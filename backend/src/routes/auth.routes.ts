@@ -209,9 +209,32 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
     // Generate reset URL
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}&email=${encodeURIComponent(user.email)}`;
 
-
-    // Send email (currently just logs, will implement email service later)
-    await sendPasswordResetEmail(user.email, resetToken, resetUrl);
+    // Send email using Brevo SMTP
+    try {
+      console.log(`\n📧 ===== FORGOT PASSWORD REQUEST =====`);
+      console.log(`📧 User: ${user.email} (${user.name})`);
+      console.log(`📧 Attempting to send password reset email...`);
+      await sendPasswordResetEmail(user.email, resetUrl);
+      console.log(`✅ Password reset email sent successfully to: ${user.email}`);
+      console.log(`📧 ========================================\n`);
+    } catch (emailError: any) {
+      console.error('\n❌ ===== EMAIL SENDING FAILED =====');
+      console.error('❌ Email sending failed:', emailError);
+      console.error('❌ Error details:', JSON.stringify(emailError, null, 2));
+      console.error('❌ Full error:', emailError);
+      if (emailError?.message) {
+        console.error('❌ Error message:', emailError.message);
+      }
+      if (emailError?.statusCode) {
+        console.error('❌ Status code:', emailError.statusCode);
+      }
+      if (emailError?.code) {
+        console.error('❌ Error code:', emailError.code);
+      }
+      console.error('❌ ======================================\n');
+      // Still return success to user (don't reveal email service issues)
+      // But log the actual error for debugging
+    }
 
 
     res.json({

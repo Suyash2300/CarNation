@@ -1,38 +1,52 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, Mail } from 'lucide-react';
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { ArrowLeft, Mail } from "lucide-react";
 
 const ForgotPassword = () => {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/auth/forgot-password`, {
-        method: 'POST',
+      const API_URL =
+        import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+
+      console.log(
+        "📤 Sending forgot password request to:",
+        `${API_URL}/auth/forgot-password`
+      );
+      console.log("📧 Email:", email);
+
+      const response = await fetch(`${API_URL}/auth/forgot-password`, {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ email }),
       });
 
-      const data = await response.json();
+      console.log("📥 Response status:", response.status);
+      console.log("📥 Response ok:", response.ok);
 
       if (!response.ok) {
-        setError(data.error || 'Something went wrong');
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: "Something went wrong" }));
+        setError(errorData.error || "Something went wrong");
         return;
       }
 
+      await response.json(); // Response is OK, just consume it
       setIsSubmitted(true);
     } catch (err) {
-      setError('Failed to send reset email. Please try again.');
-      console.error('Forgot password error:', err);
+      setError("Failed to send reset email. Please try again.");
+      console.error("Forgot password error:", err);
     } finally {
       setIsLoading(false);
     }
@@ -74,15 +88,21 @@ const ForgotPassword = () => {
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to Login
                 </Link>
-                <h1 className="text-3xl font-bold text-dark-900 mb-2">Forgot Password?</h1>
+                <h1 className="text-3xl font-bold text-dark-900 mb-2">
+                  Forgot Password?
+                </h1>
                 <p className="text-dark-700">
-                  Enter your email address and we'll send you a link to reset your password.
+                  Enter your email address and we'll send you a link to reset
+                  your password.
                 </p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-dark-900 mb-2">
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-dark-900 mb-2"
+                  >
                     Email Address
                   </label>
                   <div className="relative">
@@ -110,7 +130,7 @@ const ForgotPassword = () => {
                   disabled={isLoading}
                   className="w-full bg-gradient-primary hover:bg-gradient-primary-dark text-white py-3 rounded-lg font-semibold transition shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLoading ? 'Sending...' : 'Send Reset Link'}
+                  {isLoading ? "Sending..." : "Send Reset Link"}
                 </button>
               </form>
             </>
@@ -119,12 +139,15 @@ const ForgotPassword = () => {
               <div className="w-16 h-16 bg-success-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Mail className="w-8 h-8 text-success-600" />
               </div>
-              <h2 className="text-2xl font-bold text-dark-900 mb-2">Check Your Email</h2>
+              <h2 className="text-2xl font-bold text-dark-900 mb-2">
+                Check Your Email
+              </h2>
               <p className="text-dark-700 mb-6">
                 We've sent a password reset link to <strong>{email}</strong>
               </p>
               <p className="text-sm text-dark-600 mb-6">
-                Click the link in the email to reset your password. The link will expire in 1 hour.
+                Click the link in the email to reset your password. The link
+                will expire in 1 hour.
               </p>
               <Link
                 to="/auth"
@@ -141,4 +164,3 @@ const ForgotPassword = () => {
 };
 
 export default ForgotPassword;
-

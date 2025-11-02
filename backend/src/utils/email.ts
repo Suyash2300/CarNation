@@ -1,93 +1,282 @@
-/**
- * Email utility functions
- * For now, we'll just log the email content
- * Later, you can integrate with services like:
- * - Nodemailer
- * - SendGrid
- * - AWS SES
- * - Resend
- */
+import * as brevo from '@getbrevo/brevo';
+import nodemailer from 'nodemailer';
 
-interface EmailOptions {
-  to: string;
-  subject: string;
-  html: string;
-  text?: string;
+// Brevo configuration - Check which method to use
+const brevoApiKey = process.env.BREVO_API_KEY;
+const useSMTP = process.env.BREVO_USE_SMTP === 'true' || !!process.env.BREVO_SMTP_PASSWORD;
+
+// Brevo SMTP configuration
+const smtpConfig = {
+  host: process.env.BREVO_SMTP_HOST || 'smtp-relay.brevo.com',
+  port: parseInt(process.env.BREVO_SMTP_PORT || '587'),
+  secure: false, // true for 465, false for other ports
+  auth: {
+    user: process.env.BREVO_SMTP_USER,
+    pass: process.env.BREVO_SMTP_PASSWORD,
+  },
+};
+
+// Initialize Brevo API client (if not using SMTP)
+let apiInstance: brevo.TransactionalEmailsApi | null = null;
+if (brevoApiKey && !useSMTP) {
+  apiInstance = new brevo.TransactionalEmailsApi();
+  apiInstance.setApiKey(0 as any, brevoApiKey);
 }
 
-export const sendEmail = async (options: EmailOptions): Promise<void> => {
-  // TODO: Integrate with email service (Nodemailer, SendGrid, etc.)
-  // For now, just log the email content
-  console.log('📧 Email to be sent:');
-  console.log('To:', options.to);
-  console.log('Subject:', options.subject);
-  console.log('Body:', options.text || options.html);
-  console.log('---');
-  
-  // In production, implement actual email sending:
-  // await nodemailer.sendMail({
-  //   from: process.env.EMAIL_FROM,
-  //   to: options.to,
-  //   subject: options.subject,
-  //   html: options.html,
-  //   text: options.text,
-  // });
+// Create SMTP transporter (if using SMTP)
+const createSMTPTransporter = () => {
+  if (!smtpConfig.auth.user || !smtpConfig.auth.pass) {
+    return null;
+  }
+  return nodemailer.createTransport(smtpConfig);
 };
 
 /**
- * Send password reset email
+ * Send password reset email using Brevo
+ * Brevo allows sending to ANY email address without domain restrictions!
  */
 export const sendPasswordResetEmail = async (
   email: string,
-  resetToken: string,
   resetUrl: string
 ): Promise<void> => {
+  // Parse from email - Brevo needs separate name and email
+  // IMPORTANT: For Gmail addresses, use the verified sender exactly as shown in Brevo
+  const fromEmailRaw = process.env.BREVO_FROM_EMAIL || process.env.BREVO_FROM || 'CarNation <carnation71212@gmail.com>';
+  let fromName = process.env.BREVO_FROM_NAME || 'CarNation';
+  let fromAddress = 'carnation71212@gmail.com'; // Default to verified sender
+  
+  if (fromEmailRaw.includes('<')) {
+    const match = fromEmailRaw.match(/(.+?)\s*<(.+?)>/);
+    if (match) {
+      fromName = match[1].trim() || fromName;
+      fromAddress = match[2].trim();
+    } else {
+      fromAddress = fromEmailRaw.replace(/[<>]/g, '').trim();
+    }
+  } else {
+    fromAddress = fromEmailRaw.trim();
+  }
+  
+  console.log(`📧 Using sender: ${fromName} <${fromAddress}>`);
+  
   const subject = 'Reset Your CarNation Password';
+  
   const html = `
     <!DOCTYPE html>
     <html>
       <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .button { display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-          .footer { margin-top: 30px; font-size: 12px; color: #666; }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8fafc;
+          }
+          .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 30px;
+          }
+          .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2563eb;
+            margin-bottom: 10px;
+          }
+          h2 {
+            color: #1e293b;
+            margin-bottom: 20px;
+          }
+          p {
+            color: #475569;
+            margin-bottom: 16px;
+          }
+          .button {
+            display: inline-block;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #3b82f6 0%, #0ea5e9 100%);
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            margin: 24px 0;
+            text-align: center;
+            transition: transform 0.2s;
+          }
+          .button:hover {
+            transform: translateY(-2px);
+          }
+          .link-text {
+            background-color: #f1f5f9;
+            padding: 12px;
+            border-radius: 6px;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 12px;
+            color: #475569;
+            margin: 16px 0;
+          }
+          .footer {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #e2e8f0;
+            text-align: center;
+            font-size: 12px;
+            color: #64748b;
+          }
+          .warning {
+            background-color: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-size: 14px;
+            color: #92400e;
+          }
         </style>
       </head>
       <body>
         <div class="container">
+          <div class="header">
+            <div class="logo">CarNation</div>
+          </div>
+          
           <h2>Reset Your Password</h2>
+          
           <p>Hello,</p>
+          
           <p>You requested to reset your password for your CarNation account.</p>
+          
           <p>Click the button below to reset your password:</p>
-          <a href="${resetUrl}" class="button">Reset Password</a>
+          
+          <div style="text-align: center;">
+            <a href="${resetUrl}" class="button">Reset Password</a>
+          </div>
+          
           <p>Or copy and paste this link into your browser:</p>
-          <p style="word-break: break-all;">${resetUrl}</p>
-          <p>This link will expire in 1 hour.</p>
-          <p>If you didn't request this, please ignore this email.</p>
+          
+          <div class="link-text">
+            ${resetUrl}
+          </div>
+          
+          <div class="warning">
+            <strong>⚠️ Important:</strong> This link will expire in <strong>1 hour</strong>. If you didn't request this password reset, please ignore this email.
+          </div>
+          
           <div class="footer">
-            <p>Best regards,<br>The CarNation Team</p>
+            <p>Best regards,<br><strong>The CarNation Team</strong></p>
+            <p>© 2024 CarNation. All rights reserved.</p>
           </div>
         </div>
       </body>
     </html>
   `;
+
   const text = `
-    Reset Your CarNation Password
-    
-    You requested to reset your password. Click the link below:
-    ${resetUrl}
-    
-    This link will expire in 1 hour.
-    
-    If you didn't request this, please ignore this email.
-  `;
+Reset Your CarNation Password
 
-  await sendEmail({
-    to: email,
-    subject,
-    html,
-    text,
-  });
+Hello,
+
+You requested to reset your password for your CarNation account.
+
+Click the link below to reset your password:
+${resetUrl}
+
+This link will expire in 1 hour.
+
+If you didn't request this, please ignore this email.
+
+Best regards,
+The CarNation Team
+  `.trim();
+
+  // Use SMTP if credentials are provided, otherwise use API
+  if (useSMTP) {
+    const transporter = createSMTPTransporter();
+    if (!transporter) {
+      throw new Error(
+        'Brevo SMTP credentials not configured. Please set:\n' +
+        '  BREVO_SMTP_USER=your-email@brevo.com\n' +
+        '  BREVO_SMTP_PASSWORD=your-smtp-password\n' +
+        '\nGet SMTP password from: https://app.brevo.com/settings/keys/smtp'
+      );
+    }
+
+    try {
+      console.log(`📤 Sending email via Brevo SMTP:`);
+      console.log(`   Host: ${smtpConfig.host}:${smtpConfig.port}`);
+      console.log(`   From: ${fromName} <${fromAddress}>`);
+      console.log(`   To: ${email}`);
+      console.log(`   Subject: ${subject}`);
+
+      const info = await transporter.sendMail({
+        from: `${fromName} <${fromAddress}>`,
+        to: email,
+        subject: subject,
+        html: html,
+        text: text,
+      });
+
+      console.log('✅ Password reset email sent successfully via Brevo SMTP!');
+      console.log(`   Message ID: ${info.messageId}`);
+      console.log(`   Recipient: ${email}`);
+      return;
+    } catch (error: any) {
+      console.error('❌ Error sending password reset email via SMTP:', error);
+      if (error?.message) {
+        console.error(`   Error message: ${error.message}`);
+      }
+      throw new Error(`Failed to send email via SMTP: ${error.message || 'Unknown error'}`);
+    }
+  }
+
+  // Fallback to API method
+  if (!apiInstance || !brevoApiKey) {
+    throw new Error(
+      'Brevo API key is not configured. Please set BREVO_API_KEY in your .env file.\n' +
+      'Or set BREVO_SMTP_USER and BREVO_SMTP_PASSWORD to use SMTP.\n' +
+      'Get credentials at: https://app.brevo.com/settings/keys/api'
+    );
+  }
+
+  try {
+    console.log(`📤 Sending email via Brevo API:`);
+    console.log(`   From: ${fromName} <${fromAddress}>`);
+    console.log(`   To: ${email}`);
+    console.log(`   Subject: ${subject}`);
+
+    const sendSmtpEmail = new brevo.SendSmtpEmail();
+    sendSmtpEmail.subject = subject;
+    sendSmtpEmail.htmlContent = html;
+    sendSmtpEmail.textContent = text;
+    sendSmtpEmail.sender = { name: fromName, email: fromAddress };
+    sendSmtpEmail.to = [{ email: email }];
+
+    const result = await apiInstance!.sendTransacEmail(sendSmtpEmail);
+
+    console.log('✅ Password reset email sent successfully via Brevo API!');
+    if (result.body?.messageId) {
+      console.log(`   Message ID: ${result.body.messageId}`);
+    }
+    console.log(`   Recipient: ${email}`);
+  } catch (error: any) {
+    console.error('❌ Error sending password reset email via Brevo API:', error);
+    if (error?.response?.body) {
+      console.error('   Error details:', JSON.stringify(error.response.body, null, 2));
+    }
+    if (error?.message) {
+      console.error(`   Error message: ${error.message}`);
+    }
+    throw new Error(`Failed to send email: ${error.message || 'Unknown error'}`);
+  }
 };
-
