@@ -10,12 +10,154 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Example model - customize based on your needs
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum UserRole {
+  ADMIN
+  SELLER
+  BUYER
 }
 
+enum CarStatus {
+  AVAILABLE
+  RENTED
+  SOLD
+  MAINTENANCE
+}
+
+enum RentalStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum PurchaseStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String    // Hashed password
+  name          String
+  phone         String?
+  role          UserRole  @default(BUYER)
+  
+  // Profile image
+  profileImage  String?
+  
+  // Relationships
+  carsOwned     Car[]     @relation("CarOwner")      // Admin's cars for rent
+  carsForSale   Car[]     @relation("CarSeller")     // Seller's cars
+  rentals       Rental[]  @relation("RentalBuyer")    // Buyer's rentals
+  purchases     Purchase[] @relation("PurchaseBuyer") // Buyer's purchases
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Car {
+  id              String         @id @default(uuid())
+  
+  // Basic Info
+  brand           String
+  model           String
+  year            Int
+  color           String?
+  mileage         Float?         // in km
+  transmission    String?        // Automatic, Manual
+  fuelType        String?        // Petrol, Diesel, Electric, Hybrid
+  seats           Int?
+  
+  // Pricing
+  rentalPrice     Float?         // Daily rental price (for admin)
+  salePrice       Float?         // Sale price (for seller)
+  
+  // Car Type
+  isForRent       Boolean        @default(false)  // Admin rents out
+  isForSale       Boolean        @default(false)  // Seller sells
+  
+  // Status
+  status          CarStatus      @default(AVAILABLE)
+  
+  // Images (Cloudinary URLs)
+  images          String[]       // Array of Cloudinary image URLs
+  primaryImage    String?        // Main image URL
+  
+  // Description
+  description     String?
+  
+  // Relationships
+  ownerId         String?        // Admin who owns this car for rent
+  owner           User?          @relation("CarOwner", fields: [ownerId], references: [id])
+  
+  sellerId        String?        // Seller who is selling this car
+  seller          User?          @relation("CarSeller", fields: [sellerId], references: [id])
+  
+  rentals         Rental[]
+  purchases       Purchase[]
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  @@index([ownerId])
+  @@index([sellerId])
+  @@index([status])
+}
+
+model Rental {
+  id              String         @id @default(uuid())
+  
+  carId           String
+  car             Car            @relation(fields: [carId], references: [id])
+  
+  buyerId         String
+  buyer           User            @relation("RentalBuyer", fields: [buyerId], references: [id])
+  
+  // Rental Period
+  startDate       DateTime
+  endDate         DateTime
+  totalDays       Int
+  dailyPrice      Float
+  
+  // Payment
+  totalAmount     Float
+  razorpayOrderId String?        // Razorpay order ID
+  razorpayPaymentId String?      // Razorpay payment ID
+  paymentStatus   String         @default("PENDING") // PENDING, PAID, FAILED
+  
+  // Status
+  status          RentalStatus   @default(PENDING)
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  @@index([buyerId])
+  @@index([carId])
+}
+
+model Purchase {
+  id              String         @id @default(uuid())
+  
+  carId           String
+  car             Car            @relation(fields: [carId], references: [id])
+  
+  buyerId         String
+  buyer           User           @relation("PurchaseBuyer", fields: [buyerId], references: [id])
+  
+  // Payment
+  salePrice       Float
+  razorpayOrderId String?        // Razorpay order ID
+  razorpayPaymentId String?      // Razorpay payment ID
+  paymentStatus   String         @default("PENDING") // PENDING, PAID, FAILED
+  
+  // Status
+  status          PurchaseStatus @default(PENDING)
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  @@index([buyerId])
+  @@index([carId])
+}
