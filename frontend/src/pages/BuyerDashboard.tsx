@@ -1,26 +1,42 @@
 import { useAppSelector } from '../hooks/redux';
 import Navbar from '../components/layout/Navbar';
 import { useGetRentalCarsQuery } from '../services/carApi';
-import { Car as CarIcon, MapPin, Search, Calendar, UserCheck } from 'lucide-react';
+import { useGetDealsQuery } from '../services/dealsApi';
+import { useGetRentalsQuery } from '../services/rentalApi';
+import DealStatusBadge from '../components/deals/DealStatusBadge';
+import { Car as CarIcon, MapPin, Search, Calendar, UserCheck, Handshake, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const BuyerDashboard = () => {
   const { user } = useAppSelector((state) => state.auth);
   const { data, isLoading } = useGetRentalCarsQuery({});
+  const { data: dealsData } = useGetDealsQuery();
+  const { data: rentalsData } = useGetRentalsQuery();
 
   const cars = data?.cars || [];
+  const deals = dealsData?.deals || [];
+  const rentals = rentalsData?.rentals || [];
 
   return (
     <div className="min-h-screen bg-light-subtle">
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-dark-900 mb-2">Welcome Back!</h1>
-          <p className="text-dark-600">
-            Hello, <span className="font-semibold text-primary">{user?.name}</span>! 
-            Ready to find your perfect ride?
-          </p>
+        <div className="mb-8 flex justify-between items-start">
+          <div>
+            <h1 className="text-4xl font-bold text-dark-900 mb-2">Welcome Back!</h1>
+            <p className="text-dark-600">
+              Hello, <span className="font-semibold text-primary">{user?.name}</span>! 
+              Ready to find your perfect ride?
+            </p>
+          </div>
+          <Link
+            to="/chat"
+            className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold transition shadow-lg hover:shadow-xl"
+          >
+            <MessageCircle className="w-5 h-5" />
+            Messages
+          </Link>
         </div>
 
         {/* Account Status Card */}
@@ -97,6 +113,107 @@ const BuyerDashboard = () => {
             </p>
           </Link>
         </div>
+
+        {/* Active Deals & Rentals */}
+        {(deals.length > 0 || rentals.length > 0) && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-dark-900 mb-4">My Deals & Rentals</h2>
+            
+            {deals.length > 0 && (
+              <div className="glass rounded-xl p-6 mb-6">
+                <h3 className="text-lg font-semibold text-dark-900 mb-4 flex items-center gap-2">
+                  <Handshake className="w-5 h-5" />
+                  Active Deals
+                </h3>
+                <div className="space-y-4">
+                  {deals.map((deal) => (
+                    <div key={deal.id} className="border border-dark-200 rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            {deal.car.primaryImage && (
+                              <img
+                                src={deal.car.primaryImage}
+                                alt={`${deal.car.brand} ${deal.car.model}`}
+                                className="w-16 h-16 rounded-lg object-cover"
+                              />
+                            )}
+                            <div>
+                              <h4 className="font-semibold text-dark-900">
+                                {deal.car.brand} {deal.car.model} ({deal.car.year})
+                              </h4>
+                              <p className="text-sm text-dark-600">
+                                {deal.dealType === 'PURCHASE' ? 'Purchase' : 'Rental'} with {deal.seller.name}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        <DealStatusBadge status={deal.status} />
+                      </div>
+                      <div className="flex items-center justify-between mt-3">
+                        <div>
+                          <p className="text-sm text-dark-600">Agreed Price</p>
+                          <p className="font-semibold text-dark-900">₹{deal.agreedPrice.toLocaleString()}</p>
+                        </div>
+                        {deal.purchase?.platformFee && (
+                          <div>
+                            <p className="text-sm text-dark-600">Platform Fee</p>
+                            <p className="font-semibold text-primary-600">₹{deal.purchase.platformFee.toLocaleString()}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {rentals.length > 0 && (
+              <div className="glass rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-dark-900 mb-4 flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  My Rentals
+                </h3>
+                <div className="space-y-4">
+                  {rentals.map((rental) => (
+                    <div key={rental.id} className="border border-dark-200 rounded-lg p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          {rental.car.primaryImage && (
+                            <img
+                              src={rental.car.primaryImage}
+                              alt={`${rental.car.brand} ${rental.car.model}`}
+                              className="w-16 h-16 rounded-lg object-cover"
+                            />
+                          )}
+                          <div>
+                            <h4 className="font-semibold text-dark-900">
+                              {rental.car.brand} {rental.car.model}
+                            </h4>
+                            <p className="text-sm text-dark-600">
+                              {new Date(rental.startDate).toLocaleDateString()} - {new Date(rental.endDate).toLocaleDateString()}
+                            </p>
+                            <p className="text-sm text-dark-600">{rental.totalDays} days</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-dark-900">₹{rental.totalAmount.toLocaleString()}</p>
+                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                            rental.status === 'COMPLETED' ? 'bg-success-100 text-success-700' :
+                            rental.status === 'ACTIVE' ? 'bg-primary-100 text-primary-700' :
+                            'bg-warning-100 text-warning-700'
+                          }`}>
+                            {rental.status}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Featured Rental Cars */}
         <div className="mb-6">

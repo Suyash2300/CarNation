@@ -5,8 +5,14 @@ import { generateToken } from '../utils/jwt';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { generateResetToken, hashResetToken } from '../utils/resetToken';
 import { sendPasswordResetEmail } from '../utils/email';
+import { authLimiter } from '../middleware/rateLimit';
+import multer from 'multer';
+import { uploadToCloudinary } from '../utils/cloudinary';
 
 const router = Router();
+
+// Apply rate limiting to auth routes
+router.use(authLimiter);
 
 // Register / Sign Up
 router.post('/register', async (req: Request, res: Response) => {
@@ -41,14 +47,26 @@ router.post('/register', async (req: Request, res: Response) => {
     const hashedPassword = await hashPassword(password);
 
     // Create user
+    const userRole = role || 'BUYER';
+    const now = new Date();
+    const freeTierEndDate = new Date();
+    freeTierEndDate.setFullYear(freeTierEndDate.getFullYear() + 100); // 100 years from now
+
     const user = await prisma.user.create({
       data: {
         email: email.toLowerCase(),
         password: hashedPassword,
         name,
         phone,
-        role: role || 'BUYER',
-      },
+        role: userRole,
+        // Auto-activate FREE tier for sellers
+        ...(userRole === 'SELLER' ? {
+          subscriptionTier: 'FREE',
+          subscriptionStatus: 'ACTIVE',
+          subscriptionStartDate: now,
+          subscriptionEndDate: freeTierEndDate,
+        } : {}),
+      } as any,
       select: {
         id: true,
         email: true,
@@ -305,6 +323,79 @@ router.post('/reset-password', async (req: Request, res: Response) => {
     });
   }
 });
+
+// Configure multer for Aadhaar upload
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'));
+    }
+  },
+});
+
+// Upload Aadhaar documents
+router.post(
+  '/upload-aadhaar',
+  authenticate,
+  upload.fields([
+    { name: 'aadhaarFrontImage', maxCount: 1 },
+    { name: 'aadhaarBackImage', maxCount: 1 },
+  ]),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.user!.userId;
+      const { aadhaarNumber } = req.body;
+
+      if (!aadhaarNumber || aadhaarNumber.length !== 12) {
+        return res.status(400).json({
+          error: 'Please provide a valid 12-digit Aadhaar number',
+        });
+      }
+
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      const frontImage = files?.aadhaarFrontImage?.[0];
+      const backImage = files?.aadhaarBackImage?.[0];
+
+      if (!frontImage || !backImage) {
+        return res.status(400).json({
+          error: 'Please upload both front and back images of your Aadhaar card',
+        });
+      }
+
+      // Upload images to Cloudinary
+      const [frontImageResult, backImageResult] = await Promise.all([
+        uploadToCloudinary(frontImage.buffer, `aadhaar-front-${userId}`),
+        uploadToCloudinary(backImage.buffer, `aadhaar-back-${userId}`),
+      ]);
+
+      // Update user with Aadhaar information
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          aadhaarNumber: aadhaarNumber.slice(0, 12), // Store full number for admin verification
+          aadhaarFrontImage: frontImageResult.url,
+          aadhaarBackImage: backImageResult.url,
+        } as any,
+      });
+
+      res.json({
+        message: 'Aadhaar documents uploaded successfully. Admin will verify them shortly.',
+      });
+    } catch (error) {
+      console.error('Upload Aadhaar error:', error);
+      res.status(500).json({
+        error: 'Failed to upload Aadhaar documents',
+      });
+    }
+  }
+);
 
 export default router;
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Menu, X, LogOut } from "lucide-react";
+import { Menu, X, LogOut, MessageCircle } from "lucide-react";
 import { useAppSelector, useAppDispatch } from "../../hooks/redux";
 import { logout } from "../../store/slices/authSlice";
 
@@ -85,6 +85,15 @@ const Navbar = () => {
               <>
                 <span className="text-sm text-primary-400">👤 {user?.name}</span>
                 <Link
+                  to="/chat"
+                  className={`flex items-center gap-2 hover:text-primary-400 transition ${
+                    isActive('/chat') ? 'text-primary-400 border-b-2 border-primary-400 pb-1' : ''
+                  }`}
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  Messages
+                </Link>
+                <Link
                   to="/dashboard"
                   className="bg-gradient-primary hover:bg-gradient-primary-dark px-4 py-2 rounded-lg text-sm font-semibold transition shadow-soft hover:shadow-glow"
                 >
@@ -168,6 +177,18 @@ const Navbar = () => {
           </Link>
           {isAuthenticated ? (
             <>
+              <Link
+                to="/chat"
+                className={`block transition ${
+                  isActive('/chat') ? 'text-primary-400 font-semibold' : 'hover:text-primary'
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <div className="flex items-center gap-2">
+                  <MessageCircle className="w-5 h-5" />
+                  Messages
+                </div>
+              </Link>
               <Link
                 to="/dashboard"
                 className="block hover:text-primary-400 transition"

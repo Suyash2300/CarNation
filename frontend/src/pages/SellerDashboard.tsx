@@ -15,21 +15,31 @@ import {
   CheckCircle,
   XCircle,
   TrendingUp,
+  Crown,
+  Handshake,
+  MessageCircle,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import AddSellerCarModal from "../components/seller/AddSellerCarModal";
 import EditSellerCarModal from "../components/seller/EditSellerCarModal";
+import SubscriptionManagement from "../components/seller/SubscriptionManagement";
+import { useGetDealsQuery } from "../services/dealsApi";
+import DealStatusBadge from "../components/deals/DealStatusBadge";
 
 const SellerDashboard = () => {
   const { user } = useAppSelector((state) => state.auth);
   const { data, isLoading } = useGetSellerCarsQuery();
   const { data: statsData } = useGetSellerStatsQuery();
+  const { data: dealsData } = useGetDealsQuery();
   const [deleteCar] = useDeleteSellerCarMutation();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingCar, setEditingCar] = useState<Car | null>(null);
+  const [activeTab, setActiveTab] = useState<'listings' | 'subscription' | 'deals'>('listings');
 
   const cars = data?.cars || [];
   const stats = statsData?.stats;
+  const deals = dealsData?.deals || [];
 
   const handleDelete = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this car listing?")) {
@@ -108,24 +118,146 @@ const SellerDashboard = () => {
           </div>
         )}
 
-        {/* Actions */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-dark-900">
-              My Car Listings
-            </h2>
-            <p className="text-dark-600">
-              Manage your pre-owned vehicles for sale
-            </p>
-          </div>
+        {/* Tabs */}
+        <div className="flex gap-4 mb-6 border-b border-dark-200">
           <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="bg-gradient-primary hover:bg-gradient-primary-dark text-white px-6 py-3 rounded-lg font-semibold transition shadow-lg hover:shadow-xl flex items-center gap-2"
+            onClick={() => setActiveTab('listings')}
+            className={`px-4 py-2 font-semibold transition border-b-2 ${
+              activeTab === 'listings'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-dark-600 hover:text-dark-900'
+            }`}
           >
-            <Plus className="w-5 h-5" />
-            Add New Car
+            <CarIcon className="w-4 h-4 inline mr-2" />
+            My Listings
           </button>
+          <button
+            onClick={() => setActiveTab('subscription')}
+            className={`px-4 py-2 font-semibold transition border-b-2 ${
+              activeTab === 'subscription'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-dark-600 hover:text-dark-900'
+            }`}
+          >
+            <Crown className="w-4 h-4 inline mr-2" />
+            Subscription
+          </button>
+          <button
+            onClick={() => setActiveTab('deals')}
+            className={`px-4 py-2 font-semibold transition border-b-2 ${
+              activeTab === 'deals'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-dark-600 hover:text-dark-900'
+            }`}
+          >
+            <Handshake className="w-4 h-4 inline mr-2" />
+            My Deals
+          </button>
+          <Link
+            to="/chat"
+            className="ml-auto flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold transition shadow-lg hover:shadow-xl"
+          >
+            <MessageCircle className="w-4 h-4" />
+            Messages
+          </Link>
         </div>
+
+        {/* Subscription Tab */}
+        {activeTab === 'subscription' && <SubscriptionManagement />}
+
+        {/* Deals Tab */}
+        {activeTab === 'deals' && (
+          <div>
+            <h2 className="text-2xl font-bold text-dark-900 mb-6">My Deals</h2>
+            {deals.length === 0 ? (
+              <div className="text-center py-12 glass rounded-xl">
+                <Handshake className="w-16 h-16 text-dark-300 mx-auto mb-4" />
+                <p className="text-xl text-dark-600 mb-2">No deals yet</p>
+                <p className="text-dark-500">
+                  Deals will appear here when buyers initiate them from chats
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {deals.map((deal) => (
+                  <div key={deal.id} className="glass rounded-xl p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-4">
+                        {deal.car.primaryImage && (
+                          <img
+                            src={deal.car.primaryImage}
+                            alt={`${deal.car.brand} ${deal.car.model}`}
+                            className="w-20 h-20 rounded-lg object-cover"
+                          />
+                        )}
+                        <div>
+                          <h3 className="font-bold text-dark-900">
+                            {deal.car.brand} {deal.car.model} ({deal.car.year})
+                          </h3>
+                          <p className="text-sm text-dark-600">
+                            Deal with {deal.buyer.name}
+                          </p>
+                          <p className="text-sm text-dark-600">
+                            {deal.dealType === 'PURCHASE' ? 'Purchase' : 'Rental'} Deal
+                          </p>
+                        </div>
+                      </div>
+                      <DealStatusBadge status={deal.status} />
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-dark-200">
+                      <div>
+                        <p className="text-sm text-dark-600 mb-1">Agreed Price</p>
+                        <p className="font-semibold text-dark-900">₹{deal.agreedPrice.toLocaleString()}</p>
+                      </div>
+                      {deal.purchase?.platformFee && (
+                        <>
+                          <div>
+                            <p className="text-sm text-dark-600 mb-1">Platform Fee</p>
+                            <p className="font-semibold text-primary-600">₹{deal.purchase.platformFee.toLocaleString()}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-dark-600 mb-1">Your Earnings</p>
+                            <p className="font-semibold text-success-600">
+                              ₹{deal.purchase.sellerEarnings?.toLocaleString() || 'N/A'}
+                            </p>
+                          </div>
+                        </>
+                      )}
+                      <div>
+                        <p className="text-sm text-dark-600 mb-1">Date</p>
+                        <p className="font-semibold text-dark-900">
+                          {new Date(deal.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Listings Tab */}
+        {activeTab === 'listings' && (
+          <>
+            {/* Actions */}
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-dark-900">
+                  My Car Listings
+                </h2>
+                <p className="text-dark-600">
+                  Manage your pre-owned vehicles for sale
+                </p>
+              </div>
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="bg-gradient-primary hover:bg-gradient-primary-dark text-white px-6 py-3 rounded-lg font-semibold transition shadow-lg hover:shadow-xl flex items-center gap-2"
+              >
+                <Plus className="w-5 h-5" />
+                Add New Car
+              </button>
+            </div>
 
         {/* Cars Grid */}
         {isLoading ? (
@@ -221,15 +353,33 @@ const SellerDashboard = () => {
 
                   <div className="flex gap-2">
                     <button
-                      onClick={() => setEditingCar(car)}
-                      className="flex-1 flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-semibold transition"
+                      onClick={() => {
+                        if (car.status === 'SOLD') {
+                          alert('This car has been sold and cannot be edited.');
+                          return;
+                        }
+                        setEditingCar(car);
+                      }}
+                      disabled={car.status === 'SOLD'}
+                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold transition ${
+                        car.status === 'SOLD'
+                          ? 'bg-dark-300 text-dark-600 cursor-not-allowed opacity-50'
+                          : 'bg-primary-600 hover:bg-primary-700 text-white'
+                      }`}
+                      title={car.status === 'SOLD' ? 'Cannot edit sold cars' : 'Edit car listing'}
                     >
                       <Edit className="w-4 h-4" />
-                      Edit
+                      {car.status === 'SOLD' ? 'Sold' : 'Edit'}
                     </button>
                     <button
                       onClick={() => handleDelete(car.id)}
-                      className="flex items-center justify-center gap-2 bg-error-600 hover:bg-error-700 text-white px-4 py-2 rounded-lg font-semibold transition"
+                      disabled={car.status === 'SOLD'}
+                      className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold transition ${
+                        car.status === 'SOLD'
+                          ? 'bg-dark-300 text-dark-600 cursor-not-allowed opacity-50'
+                          : 'bg-error-600 hover:bg-error-700 text-white'
+                      }`}
+                      title={car.status === 'SOLD' ? 'Cannot delete sold cars' : 'Delete car listing'}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -261,6 +411,8 @@ const SellerDashboard = () => {
             </p>
           </div>
         </div>
+          </>
+        )}
       </div>
 
       {/* Modals */}

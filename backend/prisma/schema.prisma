@@ -36,6 +36,18 @@ enum PurchaseStatus {
   CANCELLED
 }
 
+enum SubscriptionTier {
+  FREE
+  BASIC
+  PREMIUM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
 model User {
   id            String    @id @default(uuid())
   email         String    @unique
@@ -59,11 +71,25 @@ model User {
   resetToken        String?
   resetTokenExpiry  DateTime?
   
+  // Subscription (for sellers)
+  subscriptionTier      SubscriptionTier    @default(FREE)
+  subscriptionStatus    SubscriptionStatus  @default(ACTIVE)
+  subscriptionStartDate DateTime?
+  subscriptionEndDate   DateTime?
+  subscriptionPayments  SubscriptionPayment[]
+  
   // Relationships
   carsOwned     Car[]     @relation("CarOwner")      // Admin's cars for rent
   carsForSale   Car[]     @relation("CarSeller")     // Seller's cars
   rentals       Rental[]  @relation("RentalBuyer")    // Buyer's rentals
   purchases     Purchase[] @relation("PurchaseBuyer") // Buyer's purchases
+  
+  // Chat relationships
+  conversations1 Conversation[] @relation("ConversationParticipant1")
+  conversations2 Conversation[] @relation("ConversationParticipant2")
+  messagesSent   Message[]       @relation("MessageSender")
+  dealsAsBuyer  Deal[]          @relation("DealBuyer")
+  dealsAsSeller Deal[]          @relation("DealSeller")
   
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -110,6 +136,8 @@ model Car {
   
   rentals         Rental[]
   purchases       Purchase[]
+  conversations   Conversation[]
+  deals           Deal[]
   
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
@@ -143,11 +171,17 @@ model Rental {
   // Status
   status          RentalStatus   @default(PENDING)
   
+  // Optional conversation link
+  conversationId  String?        @unique
+  conversation    Conversation?  @relation(fields: [conversationId], references: [id])
+  deals           Deal[]
+  
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   
   @@index([buyerId])
   @@index([carId])
+  @@index([conversationId])
 }
 
 model Purchase {
@@ -165,6 +199,13 @@ model Purchase {
   razorpayPaymentId String?      // Razorpay payment ID
   paymentStatus   String         @default("PENDING") // PENDING, PAID, FAILED
   
+  // Platform Fees
+  platformFee     Float?         // Platform fee amount
+  sellerEarnings  Float?         // Amount seller receives after fee
+  conversationId  String?        // Links to chat where deal was made
+  conversation    Conversation?  @relation(fields: [conversationId], references: [id])
+  deals           Deal[]
+  
   // Status
   status          PurchaseStatus @default(PENDING)
   
@@ -173,4 +214,130 @@ model Purchase {
   
   @@index([buyerId])
   @@index([carId])
+  @@index([conversationId])
+}
+
+model Conversation {
+  id              String         @id @default(uuid())
+  
+  // Participants
+  participant1Id  String        // User 1
+  participant1    User           @relation("ConversationParticipant1", fields: [participant1Id], references: [id])
+  participant2Id  String        // User 2
+  participant2    User           @relation("ConversationParticipant2", fields: [participant2Id], references: [id])
+  
+  // Context (optional - links to car or rental)
+  carId           String?
+  car             Car?           @relation(fields: [carId], references: [id])
+  rental          Rental?
+  
+  // Last message info
+  lastMessageAt   DateTime?
+  lastMessage     String?
+  
+  // Relationships
+  messages        Message[]
+  purchases       Purchase[]
+  deals           Deal[]
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  @@unique([participant1Id, participant2Id, carId])
+  @@index([participant1Id])
+  @@index([participant2Id])
+  @@index([carId])
+}
+
+model Message {
+  id              String         @id @default(uuid())
+  
+  conversationId  String
+  conversation    Conversation   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  senderId        String
+  sender          User           @relation("MessageSender", fields: [senderId], references: [id])
+  
+  content         String         // Message text
+  imageUrl        String?        // Optional image attachment
+  
+  isRead          Boolean        @default(false)
+  readAt          DateTime?
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([createdAt])
+}
+
+model PlatformFee {
+  id              String         @id @default(uuid())
+  
+  feePercentage   Float          @default(5.0) // Default 5% platform fee
+  isActive        Boolean        @default(true)
+  updatedBy       String?        // Admin ID who last updated
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model Deal {
+  id              String         @id @default(uuid())
+  
+  conversationId  String
+  conversation    Conversation   @relation(fields: [conversationId], references: [id])
+  
+  carId           String
+  car             Car            @relation(fields: [carId], references: [id])
+  
+  buyerId         String
+  buyer           User           @relation("DealBuyer", fields: [buyerId], references: [id])
+  
+  sellerId        String
+  seller          User           @relation("DealSeller", fields: [sellerId], references: [id])
+  
+  // Deal details
+  agreedPrice     Float
+  dealType        String         // "PURCHASE" or "RENTAL"
+  
+  // Link to actual transaction
+  purchaseId      String?        // If deal resulted in purchase
+  purchase        Purchase?      @relation(fields: [purchaseId], references: [id])
+  rentalId        String?        // If deal resulted in rental
+  rental          Rental?        @relation(fields: [rentalId], references: [id])
+  
+  status          String         @default("PENDING") // PENDING, ACCEPTED, REJECTED, COMPLETED
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  @@index([conversationId])
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([carId])
+}
+
+model SubscriptionPayment {
+  id              String         @id @default(uuid())
+  
+  userId          String
+  user            User           @relation(fields: [userId], references: [id])
+  
+  // Payment Details
+  amount          Float
+  tier            SubscriptionTier
+  razorpayOrderId String?
+  razorpayPaymentId String?
+  paymentStatus   String         @default("PENDING") // PENDING, PAID, FAILED
+  
+  // Subscription Period
+  startDate       DateTime
+  endDate         DateTime
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  @@index([userId])
 }

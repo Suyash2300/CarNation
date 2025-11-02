@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../db/prisma';
+import { getCarAvailability, getUnavailableDates } from '../services/availabilityService';
 
 const router = Router();
 
@@ -62,9 +63,50 @@ router.get('/rent', async (req: Request, res: Response) => {
         orderBy,
         skip,
         take: limitNum,
+        include: {
+          rentals: {
+            where: {
+              status: {
+                in: ['PENDING', 'ACTIVE'],
+              },
+            },
+            select: {
+              id: true,
+              startDate: true,
+              endDate: true,
+              status: true,
+            },
+            orderBy: {
+              startDate: 'asc',
+            },
+          },
+        },
       }),
       prisma.car.count({ where }),
     ]);
+
+    // Calculate availability for each car
+    const carsWithAvailability = await Promise.all(
+      cars.map(async (car) => {
+        try {
+          const availability = await getCarAvailability(car.id);
+          return {
+            ...car,
+            availability,
+          };
+        } catch (error) {
+          // If error calculating, return car without availability
+          return {
+            ...car,
+            availability: {
+              status: 'AVAILABLE' as const,
+              bookedDates: [],
+              isCurrentlyRented: false,
+            },
+          };
+        }
+      })
+    );
 
     // Get unique cities and brands for filters
     const cities = await prisma.car.findMany({
@@ -80,7 +122,7 @@ router.get('/rent', async (req: Request, res: Response) => {
     });
 
     res.json({
-      cars,
+      cars: carsWithAvailability,
       pagination: {
         page: pageNum,
         limit: limitNum,

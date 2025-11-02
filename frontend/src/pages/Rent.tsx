@@ -4,6 +4,7 @@ import Select from 'react-select';
 import { useGetRentalCarsQuery, type Car } from '../services/carApi';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
+import AvailabilityBadge from '../components/rental/AvailabilityBadge';
 import { Filter, MapPin, DollarSign } from 'lucide-react';
 
 const Rent = () => {
@@ -166,6 +167,9 @@ const Rent = () => {
                       +{car.images.length - 1} more
                     </div>
                   )}
+                  <div className="absolute top-2 left-2">
+                    <AvailabilityBadge availability={car.availability} />
+                  </div>
                 </div>
               )}
                 <div className="p-6">
@@ -184,11 +188,21 @@ const Rent = () => {
                     </div>
                   </div>
 
-                  {car.city && (
-                    <div className="flex items-center gap-1 text-sm text-dark-600 mb-3">
-                      <MapPin className="w-4 h-4" />
-                      <span>{car.city}</span>
-                    </div>
+                  <div className="flex items-center justify-between mb-3">
+                    {car.city && (
+                      <div className="flex items-center gap-1 text-sm text-dark-600">
+                        <MapPin className="w-4 h-4" />
+                        <span>{car.city}</span>
+                      </div>
+                    )}
+                    {!car.primaryImage && (
+                      <AvailabilityBadge availability={car.availability} />
+                    )}
+                  </div>
+                  {car.availability?.nextAvailableDate && (
+                    <p className="text-xs text-warning-600 mb-2">
+                      Available after {new Date(car.availability.nextAvailableDate).toLocaleDateString()}
+                    </p>
                   )}
 
                   <div className="flex flex-wrap gap-2 mb-4">

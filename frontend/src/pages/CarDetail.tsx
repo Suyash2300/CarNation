@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useGetCarByIdQuery } from '../services/carApi';
+import { useCreateConversationMutation } from '../services/chatApi';
+import { useAppSelector } from '../hooks/redux';
 import Navbar from '../components/layout/Navbar';
+import AvailabilityBadge from '../components/rental/AvailabilityBadge';
 import {
   MapPin,
   Calendar,
@@ -20,6 +23,8 @@ const CarDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data, isLoading, error } = useGetCarByIdQuery(id!);
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
+  const [createConversation, { isLoading: isCreatingConversation }] = useCreateConversationMutation();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const car = data?.car;
@@ -68,6 +73,34 @@ const CarDetail = () => {
 
   const goToImage = (index: number) => {
     setCurrentImageIndex(index);
+  };
+
+  const handleContactSeller = async () => {
+    if (!isAuthenticated || !user) {
+      navigate('/auth');
+      return;
+    }
+
+    if (!car) return;
+
+    const otherUserId = car.isForSale ? car.seller?.id : car.owner?.id;
+    if (!otherUserId) {
+      alert('Seller/Owner information not available');
+      return;
+    }
+
+    try {
+      const result = await createConversation({
+        otherUserId,
+        carId: car.id,
+      }).unwrap();
+
+      // Navigate to chat with the conversation open
+      navigate('/chat', { state: { conversationId: result.conversation.id } });
+    } catch (error: any) {
+      console.error('Error creating conversation:', error);
+      alert(error?.data?.error || 'Failed to start conversation');
+    }
   };
 
   return (
@@ -174,7 +207,7 @@ const CarDetail = () => {
             </div>
 
             {/* Status Badge */}
-            <div>
+            <div className="flex items-center gap-3 flex-wrap">
               <span
                 className={`inline-block px-4 py-2 rounded-full text-sm font-semibold ${
                   car.status === 'AVAILABLE'
@@ -186,7 +219,65 @@ const CarDetail = () => {
               >
                 {car.status}
               </span>
+              
+              {/* Availability Status for Rental Cars */}
+              {car.isForRent && car.availability && (
+                <AvailabilityBadge availability={car.availability} />
+              )}
+              
+              {car.isForRent && car.availability?.nextAvailableDate && (
+                <p className="text-sm text-warning-700 font-semibold">
+                  Available after {new Date(car.availability.nextAvailableDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </p>
+              )}
+              
+              {/* Booked Dates */}
+              {car.isForRent && car.availability && car.availability.bookedDates.length > 0 && (
+                <div className="w-full mt-3">
+                  <p className="text-sm font-semibold text-dark-900 mb-2">Booked Dates:</p>
+                  <div className="space-y-2">
+                    {car.availability.bookedDates.map((booking, idx) => (
+                      <div key={idx} className="flex items-center gap-2 flex-wrap">
+                        <span className="px-3 py-1.5 bg-dark-100 rounded-lg text-sm text-dark-700">
+                          {new Date(booking.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} - {new Date(booking.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                        </span>
+                        <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
+                          booking.status === 'ACTIVE' ? 'bg-primary-100 text-primary-700' : 'bg-warning-100 text-warning-700'
+                        }`}>
+                          {booking.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
+
+            {/* Availability Info for Rentals */}
+            {car.isForRent && car.availability && (
+              <div className="glass rounded-xl p-4">
+                <h3 className="font-semibold text-dark-900 mb-2">Availability</h3>
+                {car.availability.nextAvailableDate && (
+                  <p className="text-sm text-dark-600 mb-2">
+                    Next available: <span className="font-semibold text-primary-600">
+                      {new Date(car.availability.nextAvailableDate).toLocaleDateString()}
+                    </span>
+                  </p>
+                )}
+                {car.availability.bookedDates.length > 0 && (
+                  <div>
+                    <p className="text-xs text-dark-500 mb-2">Booked periods:</p>
+                    <div className="space-y-1">
+                      {car.availability.bookedDates.map((period, idx) => (
+                        <p key={idx} className="text-xs text-dark-600">
+                          {new Date(period.startDate).toLocaleDateString()} - {new Date(period.endDate).toLocaleDateString()}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Car Specifications */}
             <div className="glass rounded-xl p-6">
@@ -295,18 +386,39 @@ const CarDetail = () => {
             {/* Action Buttons */}
             <div className="flex gap-4">
               {car.isForRent && (
-                <button className="flex-1 bg-gradient-primary hover:bg-gradient-primary-dark text-white px-6 py-4 rounded-lg font-semibold transition shadow-lg hover:shadow-xl">
+                <button
+                  onClick={() => navigate(`/rental-booking/${car.id}`)}
+                  className="flex-1 bg-gradient-primary hover:bg-gradient-primary-dark text-white px-6 py-4 rounded-lg font-semibold transition shadow-lg hover:shadow-xl"
+                >
                   Book Now
                 </button>
               )}
               {car.isForSale && (
-                <button className="flex-1 bg-gradient-primary hover:bg-gradient-primary-dark text-white px-6 py-4 rounded-lg font-semibold transition shadow-lg hover:shadow-xl">
-                  Contact Seller
+                <>
+                  <button
+                    onClick={() => navigate(`/purchase-booking/${car.id}`)}
+                    className="flex-1 bg-gradient-primary hover:bg-gradient-primary-dark text-white px-6 py-4 rounded-lg font-semibold transition shadow-lg hover:shadow-xl"
+                  >
+                    Buy Now
+                  </button>
+                  <button
+                    onClick={handleContactSeller}
+                    disabled={isCreatingConversation}
+                    className="px-6 py-4 border-2 border-primary-600 text-primary-600 font-semibold rounded-lg hover:bg-primary-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isCreatingConversation ? 'Starting Chat...' : 'Contact Seller'}
+                  </button>
+                </>
+              )}
+              {car.isForRent && car.owner && (
+                <button
+                  onClick={handleContactSeller}
+                  disabled={isCreatingConversation}
+                  className="px-6 py-4 border-2 border-primary-600 text-primary-600 font-semibold rounded-lg hover:bg-primary-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Chat with Admin
                 </button>
               )}
-              <button className="px-6 py-4 border-2 border-dark-300 text-dark-700 font-semibold rounded-lg hover:bg-dark-50 transition">
-                Save
-              </button>
             </div>
           </div>
         </div>

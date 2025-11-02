@@ -20,7 +20,7 @@ export const api = createApi({
       return headers;
     },
   }),
-  tagTypes: ['User', 'Car', 'Rental', 'Purchase', 'Admin'],
+  tagTypes: ['User', 'Car', 'Rental', 'Purchase', 'Admin', 'Conversations', 'Conversation', 'Messages', 'Deals', 'PlatformFees', 'Payment'],
   endpoints: () => ({}),
 });
 

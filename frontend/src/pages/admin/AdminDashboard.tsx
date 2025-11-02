@@ -6,6 +6,8 @@ import CarManagement from "../../components/admin/CarManagement";
 import RentalManagement from "../../components/admin/RentalManagement";
 import UserVerification from "../../components/admin/UserVerification";
 import UserManagement from "../../components/admin/UserManagement";
+import PlatformFeeSettings from "../../components/admin/PlatformFeeSettings";
+import TransactionReport from "../../components/admin/TransactionReport";
 import {
   LayoutDashboard,
   Car,
@@ -13,12 +15,15 @@ import {
   Users,
   Shield,
   TrendingUp,
+  DollarSign,
+  MessageCircle,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const AdminDashboard = () => {
   const { user } = useAppSelector((state) => state.auth);
   const [activeSection, setActiveSection] = useState<
-    "overview" | "cars" | "rentals" | "verification" | "users"
+    "overview" | "cars" | "rentals" | "verification" | "users" | "platform" | "transactions"
   >("overview");
 
   if (user?.role !== "ADMIN") {
@@ -44,6 +49,8 @@ const AdminDashboard = () => {
       icon: Shield,
     },
     { id: "users" as const, label: "User Management", icon: Users },
+    { id: "platform" as const, label: "Platform Settings", icon: DollarSign },
+    { id: "transactions" as const, label: "Transaction Report", icon: TrendingUp },
   ];
 
   return (
@@ -52,11 +59,20 @@ const AdminDashboard = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-dark-900 mb-2">
-            Admin Dashboard
-          </h1>
-          <p className="text-dark-700">Welcome back, {user?.name}</p>
+        <div className="mb-8 flex justify-between items-start">
+          <div>
+            <h1 className="text-4xl font-bold text-dark-900 mb-2">
+              Admin Dashboard
+            </h1>
+            <p className="text-dark-700">Welcome back, {user?.name}</p>
+          </div>
+          <Link
+            to="/chat"
+            className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold transition shadow-lg hover:shadow-xl"
+          >
+            <MessageCircle className="w-5 h-5" />
+            Messages
+          </Link>
         </div>
 
         {/* Sidebar Navigation */}
@@ -91,6 +107,8 @@ const AdminDashboard = () => {
               {activeSection === "rentals" && <RentalManagement />}
               {activeSection === "verification" && <UserVerification />}
               {activeSection === "users" && <UserManagement />}
+              {activeSection === "platform" && <PlatformFeeSettings />}
+              {activeSection === "transactions" && <TransactionReport />}
             </div>
           </main>
         </div>

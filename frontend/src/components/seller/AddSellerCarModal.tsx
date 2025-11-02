@@ -13,6 +13,7 @@ interface AddSellerCarModalProps {
 
 const AddSellerCarModal = ({ isOpen, onClose, onSuccess }: AddSellerCarModalProps) => {
   const [createCar, { isLoading }] = useCreateSellerCarMutation();
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState<CreateCarRequest>({
     brand: '',
     model: '',
@@ -70,6 +71,7 @@ const AddSellerCarModal = ({ isOpen, onClose, onSuccess }: AddSellerCarModalProp
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     try {
       await createCar(formData).unwrap();
       setFormData({
@@ -88,9 +90,15 @@ const AddSellerCarModal = ({ isOpen, onClose, onSuccess }: AddSellerCarModalProp
         city: '',
       });
       onSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create car:', error);
-      alert('Failed to create car listing. Please try again.');
+      const errorMessage = error?.data?.error || 'Failed to create car listing. Please try again.';
+      setError(errorMessage);
+      
+      // If it's a subscription limit error, suggest upgrading
+      if (error?.status === 403) {
+        // Error will be displayed below
+      }
     }
   };
 
@@ -110,6 +118,23 @@ const AddSellerCarModal = ({ isOpen, onClose, onSuccess }: AddSellerCarModalProp
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {error && (
+            <div className="bg-error-50 border border-error-200 rounded-lg p-4 mb-4">
+              <p className="text-error-900 text-sm">{error}</p>
+              {error.includes('listing limit') && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    // Navigate to subscription tab (you can handle this via parent component)
+                  }}
+                  className="mt-2 text-error-700 underline text-sm hover:text-error-900"
+                >
+                  Upgrade your subscription to list more cars
+                </button>
+              )}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-dark-900 mb-2">

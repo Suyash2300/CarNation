@@ -11,6 +11,10 @@ import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import Sell from './pages/Sell';
+import Chat from './pages/Chat';
+import RentalBooking from './pages/RentalBooking';
+import PurchaseBooking from './pages/PurchaseBooking';
+import VerifyAadhaar from './pages/VerifyAadhaar';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -51,6 +55,38 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/chat"
+        element={
+          <ProtectedRoute>
+            <Chat />
+          </ProtectedRoute>
+        }
+      />
+        <Route
+          path="/rental-booking/:id"
+          element={
+            <ProtectedRoute>
+              <RentalBooking />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/purchase-booking/:id"
+          element={
+            <ProtectedRoute>
+              <PurchaseBooking />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/verify-aadhaar"
+          element={
+            <ProtectedRoute>
+              <VerifyAadhaar />
+            </ProtectedRoute>
+          }
+        />
     </Routes>
   );
 }

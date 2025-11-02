@@ -1,5 +1,18 @@
 import { api } from './api';
 
+export interface CarAvailability {
+  status: 'AVAILABLE' | 'RENTED' | 'BOOKED_UNTIL';
+  isCurrentlyRented: boolean;
+  nextAvailableDate?: string;
+  bookedUntil?: string;
+  bookedDates: Array<{
+    startDate: string;
+    endDate: string;
+    status: string;
+  }>;
+  activeRentalsCount: number;
+}
+
 export interface Car {
   id: string;
   brand: string;
@@ -18,6 +31,7 @@ export interface Car {
   city?: string;
   status: string;
   isForRent: boolean;
+  availability?: CarAvailability;
   seller?: {
     id: string;
     name: string;
@@ -162,8 +176,18 @@ export const carApi = api.injectEndpoints({
       }),
       providesTags: (result, error, id) => [{ type: 'Car' as const, id }],
     }),
+    getUnavailableDates: builder.query<{ unavailableDates: string[] }, string>({
+      query: (carId) => `/cars/${carId}/unavailable-dates`,
+    }),
   }),
 });
+
+export const {
+  useGetRentalCarsQuery,
+  useGetUsedCarsQuery,
+  useGetCarByIdQuery,
+  useGetUnavailableDatesQuery,
+} = carApi;
 
 // Admin API
 export const adminApi = api.injectEndpoints({
@@ -243,13 +267,6 @@ export const adminApi = api.injectEndpoints({
     }),
   }),
 });
-
-// Car API hooks
-export const {
-  useGetRentalCarsQuery,
-  useGetUsedCarsQuery,
-  useGetCarByIdQuery,
-} = carApi;
 
 // Admin API hooks
 export const {

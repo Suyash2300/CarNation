@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import prisma from '../db/prisma';
 import { authenticate, AuthRequest } from '../middleware/auth';
+import { checkSellerCanListCar } from '../services/subscriptionService';
 
 const router = Router();
 
@@ -30,6 +31,17 @@ router.get('/cars', authenticate, async (req: AuthRequest, res: Response) => {
 router.post('/cars', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const sellerId = req.user!.userId;
+    
+    // Check subscription limits
+    const canListCheck = await checkSellerCanListCar(sellerId);
+    if (!canListCheck.canList) {
+      return res.status(403).json({
+        error: canListCheck.reason || 'You have reached your listing limit',
+        currentListings: canListCheck.currentListings,
+        maxListings: canListCheck.maxListings,
+      });
+    }
+    
     const {
       brand,
       model,
