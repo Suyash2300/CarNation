@@ -11,6 +11,8 @@ export interface User {
   phone: string | null;
   role: UserRole;
   profileImage: string | null;
+  isAadhaarVerified?: boolean;
+  aadhaarVerifiedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -45,6 +45,39 @@
   }
 }
 
+/* React Select Custom Styles */
+.react-select-container .react-select__control {
+  @apply border border-dark-300 rounded-lg min-h-[42px] bg-white;
+}
+
+.react-select-container .react-select__control:hover {
+  @apply border-primary-500;
+}
+
+.react-select-container .react-select__control--is-focused {
+  @apply border-primary-500 ring-2 ring-primary-500/20 outline-none;
+}
+
+.react-select-container .react-select__menu {
+  @apply rounded-lg border border-dark-200 shadow-lg;
+}
+
+.react-select-container .react-select__option {
+  @apply text-dark-700;
+}
+
+.react-select-container .react-select__option:hover {
+  @apply bg-primary-50 text-primary-700;
+}
+
+.react-select-container .react-select__option--is-selected {
+  @apply bg-primary-600 text-white;
+}
+
+.react-select-container .react-select__option--is-focused {
+  @apply bg-primary-100 text-primary-700;
+}
+
 /* Light background utilities */
 @layer utilities {
   .bg-light {

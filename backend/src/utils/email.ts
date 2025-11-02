@@ -1,29 +1,25 @@
 import * as brevo from '@getbrevo/brevo';
 import nodemailer from 'nodemailer';
 
-// Brevo configuration - Check which method to use
 const brevoApiKey = process.env.BREVO_API_KEY;
 const useSMTP = process.env.BREVO_USE_SMTP === 'true' || !!process.env.BREVO_SMTP_PASSWORD;
 
-// Brevo SMTP configuration
 const smtpConfig = {
   host: process.env.BREVO_SMTP_HOST || 'smtp-relay.brevo.com',
   port: parseInt(process.env.BREVO_SMTP_PORT || '587'),
-  secure: false, // true for 465, false for other ports
+  secure: false,
   auth: {
     user: process.env.BREVO_SMTP_USER,
     pass: process.env.BREVO_SMTP_PASSWORD,
   },
 };
 
-// Initialize Brevo API client (if not using SMTP)
 let apiInstance: brevo.TransactionalEmailsApi | null = null;
 if (brevoApiKey && !useSMTP) {
   apiInstance = new brevo.TransactionalEmailsApi();
   apiInstance.setApiKey(0 as any, brevoApiKey);
 }
 
-// Create SMTP transporter (if using SMTP)
 const createSMTPTransporter = () => {
   if (!smtpConfig.auth.user || !smtpConfig.auth.pass) {
     return null;
@@ -31,19 +27,13 @@ const createSMTPTransporter = () => {
   return nodemailer.createTransport(smtpConfig);
 };
 
-/**
- * Send password reset email using Brevo
- * Brevo allows sending to ANY email address without domain restrictions!
- */
 export const sendPasswordResetEmail = async (
   email: string,
   resetUrl: string
 ): Promise<void> => {
-  // Parse from email - Brevo needs separate name and email
-  // IMPORTANT: For Gmail addresses, use the verified sender exactly as shown in Brevo
   const fromEmailRaw = process.env.BREVO_FROM_EMAIL || process.env.BREVO_FROM || 'CarNation <carnation71212@gmail.com>';
   let fromName = process.env.BREVO_FROM_NAME || 'CarNation';
-  let fromAddress = 'carnation71212@gmail.com'; // Default to verified sender
+  let fromAddress = 'carnation71212@gmail.com';
   
   if (fromEmailRaw.includes('<')) {
     const match = fromEmailRaw.match(/(.+?)\s*<(.+?)>/);
@@ -56,8 +46,6 @@ export const sendPasswordResetEmail = async (
   } else {
     fromAddress = fromEmailRaw.trim();
   }
-  
-  console.log(`📧 Using sender: ${fromName} <${fromAddress}>`);
   
   const subject = 'Reset Your CarNation Password';
   
@@ -200,7 +188,6 @@ Best regards,
 The CarNation Team
   `.trim();
 
-  // Use SMTP if credentials are provided, otherwise use API
   if (useSMTP) {
     const transporter = createSMTPTransporter();
     if (!transporter) {
@@ -213,12 +200,6 @@ The CarNation Team
     }
 
     try {
-      console.log(`📤 Sending email via Brevo SMTP:`);
-      console.log(`   Host: ${smtpConfig.host}:${smtpConfig.port}`);
-      console.log(`   From: ${fromName} <${fromAddress}>`);
-      console.log(`   To: ${email}`);
-      console.log(`   Subject: ${subject}`);
-
       const info = await transporter.sendMail({
         from: `${fromName} <${fromAddress}>`,
         to: email,
@@ -227,20 +208,14 @@ The CarNation Team
         text: text,
       });
 
-      console.log('✅ Password reset email sent successfully via Brevo SMTP!');
-      console.log(`   Message ID: ${info.messageId}`);
-      console.log(`   Recipient: ${email}`);
+      console.log(`Password reset email sent to ${email}`);
       return;
     } catch (error: any) {
-      console.error('❌ Error sending password reset email via SMTP:', error);
-      if (error?.message) {
-        console.error(`   Error message: ${error.message}`);
-      }
-      throw new Error(`Failed to send email via SMTP: ${error.message || 'Unknown error'}`);
+      console.error('Failed to send email via SMTP:', error.message || error);
+      throw new Error(`Failed to send email: ${error.message || 'Unknown error'}`);
     }
   }
 
-  // Fallback to API method
   if (!apiInstance || !brevoApiKey) {
     throw new Error(
       'Brevo API key is not configured. Please set BREVO_API_KEY in your .env file.\n' +
@@ -250,11 +225,6 @@ The CarNation Team
   }
 
   try {
-    console.log(`📤 Sending email via Brevo API:`);
-    console.log(`   From: ${fromName} <${fromAddress}>`);
-    console.log(`   To: ${email}`);
-    console.log(`   Subject: ${subject}`);
-
     const sendSmtpEmail = new brevo.SendSmtpEmail();
     sendSmtpEmail.subject = subject;
     sendSmtpEmail.htmlContent = html;
@@ -262,21 +232,10 @@ The CarNation Team
     sendSmtpEmail.sender = { name: fromName, email: fromAddress };
     sendSmtpEmail.to = [{ email: email }];
 
-    const result = await apiInstance!.sendTransacEmail(sendSmtpEmail);
-
-    console.log('✅ Password reset email sent successfully via Brevo API!');
-    if (result.body?.messageId) {
-      console.log(`   Message ID: ${result.body.messageId}`);
-    }
-    console.log(`   Recipient: ${email}`);
+    await apiInstance!.sendTransacEmail(sendSmtpEmail);
+    console.log(`Password reset email sent to ${email}`);
   } catch (error: any) {
-    console.error('❌ Error sending password reset email via Brevo API:', error);
-    if (error?.response?.body) {
-      console.error('   Error details:', JSON.stringify(error.response.body, null, 2));
-    }
-    if (error?.message) {
-      console.error(`   Error message: ${error.message}`);
-    }
+    console.error('Failed to send email via API:', error.message || error);
     throw new Error(`Failed to send email: ${error.message || 'Unknown error'}`);
   }
 };

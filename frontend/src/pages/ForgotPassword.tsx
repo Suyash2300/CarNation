@@ -17,12 +17,6 @@ const ForgotPassword = () => {
       const API_URL =
         import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
-      console.log(
-        "📤 Sending forgot password request to:",
-        `${API_URL}/auth/forgot-password`
-      );
-      console.log("📧 Email:", email);
-
       const response = await fetch(`${API_URL}/auth/forgot-password`, {
         method: "POST",
         headers: {
@@ -30,9 +24,6 @@ const ForgotPassword = () => {
         },
         body: JSON.stringify({ email }),
       });
-
-      console.log("📥 Response status:", response.status);
-      console.log("📥 Response ok:", response.ok);
 
       if (!response.ok) {
         const errorData = await response

@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import prisma from './db/prisma';
 import authRoutes from './routes/auth.routes';
+import adminRoutes from './routes/admin.routes';
 
 // Load environment variables
 dotenv.config();
@@ -17,8 +18,10 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+// Body parsers with increased size limit for file uploads
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
@@ -57,40 +60,25 @@ app.get('/api', (req: Request, res: Response) => {
 // Auth routes
 app.use('/api/auth', authRoutes);
 
-// Test email endpoint (for development/testing)
-app.post('/api/test-email', async (req: Request, res: Response) => {
-  try {
-    const { email } = req.body;
-    
-    if (!email) {
-      return res.status(400).json({
-        error: 'Email is required',
-      });
-    }
+// Admin routes
+app.use('/api/admin', adminRoutes);
 
-    // Import email utility
-    const { sendPasswordResetEmail } = await import('./utils/email');
-    
-    // Create a test reset URL
-    const testResetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=test-token-123&email=${encodeURIComponent(email)}`;
-    
-    // Try to send email
-    await sendPasswordResetEmail(email, testResetUrl);
-    
-    res.json({
-      success: true,
-      message: `Test email sent successfully to ${email}`,
-      note: 'Check your inbox (and spam folder) for the test email',
-    });
-  } catch (error) {
-    console.error('Test email error:', error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to send test email',
-      hint: 'Make sure RESEND_API_KEY is set in your .env file',
-    });
-  }
-});
+// Public car routes
+import carsRoutes from './routes/cars.routes';
+app.use('/api/cars', carsRoutes);
+
+// Car detail route (must be after /cars routes to avoid conflicts)
+import carDetailRoutes from './routes/carDetail.routes';
+app.use('/api/cars', carDetailRoutes);
+
+// Seller routes (requires authentication)
+import sellerRoutes from './routes/seller.routes';
+app.use('/api/seller', sellerRoutes);
+
+// Upload routes (requires authentication)
+import uploadRoutes from './routes/upload.routes';
+app.use('/api/upload', uploadRoutes);
+
 
 // Start server
 app.listen(PORT, () => {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Menu, X, LogOut } from "lucide-react";
 import { useAppSelector, useAppDispatch } from "../../hooks/redux";
 import { logout } from "../../store/slices/authSlice";
@@ -8,7 +8,16 @@ const Navbar = () => {
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Helper function to check if a path is active
+  const isActive = (path: string) => {
+    if (path === '/') {
+      return location.pathname === '/' || location.pathname === '/home';
+    }
+    return location.pathname.startsWith(path);
+  };
 
   const handleLogout = () => {
     dispatch(logout());
@@ -30,26 +39,43 @@ const Navbar = () => {
           {/* Desktop Menu */}
           <div className="hidden md:flex space-x-8">
             <Link
-              to="/cars?type=rent"
-              className="text-primary-500 border-b-2 border-primary-500 pb-1 hover:text-primary-400 transition"
+              to="/home"
+              className={`hover:text-primary-400 transition ${
+                isActive('/home') ? 'text-primary-400 border-b-2 border-primary-400 pb-1' : ''
+              }`}
+            >
+              Home
+            </Link>
+            <Link
+              to="/rent"
+              className={`hover:text-primary-400 transition ${
+                isActive('/rent') ? 'text-primary-400 border-b-2 border-primary-400 pb-1' : ''
+              }`}
             >
               Rent
             </Link>
             <Link
-              to="/cars?type=buy"
-              className="hover:text-primary-400 transition"
+              to="/used-cars"
+              className={`hover:text-primary-400 transition ${
+                isActive('/used-cars') || isActive('/buy') ? 'text-primary-400 border-b-2 border-primary-400 pb-1' : ''
+              }`}
             >
               Buy
             </Link>
-            {(user?.role === "SELLER" || user?.role === "ADMIN") && (
-              <Link to="/sell" className="hover:text-primary transition">
-                Sell Your Car
-              </Link>
-            )}
-            <Link to="/about" className="hover:text-primary transition">
+            <Link
+              to="/about"
+              className={`hover:text-primary-400 transition ${
+                isActive('/about') ? 'text-primary-400 border-b-2 border-primary-400 pb-1' : ''
+              }`}
+            >
               About Us
             </Link>
-            <Link to="/contact" className="hover:text-primary transition">
+            <Link
+              to="/contact"
+              className={`hover:text-primary-400 transition ${
+                isActive('/contact') ? 'text-primary-400 border-b-2 border-primary-400 pb-1' : ''
+              }`}
+            >
               Contact
             </Link>
           </div>
@@ -96,38 +122,46 @@ const Navbar = () => {
       {isMenuOpen && (
         <div className="md:hidden bg-dark-900/95 px-4 py-4 space-y-3">
           <Link
-            to="/cars?type=rent"
-            className="block hover:text-primary transition"
+            to="/home"
+            className={`block transition ${
+              isActive('/home') ? 'text-primary-400 font-semibold' : 'hover:text-primary'
+            }`}
+            onClick={() => setIsMenuOpen(false)}
+          >
+            Home
+          </Link>
+          <Link
+            to="/rent"
+            className={`block transition ${
+              isActive('/rent') ? 'text-primary-400 font-semibold' : 'hover:text-primary'
+            }`}
             onClick={() => setIsMenuOpen(false)}
           >
             Rent
           </Link>
           <Link
-            to="/cars?type=buy"
-            className="block hover:text-primary transition"
+            to="/used-cars"
+            className={`block transition ${
+              isActive('/used-cars') || isActive('/buy') ? 'text-primary-400 font-semibold' : 'hover:text-primary'
+            }`}
             onClick={() => setIsMenuOpen(false)}
           >
             Buy
           </Link>
-          {(user?.role === "SELLER" || user?.role === "ADMIN") && (
-            <Link
-              to="/sell"
-              className="block hover:text-primary transition"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Sell Your Car
-            </Link>
-          )}
           <Link
             to="/about"
-            className="block hover:text-primary transition"
+            className={`block transition ${
+              isActive('/about') ? 'text-primary-400 font-semibold' : 'hover:text-primary'
+            }`}
             onClick={() => setIsMenuOpen(false)}
           >
             About Us
           </Link>
           <Link
             to="/contact"
-            className="block hover:text-primary transition"
+            className={`block transition ${
+              isActive('/contact') ? 'text-primary-400 font-semibold' : 'hover:text-primary'
+            }`}
             onClick={() => setIsMenuOpen(false)}
           >
             Contact

@@ -47,6 +47,14 @@ model User {
   // Profile image
   profileImage  String?
   
+  // Aadhaar Verification
+  aadhaarNumber      String?         // Encrypted Aadhaar number
+  aadhaarFrontImage  String?         // Aadhaar front image URL
+  aadhaarBackImage   String?         // Aadhaar back image URL
+  isAadhaarVerified  Boolean         @default(false)
+  aadhaarVerifiedAt  DateTime?
+  aadhaarVerifiedBy  String?         // Admin ID who verified
+  
   // Password Reset
   resetToken        String?
   resetTokenExpiry  DateTime?
@@ -73,6 +81,7 @@ model Car {
   transmission    String?        // Automatic, Manual
   fuelType        String?        // Petrol, Diesel, Electric, Hybrid
   seats           Int?
+  city            String?        // City where car is available
   
   // Pricing
   rentalPrice     Float?         // Daily rental price (for admin)

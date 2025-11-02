@@ -1,0 +1,319 @@
+import { useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useGetCarByIdQuery } from '../services/carApi';
+import Navbar from '../components/layout/Navbar';
+import {
+  MapPin,
+  Calendar,
+  Fuel,
+  Settings,
+  Users,
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  Mail,
+  Phone,
+  DollarSign,
+} from 'lucide-react';
+
+const CarDetail = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { data, isLoading, error } = useGetCarByIdQuery(id!);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const car = data?.car;
+  const allImages = car?.images && car.images.length > 0 ? car.images : (car?.primaryImage ? [car.primaryImage] : []);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-light-subtle">
+        <Navbar />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+            <p className="mt-4 text-dark-600">Loading car details...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !car) {
+    return (
+      <div className="min-h-screen bg-light-subtle">
+        <Navbar />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center">
+            <p className="text-xl text-dark-600 mb-4">Car not found</p>
+            <button
+              onClick={() => navigate(-1)}
+              className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-semibold transition"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+  };
+
+  const goToImage = (index: number) => {
+    setCurrentImageIndex(index);
+  };
+
+  return (
+    <div className="min-h-screen bg-light-subtle">
+      <Navbar />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-dark-600 hover:text-dark-900 mb-6 transition"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span>Back</span>
+        </button>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column - Images */}
+          <div className="space-y-4">
+            {/* Main Image */}
+            <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-dark-100">
+              {allImages.length > 0 ? (
+                <>
+                  <img
+                    src={allImages[currentImageIndex]}
+                    alt={`${car.brand} ${car.model} - Image ${currentImageIndex + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  {allImages.length > 1 && (
+                    <>
+                      <button
+                        onClick={prevImage}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition"
+                        aria-label="Previous image"
+                      >
+                        <ChevronLeft className="w-6 h-6" />
+                      </button>
+                      <button
+                        onClick={nextImage}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition"
+                        aria-label="Next image"
+                      >
+                        <ChevronRight className="w-6 h-6" />
+                      </button>
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                        {currentImageIndex + 1} / {allImages.length}
+                      </div>
+                    </>
+                  )}
+                </>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-dark-400">
+                  No image available
+                </div>
+              )}
+            </div>
+
+            {/* Thumbnail Gallery */}
+            {allImages.length > 1 && (
+              <div className="grid grid-cols-5 gap-2">
+                {allImages.map((image, index) => (
+                  <button
+                    key={index}
+                    onClick={() => goToImage(index)}
+                    className={`aspect-video rounded-lg overflow-hidden border-2 transition ${
+                      index === currentImageIndex
+                        ? 'border-primary-600 ring-2 ring-primary-600/50'
+                        : 'border-dark-200 hover:border-dark-300'
+                    }`}
+                  >
+                    <img
+                      src={image}
+                      alt={`Thumbnail ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Right Column - Details */}
+          <div className="space-y-6">
+            {/* Title & Price */}
+            <div>
+              <h1 className="text-4xl font-bold text-dark-900 mb-2">
+                {car.brand} {car.model}
+              </h1>
+              <p className="text-xl text-dark-600 mb-4">{car.year}</p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-primary-600">
+                  ₹{car.isForRent ? car.rentalPrice : car.salePrice?.toLocaleString()}
+                </span>
+                {car.isForRent && (
+                  <span className="text-dark-600">per day</span>
+                )}
+              </div>
+              {car.city && (
+                <div className="flex items-center gap-1 text-dark-600 mt-2">
+                  <MapPin className="w-4 h-4" />
+                  <span>{car.city}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Status Badge */}
+            <div>
+              <span
+                className={`inline-block px-4 py-2 rounded-full text-sm font-semibold ${
+                  car.status === 'AVAILABLE'
+                    ? 'bg-success-100 text-success-700'
+                    : car.status === 'SOLD'
+                    ? 'bg-dark-100 text-dark-700'
+                    : 'bg-warning-100 text-warning-700'
+                }`}
+              >
+                {car.status}
+              </span>
+            </div>
+
+            {/* Car Specifications */}
+            <div className="glass rounded-xl p-6">
+              <h2 className="text-xl font-bold text-dark-900 mb-4">Specifications</h2>
+              <div className="grid grid-cols-2 gap-4">
+                {car.fuelType && (
+                  <div className="flex items-center gap-3">
+                    <Fuel className="w-5 h-5 text-primary-600" />
+                    <div>
+                      <p className="text-sm text-dark-600">Fuel Type</p>
+                      <p className="font-semibold text-dark-900">{car.fuelType}</p>
+                    </div>
+                  </div>
+                )}
+                {car.transmission && (
+                  <div className="flex items-center gap-3">
+                    <Settings className="w-5 h-5 text-primary-600" />
+                    <div>
+                      <p className="text-sm text-dark-600">Transmission</p>
+                      <p className="font-semibold text-dark-900">{car.transmission}</p>
+                    </div>
+                  </div>
+                )}
+                {car.seats && (
+                  <div className="flex items-center gap-3">
+                    <Users className="w-5 h-5 text-primary-600" />
+                    <div>
+                      <p className="text-sm text-dark-600">Seats</p>
+                      <p className="font-semibold text-dark-900">{car.seats}</p>
+                    </div>
+                  </div>
+                )}
+                {car.mileage && (
+                  <div className="flex items-center gap-3">
+                    <DollarSign className="w-5 h-5 text-primary-600" />
+                    <div>
+                      <p className="text-sm text-dark-600">Mileage</p>
+                      <p className="font-semibold text-dark-900">{car.mileage.toLocaleString()} km</p>
+                    </div>
+                  </div>
+                )}
+                {car.color && (
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 rounded-full border-2 border-dark-300 bg-dark-100"></div>
+                    <div>
+                      <p className="text-sm text-dark-600">Color</p>
+                      <p className="font-semibold text-dark-900">{car.color}</p>
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-center gap-3">
+                  <Calendar className="w-5 h-5 text-primary-600" />
+                  <div>
+                    <p className="text-sm text-dark-600">Year</p>
+                    <p className="font-semibold text-dark-900">{car.year}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Description */}
+            {car.description && (
+              <div className="glass rounded-xl p-6">
+                <h2 className="text-xl font-bold text-dark-900 mb-4">Description</h2>
+                <p className="text-dark-700 leading-relaxed whitespace-pre-wrap">
+                  {car.description}
+                </p>
+              </div>
+            )}
+
+            {/* Seller Information (for used cars) */}
+            {car.isForSale && car.seller && (
+              <div className="glass rounded-xl p-6">
+                <h2 className="text-xl font-bold text-dark-900 mb-4">Seller Information</h2>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm text-dark-600 mb-1">Name</p>
+                    <p className="font-semibold text-dark-900">{car.seller.name}</p>
+                  </div>
+                  {car.seller.email && (
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-dark-600" />
+                      <a
+                        href={`mailto:${car.seller.email}`}
+                        className="text-primary-600 hover:text-primary-700 transition"
+                      >
+                        {car.seller.email}
+                      </a>
+                    </div>
+                  )}
+                  {car.seller.phone && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-dark-600" />
+                      <a
+                        href={`tel:${car.seller.phone}`}
+                        className="text-primary-600 hover:text-primary-700 transition"
+                      >
+                        {car.seller.phone}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-4">
+              {car.isForRent && (
+                <button className="flex-1 bg-gradient-primary hover:bg-gradient-primary-dark text-white px-6 py-4 rounded-lg font-semibold transition shadow-lg hover:shadow-xl">
+                  Book Now
+                </button>
+              )}
+              {car.isForSale && (
+                <button className="flex-1 bg-gradient-primary hover:bg-gradient-primary-dark text-white px-6 py-4 rounded-lg font-semibold transition shadow-lg hover:shadow-xl">
+                  Contact Seller
+                </button>
+              )}
+              <button className="px-6 py-4 border-2 border-dark-300 text-dark-700 font-semibold rounded-lg hover:bg-dark-50 transition">
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CarDetail;
+
