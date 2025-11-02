@@ -75,7 +75,7 @@ const SignUp = () => {
             <div className="space-y-6">
               <div>
                 <h1 className="text-5xl font-bold text-primary mb-2">Join CarNation</h1>
-                <p className="text-xl text-dark/70">
+                <p className="text-xl text-dark-700">
                   Your journey to the perfect car starts here
                 </p>
               </div>
@@ -86,8 +86,8 @@ const SignUp = () => {
                     <span className="text-2xl">🚗</span>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-dark mb-1">Rent Premium Cars</h3>
-                    <p className="text-sm text-dark/60">Choose from our curated fleet</p>
+                    <h3 className="font-semibold text-dark-900 mb-1">Rent Premium Cars</h3>
+                    <p className="text-sm text-dark-600">Choose from our curated fleet</p>
                   </div>
                 </div>
                 
@@ -96,8 +96,8 @@ const SignUp = () => {
                     <span className="text-2xl">💰</span>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-dark mb-1">Buy Pre-Owned</h3>
-                    <p className="text-sm text-dark/60">Quality used cars from verified sellers</p>
+                    <h3 className="font-semibold text-dark-900 mb-1">Buy Pre-Owned</h3>
+                    <p className="text-sm text-dark-600">Quality used cars from verified sellers</p>
                   </div>
                 </div>
                 
@@ -106,8 +106,8 @@ const SignUp = () => {
                     <span className="text-2xl">✅</span>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-dark mb-1">Easy & Secure</h3>
-                    <p className="text-sm text-dark/60">Simple booking with secure payments</p>
+                    <h3 className="font-semibold text-dark-900 mb-1">Easy & Secure</h3>
+                    <p className="text-sm text-dark-600">Simple booking with secure payments</p>
                   </div>
                 </div>
               </div>
@@ -117,14 +117,14 @@ const SignUp = () => {
           {/* Right side - Form */}
           <div className="glass rounded-3xl p-8 md:p-10 shadow-2xl">
             <div className="mb-8">
-              <h2 className="text-3xl font-bold text-dark mb-2">Create Account</h2>
-              <p className="text-dark/70">Sign up to get started with CarNation</p>
+              <h2 className="text-3xl font-bold text-dark-900 mb-2">Create Account</h2>
+              <p className="text-dark-700">Sign up to get started with CarNation</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Name Field */}
               <div>
-                <label htmlFor="name" className="block text-sm font-semibold text-dark mb-2">
+                <label htmlFor="name" className="block text-sm font-semibold text-dark-900 mb-2">
                   Full Name
                 </label>
                 <div className="relative">
@@ -149,7 +149,7 @@ const SignUp = () => {
 
               {/* Email Field */}
               <div>
-                <label htmlFor="email" className="block text-sm font-semibold text-dark mb-2">
+                <label htmlFor="email" className="block text-sm font-semibold text-dark-900 mb-2">
                   Email Address
                 </label>
                 <div className="relative">
@@ -174,8 +174,8 @@ const SignUp = () => {
 
               {/* Phone Field */}
               <div>
-                <label htmlFor="phone" className="block text-sm font-semibold text-dark mb-2">
-                  Phone Number <span className="text-xs font-normal text-dark/50">(Optional)</span>
+                <label htmlFor="phone" className="block text-sm font-semibold text-dark-900 mb-2">
+                  Phone Number <span className="text-xs font-normal text-dark-500">(Optional)</span>
                 </label>
                 <div className="relative">
                   <input
@@ -198,7 +198,7 @@ const SignUp = () => {
 
               {/* Role Selection */}
               <div>
-                <label className="block text-sm font-semibold text-dark mb-3">
+                <label className="block text-sm font-semibold text-dark-900 mb-3">
                   What would you like to do?
                 </label>
                 <div className="grid gap-3">
@@ -223,8 +223,8 @@ const SignUp = () => {
                         <span className="text-2xl">{option.icon}</span>
                       </div>
                       <div className="flex-1">
-                        <div className="font-semibold text-dark mb-1">{option.label}</div>
-                        <div className="text-xs text-dark/60">{option.description}</div>
+                        <div className="font-semibold text-dark-900 mb-1">{option.label}</div>
+                        <div className="text-xs text-dark-600">{option.description}</div>
                       </div>
                       {formData.role === option.value && (
                         <div className="absolute top-2 right-2 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
@@ -240,7 +240,7 @@ const SignUp = () => {
 
               {/* Password Field */}
               <div>
-                <label htmlFor="password" className="block text-sm font-semibold text-dark mb-2">
+                <label htmlFor="password" className="block text-sm font-semibold text-dark-900 mb-2">
                   Password
                 </label>
                 <div className="relative">
@@ -264,7 +264,7 @@ const SignUp = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-dark/50 hover:text-dark transition-smooth"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500 hover:text-dark-900 transition-smooth"
                   >
                     {showPassword ? (
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -316,7 +316,7 @@ const SignUp = () => {
 
             {/* Sign In Link */}
             <div className="mt-6 text-center">
-              <p className="text-dark/70">
+              <p className="text-dark-700">
                 Already have an account?{' '}
                 <Link
                   to="/signin"
