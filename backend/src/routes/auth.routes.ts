@@ -3,6 +3,8 @@ import prisma from '../db/prisma';
 import { hashPassword, comparePassword } from '../utils/password';
 import { generateToken } from '../utils/jwt';
 import { authenticate, AuthRequest } from '../middleware/auth';
+import { generateResetToken, hashResetToken } from '../utils/resetToken';
+import { sendPasswordResetEmail } from '../utils/email';
 
 const router = Router();
 
@@ -161,6 +163,140 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
     res.json({ user });
   } catch (error) {
     console.error('Get profile error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+    });
+  }
+});
+
+// Forgot Password - Request reset token
+router.post('/forgot-password', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        error: 'Email is required',
+      });
+    }
+
+    // Find user
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+    });
+
+    // Always return success (security: don't reveal if email exists)
+    if (!user) {
+      return res.json({
+        message: 'If an account with that email exists, we have sent a password reset link.',
+      });
+    }
+
+    // Generate reset token
+    const resetToken = generateResetToken();
+    const hashedToken = hashResetToken(resetToken);
+    const tokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+
+    // Save reset token to database
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetToken: hashedToken,
+        resetTokenExpiry: tokenExpiry,
+      } as any, // Type assertion needed until TS server reloads Prisma types
+    });
+
+    // Generate reset URL
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}&email=${encodeURIComponent(user.email)}`;
+
+    // Send email using Resend
+    try {
+      await sendPasswordResetEmail(user.email, resetUrl);
+    } catch (emailError) {
+      console.error('Email sending failed:', emailError);
+      // Still return success to user (don't reveal email service issues)
+    }
+
+    res.json({
+      message: 'If an account with that email exists, we have sent a password reset link.',
+    });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+    });
+  }
+});
+
+// Reset Password - Verify token and update password
+router.post('/reset-password', async (req: Request, res: Response) => {
+  try {
+    const { token, email, password } = req.body;
+
+    if (!token || !email || !password) {
+      return res.status(400).json({
+        error: 'Token, email, and password are required',
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        error: 'Password must be at least 6 characters',
+      });
+    }
+
+    // Find user with reset token fields
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+    }) as any; // Type assertion needed until TS server reloads Prisma types
+
+    if (!user || !user.resetToken || !user.resetTokenExpiry) {
+      return res.status(400).json({
+        error: 'Invalid or expired reset token',
+      });
+    }
+
+    // Check if token is expired
+    if (user.resetTokenExpiry < new Date()) {
+      // Clear expired token
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          resetToken: null,
+          resetTokenExpiry: null,
+        } as any, // Type assertion needed until TS server reloads Prisma types
+      });
+      return res.status(400).json({
+        error: 'Reset token has expired. Please request a new one.',
+      });
+    }
+
+    // Verify token
+    const hashedToken = hashResetToken(token);
+    if (user.resetToken !== hashedToken) {
+      return res.status(400).json({
+        error: 'Invalid reset token',
+      });
+    }
+
+    // Hash new password
+    const hashedPassword = await hashPassword(password);
+
+    // Update password and clear reset token
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        resetToken: null,
+        resetTokenExpiry: null,
+      } as any, // Type assertion needed until TS server reloads Prisma types
+    });
+
+    res.json({
+      message: 'Password has been reset successfully',
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
     res.status(500).json({
       error: 'Internal server error',
     });

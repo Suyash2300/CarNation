@@ -47,6 +47,10 @@ model User {
   // Profile image
   profileImage  String?
   
+  // Password Reset
+  resetToken        String?
+  resetTokenExpiry  DateTime?
+  
   // Relationships
   carsOwned     Car[]     @relation("CarOwner")      // Admin's cars for rent
   carsForSale   Car[]     @relation("CarSeller")     // Seller's cars
