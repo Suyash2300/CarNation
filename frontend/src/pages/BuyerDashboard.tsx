@@ -6,6 +6,7 @@ import { useGetRentalsQuery } from '../services/rentalApi';
 import DealStatusBadge from '../components/deals/DealStatusBadge';
 import { Car as CarIcon, MapPin, Search, Calendar, UserCheck, Handshake, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import Breadcrumbs from '../components/common/Breadcrumbs';
 
 const BuyerDashboard = () => {
   const { user } = useAppSelector((state) => state.auth);
@@ -22,7 +23,14 @@ const BuyerDashboard = () => {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8 flex justify-between items-start">
+        <Breadcrumbs
+          items={[
+            { label: 'Dashboard', path: '/dashboard' },
+            { label: 'Buyer Dashboard' },
+          ]}
+        />
+
+        <div className="mb-8 flex justify-between items-start mt-6">
           <div>
             <h1 className="text-4xl font-bold text-dark-900 mb-2">Welcome Back!</h1>
             <p className="text-dark-600">

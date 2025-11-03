@@ -189,6 +189,27 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
   }
+
+  /* Mobile improvements */
+  @media (max-width: 768px) {
+    /* Larger touch targets for mobile */
+    .touch-target {
+      min-height: 44px;
+      min-width: 44px;
+      padding: 12px;
+    }
+
+    /* Better spacing on mobile */
+    .mobile-padding {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+
+    /* Hide on mobile if needed */
+    .hide-mobile {
+      display: none;
+    }
+  }
   
   /* Focus styles */
   .focus-ring {

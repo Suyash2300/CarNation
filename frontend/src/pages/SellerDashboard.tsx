@@ -22,6 +22,7 @@ import {
 import StatCard from "../components/common/StatCard";
 import { useToast } from "../components/common/ToastContainer";
 import ConfirmDialog from "../components/common/ConfirmDialog";
+import Breadcrumbs from "../components/common/Breadcrumbs";
 import { Link } from "react-router-dom";
 import AddSellerCarModal from "../components/seller/AddSellerCarModal";
 import EditSellerCarModal from "../components/seller/EditSellerCarModal";
@@ -76,6 +77,13 @@ const SellerDashboard = () => {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Breadcrumbs
+          items={[
+            { label: 'Dashboard', path: '/dashboard' },
+            { label: 'Seller Dashboard' },
+          ]}
+        />
+
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-dark-900 mb-2">
             Seller Dashboard

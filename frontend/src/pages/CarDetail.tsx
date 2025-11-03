@@ -1,10 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useGetCarByIdQuery } from '../services/carApi';
 import { useCreateConversationMutation } from '../services/chatApi';
 import { useAppSelector } from '../hooks/redux';
 import Navbar from '../components/layout/Navbar';
 import AvailabilityBadge from '../components/rental/AvailabilityBadge';
+import ImageZoomModal from '../components/cars/ImageZoomModal';
+import StickyBookingSection from '../components/cars/StickyBookingSection';
+import { useToast } from '../components/common/ToastContainer';
+import Breadcrumbs from '../components/common/Breadcrumbs';
 import {
   MapPin,
   Calendar,
@@ -26,9 +30,29 @@ const CarDetail = () => {
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const [createConversation, { isLoading: isCreatingConversation }] = useCreateConversationMutation();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isZoomOpen, setIsZoomOpen] = useState(false);
+  const [showStickyBooking, setShowStickyBooking] = useState(false);
+  const bookingSectionRef = useRef<HTMLDivElement>(null);
+  const { showError, showSuccess } = useToast();
 
   const car = data?.car;
   const allImages = car?.images && car.images.length > 0 ? car.images : (car?.primaryImage ? [car.primaryImage] : []);
+
+  // Handle sticky booking section visibility
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!bookingSectionRef.current) return;
+      
+      const rect = bookingSectionRef.current.getBoundingClientRect();
+      const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
+      setShowStickyBooking(!isVisible && window.scrollY > 200);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Check initial state
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [car]);
 
   if (isLoading) {
     return (
@@ -85,7 +109,7 @@ const CarDetail = () => {
 
     const otherUserId = car.isForSale ? car.seller?.id : car.owner?.id;
     if (!otherUserId) {
-      alert('Seller/Owner information not available');
+      showError('Seller/Owner information not available');
       return;
     }
 
@@ -95,11 +119,12 @@ const CarDetail = () => {
         carId: car.id,
       }).unwrap();
 
+      showSuccess('Conversation started!');
       // Navigate to chat with the conversation open
       navigate('/chat', { state: { conversationId: result.conversation.id } });
     } catch (error: any) {
       console.error('Error creating conversation:', error);
-      alert(error?.data?.error || 'Failed to start conversation');
+      showError(error?.data?.error || 'Failed to start conversation');
     }
   };
 
@@ -108,26 +133,31 @@ const CarDetail = () => {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-dark-600 hover:text-dark-900 mb-6 transition"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>Back</span>
-        </button>
+        {/* Breadcrumbs */}
+        <Breadcrumbs
+          items={[
+            {
+              label: car.isForRent ? 'Rent' : 'Buy',
+              path: car.isForRent ? '/rent' : '/used-cars',
+            },
+            {
+              label: `${car.brand} ${car.model}`,
+            },
+          ]}
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column - Images */}
           <div className="space-y-4">
             {/* Main Image */}
-            <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-dark-100">
+            <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-dark-100 group cursor-pointer">
               {allImages.length > 0 ? (
                 <>
                   <img
                     src={allImages[currentImageIndex]}
                     alt={`${car.brand} ${car.model} - Image ${currentImageIndex + 1}`}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    onClick={() => setIsZoomOpen(true)}
                   />
                   {allImages.length > 1 && (
                     <>
@@ -384,7 +414,7 @@ const CarDetail = () => {
             )}
 
             {/* Action Buttons */}
-            <div className="flex gap-4">
+            <div className="flex gap-4" ref={bookingSectionRef}>
               {car.isForRent && (
                 <button
                   onClick={() => navigate(`/rental-booking/${car.id}`)}
@@ -423,6 +453,31 @@ const CarDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Image Zoom Modal */}
+      {isZoomOpen && (
+        <ImageZoomModal
+          images={allImages}
+          currentIndex={currentImageIndex}
+          onClose={() => setIsZoomOpen(false)}
+          onNext={nextImage}
+          onPrev={prevImage}
+          alt={`${car.brand} ${car.model} - Image ${currentImageIndex + 1}`}
+        />
+      )}
+
+      {/* Sticky Booking Section (Mobile) */}
+      {showStickyBooking && car && (
+        <StickyBookingSection
+          car={car}
+          isAuthenticated={isAuthenticated}
+          onContactSeller={handleContactSeller}
+          isCreatingConversation={isCreatingConversation}
+        />
+      )}
+
+      {/* Bottom padding for sticky booking section */}
+      {showStickyBooking && <div className="h-20 lg:hidden" />}
     </div>
   );
 };
