@@ -3,9 +3,10 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Menu, X, LogOut, MessageCircle } from "lucide-react";
 import { useAppSelector, useAppDispatch } from "../../hooks/redux";
 import { logout } from "../../store/slices/authSlice";
+import ProfileDropdown from "./ProfileDropdown";
 
 const Navbar = () => {
-  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -13,15 +14,15 @@ const Navbar = () => {
 
   // Helper function to check if a path is active
   const isActive = (path: string) => {
-    if (path === '/') {
-      return location.pathname === '/' || location.pathname === '/home';
+    if (path === "/") {
+      return location.pathname === "/" || location.pathname === "/home";
     }
     return location.pathname.startsWith(path);
   };
 
   const handleLogout = () => {
     dispatch(logout());
-    navigate('/');
+    navigate("/");
     setIsMenuOpen(false);
   };
 
@@ -41,7 +42,9 @@ const Navbar = () => {
             <Link
               to="/home"
               className={`hover:text-primary-400 transition ${
-                isActive('/home') ? 'text-primary-400 border-b-2 border-primary-400 pb-1' : ''
+                isActive("/home")
+                  ? "text-primary-400 border-b-2 border-primary-400 pb-1"
+                  : ""
               }`}
             >
               Home
@@ -49,7 +52,9 @@ const Navbar = () => {
             <Link
               to="/rent"
               className={`hover:text-primary-400 transition ${
-                isActive('/rent') ? 'text-primary-400 border-b-2 border-primary-400 pb-1' : ''
+                isActive("/rent")
+                  ? "text-primary-400 border-b-2 border-primary-400 pb-1"
+                  : ""
               }`}
             >
               Rent
@@ -57,7 +62,9 @@ const Navbar = () => {
             <Link
               to="/used-cars"
               className={`hover:text-primary-400 transition ${
-                isActive('/used-cars') || isActive('/buy') ? 'text-primary-400 border-b-2 border-primary-400 pb-1' : ''
+                isActive("/used-cars") || isActive("/buy")
+                  ? "text-primary-400 border-b-2 border-primary-400 pb-1"
+                  : ""
               }`}
             >
               Buy
@@ -65,7 +72,9 @@ const Navbar = () => {
             <Link
               to="/about"
               className={`hover:text-primary-400 transition ${
-                isActive('/about') ? 'text-primary-400 border-b-2 border-primary-400 pb-1' : ''
+                isActive("/about")
+                  ? "text-primary-400 border-b-2 border-primary-400 pb-1"
+                  : ""
               }`}
             >
               About Us
@@ -73,7 +82,9 @@ const Navbar = () => {
             <Link
               to="/contact"
               className={`hover:text-primary-400 transition ${
-                isActive('/contact') ? 'text-primary-400 border-b-2 border-primary-400 pb-1' : ''
+                isActive("/contact")
+                  ? "text-primary-400 border-b-2 border-primary-400 pb-1"
+                  : ""
               }`}
             >
               Contact
@@ -83,37 +94,26 @@ const Navbar = () => {
           <div className="hidden md:flex items-center space-x-4">
             {isAuthenticated ? (
               <>
-                <span className="text-sm text-primary-400">👤 {user?.name}</span>
                 <Link
                   to="/chat"
                   className={`flex items-center gap-2 hover:text-primary-400 transition ${
-                    isActive('/chat') ? 'text-primary-400 border-b-2 border-primary-400 pb-1' : ''
+                    isActive("/chat")
+                      ? "text-primary-400 border-b-2 border-primary-400 pb-1"
+                      : ""
                   }`}
                 >
                   <MessageCircle className="w-5 h-5" />
                   Messages
                 </Link>
-                <Link
-                  to="/dashboard"
-                  className="bg-gradient-primary hover:bg-gradient-primary-dark px-4 py-2 rounded-lg text-sm font-semibold transition shadow-soft hover:shadow-glow"
-                >
-                  Dashboard
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 bg-error-600 hover:bg-error-700 px-4 py-2 rounded-lg text-sm font-semibold transition shadow-soft hover:shadow-lg"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Logout
-                </button>
+                <ProfileDropdown />
               </>
             ) : (
-            <Link
-              to="/auth"
-              className="bg-gradient-primary hover:bg-gradient-primary-dark px-4 py-2 rounded-lg text-sm font-semibold transition shadow-soft hover:shadow-glow"
-            >
-              Login / Sign Up
-            </Link>
+              <Link
+                to="/auth"
+                className="bg-gradient-primary hover:bg-gradient-primary-dark px-4 py-2 rounded-lg text-sm font-semibold transition shadow-soft hover:shadow-glow"
+              >
+                Login / Sign Up
+              </Link>
             )}
           </div>
 
@@ -122,7 +122,11 @@ const Navbar = () => {
             className="md:hidden"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {isMenuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
           </button>
         </div>
       </div>
@@ -133,7 +137,9 @@ const Navbar = () => {
           <Link
             to="/home"
             className={`block transition ${
-              isActive('/home') ? 'text-primary-400 font-semibold' : 'hover:text-primary'
+              isActive("/home")
+                ? "text-primary-400 font-semibold"
+                : "hover:text-primary"
             }`}
             onClick={() => setIsMenuOpen(false)}
           >
@@ -142,7 +148,9 @@ const Navbar = () => {
           <Link
             to="/rent"
             className={`block transition ${
-              isActive('/rent') ? 'text-primary-400 font-semibold' : 'hover:text-primary'
+              isActive("/rent")
+                ? "text-primary-400 font-semibold"
+                : "hover:text-primary"
             }`}
             onClick={() => setIsMenuOpen(false)}
           >
@@ -151,7 +159,9 @@ const Navbar = () => {
           <Link
             to="/used-cars"
             className={`block transition ${
-              isActive('/used-cars') || isActive('/buy') ? 'text-primary-400 font-semibold' : 'hover:text-primary'
+              isActive("/used-cars") || isActive("/buy")
+                ? "text-primary-400 font-semibold"
+                : "hover:text-primary"
             }`}
             onClick={() => setIsMenuOpen(false)}
           >
@@ -160,7 +170,9 @@ const Navbar = () => {
           <Link
             to="/about"
             className={`block transition ${
-              isActive('/about') ? 'text-primary-400 font-semibold' : 'hover:text-primary'
+              isActive("/about")
+                ? "text-primary-400 font-semibold"
+                : "hover:text-primary"
             }`}
             onClick={() => setIsMenuOpen(false)}
           >
@@ -169,7 +181,9 @@ const Navbar = () => {
           <Link
             to="/contact"
             className={`block transition ${
-              isActive('/contact') ? 'text-primary-400 font-semibold' : 'hover:text-primary'
+              isActive("/contact")
+                ? "text-primary-400 font-semibold"
+                : "hover:text-primary"
             }`}
             onClick={() => setIsMenuOpen(false)}
           >
@@ -178,9 +192,22 @@ const Navbar = () => {
           {isAuthenticated ? (
             <>
               <Link
+                to="/profile"
+                className={`block transition ${
+                  isActive("/profile")
+                    ? "text-primary-400 font-semibold"
+                    : "hover:text-primary"
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Profile
+              </Link>
+              <Link
                 to="/chat"
                 className={`block transition ${
-                  isActive('/chat') ? 'text-primary-400 font-semibold' : 'hover:text-primary'
+                  isActive("/chat")
+                    ? "text-primary-400 font-semibold"
+                    : "hover:text-primary"
                 }`}
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -220,4 +247,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-

@@ -49,13 +49,18 @@ export const checkSellerCanListCar = async (sellerId: string): Promise<{
     };
   }
 
-  // Check if subscription is active
+  // Check subscription status and expiry
   const now = new Date();
-  if (
-    seller.subscriptionStatus !== 'ACTIVE' ||
-    !seller.subscriptionEndDate ||
-    new Date(seller.subscriptionEndDate) < now
-  ) {
+  const isExpired = !seller.subscriptionEndDate || new Date(seller.subscriptionEndDate) < now;
+  
+  // Allow access if subscription is ACTIVE or CANCELLED (but not expired)
+  // CANCELLED subscriptions remain valid until endDate
+  const hasValidSubscription = (
+    (seller.subscriptionStatus === 'ACTIVE' || seller.subscriptionStatus === 'CANCELLED') &&
+    !isExpired
+  );
+
+  if (!hasValidSubscription) {
     // Check if user can still use FREE tier
     const freeTier = SUBSCRIPTION_TIERS.FREE;
     const currentListings = seller.carsForSale.length;
@@ -76,7 +81,8 @@ export const checkSellerCanListCar = async (sellerId: string): Promise<{
     };
   }
 
-  // User has active subscription
+  // User has valid subscription (ACTIVE or CANCELLED but not expired)
+  // They can use their current tier benefits until endDate
   const tier = SUBSCRIPTION_TIERS[seller.subscriptionTier];
   const currentListings = seller.carsForSale.length;
   const maxListings = tier.maxListings === -1 ? Infinity : tier.maxListings;

@@ -11,6 +11,12 @@ export interface User {
   phone: string | null;
   role: UserRole;
   profileImage: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  pincode?: string | null;
+  country?: string | null;
+  bio?: string | null;
   isAadhaarVerified?: boolean;
   aadhaarVerifiedAt?: string | null;
   createdAt: string;

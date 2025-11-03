@@ -198,5 +198,56 @@ router.post('/verify-payment', authenticate, async (req: AuthRequest, res: Respo
   }
 });
 
+// Cancel subscription
+router.post('/cancel', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+
+    // Get user to check current subscription
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        role: true,
+        subscriptionTier: true,
+        subscriptionStatus: true,
+        subscriptionEndDate: true,
+      },
+    });
+
+    if (!user || user.role !== 'SELLER') {
+      return res.status(403).json({ error: 'Only sellers can cancel subscriptions' });
+    }
+
+    // Prevent cancelling FREE tier subscriptions
+    if (user.subscriptionTier === 'FREE') {
+      return res.status(400).json({ error: 'Cannot cancel FREE tier subscription' });
+    }
+
+    // Only allow cancellation if status is ACTIVE
+    if (user.subscriptionStatus !== 'ACTIVE') {
+      return res.status(400).json({ error: 'Subscription is not active and cannot be cancelled' });
+    }
+
+    // Cancel subscription (keep endDate unchanged)
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        subscriptionStatus: 'CANCELLED',
+      },
+    });
+
+    res.json({
+      message: 'Subscription cancelled successfully',
+      endDate: user.subscriptionEndDate,
+      note: 'Your subscription will remain active until the end of the billing period',
+    });
+  } catch (error) {
+    console.error('Error cancelling subscription:', error);
+    res.status(500).json({
+      error: error instanceof Error ? error.message : 'Failed to cancel subscription',
+    });
+  }
+});
+
 export default router;
 

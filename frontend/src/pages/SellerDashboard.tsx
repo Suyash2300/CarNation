@@ -19,6 +19,9 @@ import {
   Handshake,
   MessageCircle,
 } from "lucide-react";
+import StatCard from "../components/common/StatCard";
+import { useToast } from "../components/common/ToastContainer";
+import ConfirmDialog from "../components/common/ConfirmDialog";
 import { Link } from "react-router-dom";
 import AddSellerCarModal from "../components/seller/AddSellerCarModal";
 import EditSellerCarModal from "../components/seller/EditSellerCarModal";
@@ -36,19 +39,35 @@ const SellerDashboard = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingCar, setEditingCar] = useState<Car | null>(null);
   const [activeTab, setActiveTab] = useState<'listings' | 'subscription' | 'deals'>('listings');
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; carId: string | null; carName: string }>({
+    isOpen: false,
+    carId: null,
+    carName: '',
+  });
 
   const cars = data?.cars || [];
   const stats = statsData?.stats;
   const deals = dealsData?.deals || [];
+  const { showSuccess, showError } = useToast();
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this car listing?")) {
-      try {
-        await deleteCar(id).unwrap();
-      } catch (error) {
-        console.error("Failed to delete car:", error);
-        alert("Failed to delete car. Please try again.");
-      }
+  const handleDeleteClick = (car: Car) => {
+    setDeleteConfirm({
+      isOpen: true,
+      carId: car.id,
+      carName: `${car.brand} ${car.model}`,
+    });
+  };
+
+  const handleDelete = async () => {
+    if (!deleteConfirm.carId) return;
+    
+    try {
+      await deleteCar(deleteConfirm.carId).unwrap();
+      showSuccess('Car listing deleted successfully');
+      setDeleteConfirm({ isOpen: false, carId: null, carName: '' });
+    } catch (error: any) {
+      console.error("Failed to delete car:", error);
+      showError(error?.data?.error || 'Failed to delete car. Please try again.');
     }
   };
 
@@ -71,50 +90,31 @@ const SellerDashboard = () => {
         {/* Stats Cards */}
         {stats && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="glass rounded-xl p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-dark-600 mb-1">Total Listings</p>
-                  <p className="text-3xl font-bold text-dark-900">
-                    {stats.totalCars}
-                  </p>
-                </div>
-                <CarIcon className="w-10 h-10 text-primary-600" />
-              </div>
-            </div>
-            <div className="glass rounded-xl p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-dark-600 mb-1">Available</p>
-                  <p className="text-3xl font-bold text-success-600">
-                    {stats.availableCars}
-                  </p>
-                </div>
-                <CheckCircle className="w-10 h-10 text-success-600" />
-              </div>
-            </div>
-            <div className="glass rounded-xl p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-dark-600 mb-1">Sold</p>
-                  <p className="text-3xl font-bold text-dark-600">
-                    {stats.soldCars}
-                  </p>
-                </div>
-                <XCircle className="w-10 h-10 text-dark-600" />
-              </div>
-            </div>
-            <div className="glass rounded-xl p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-dark-600 mb-1">Total Value</p>
-                  <p className="text-3xl font-bold text-primary-600">
-                    ₹{stats.totalValue.toLocaleString()}
-                  </p>
-                </div>
-                <TrendingUp className="w-10 h-10 text-primary-600" />
-              </div>
-            </div>
+            <StatCard
+              title="Total Listings"
+              value={stats.totalCars}
+              icon={CarIcon}
+              color="primary"
+            />
+            <StatCard
+              title="Available"
+              value={stats.availableCars}
+              icon={CheckCircle}
+              color="success"
+            />
+            <StatCard
+              title="Sold"
+              value={stats.soldCars}
+              icon={XCircle}
+              color="info"
+            />
+            <StatCard
+              title="Total Revenue"
+              value={stats.totalRevenue || 0}
+              icon={TrendingUp}
+              color="success"
+              prefix="₹"
+            />
           </div>
         )}
 
@@ -372,7 +372,7 @@ const SellerDashboard = () => {
                       {car.status === 'SOLD' ? 'Sold' : 'Edit'}
                     </button>
                     <button
-                      onClick={() => handleDelete(car.id)}
+                      onClick={() => handleDeleteClick(car)}
                       disabled={car.status === 'SOLD'}
                       className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold transition ${
                         car.status === 'SOLD'
@@ -430,6 +430,17 @@ const SellerDashboard = () => {
           onSuccess={() => setEditingCar(null)}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, carId: null, carName: '' })}
+        onConfirm={handleDelete}
+        title="Delete Car Listing"
+        message={`Are you sure you want to delete "${deleteConfirm.carName}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="danger"
+      />
     </div>
   );
 };

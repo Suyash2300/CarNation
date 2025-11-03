@@ -14,6 +14,22 @@ const router = Router();
 // Apply rate limiting to auth routes
 router.use(authLimiter);
 
+// Configure multer for file uploads
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'));
+    }
+  },
+});
+
 // Register / Sign Up
 router.post('/register', async (req: Request, res: Response) => {
   try {
@@ -144,6 +160,13 @@ router.post('/login', async (req: Request, res: Response) => {
         name: user.name,
         phone: user.phone,
         role: user.role,
+        profileImage: user.profileImage,
+        address: user.address,
+        city: user.city,
+        state: user.state,
+        pincode: user.pincode,
+        country: user.country,
+        bio: user.bio,
         isAadhaarVerified: user.isAadhaarVerified,
         aadhaarVerifiedAt: user.aadhaarVerifiedAt,
       },
@@ -169,6 +192,12 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
         phone: true,
         role: true,
         profileImage: true,
+        address: true,
+        city: true,
+        state: true,
+        pincode: true,
+        country: true,
+        bio: true,
         isAadhaarVerified: true,
         aadhaarVerifiedAt: true,
         createdAt: true,
@@ -190,6 +219,114 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
     });
   }
 });
+
+// Update user profile
+router.put('/profile', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    const { name, phone, address, city, state, pincode, country, bio } = req.body;
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(name && { name }),
+        ...(phone !== undefined && { phone }),
+        ...(address !== undefined && { address }),
+        ...(city !== undefined && { city }),
+        ...(state !== undefined && { state }),
+        ...(pincode !== undefined && { pincode }),
+        ...(country !== undefined && { country }),
+        ...(bio !== undefined && { bio }),
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        phone: true,
+        role: true,
+        profileImage: true,
+        address: true,
+        city: true,
+        state: true,
+        pincode: true,
+        country: true,
+        bio: true,
+        isAadhaarVerified: true,
+        aadhaarVerifiedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    res.json({
+      message: 'Profile updated successfully',
+      user,
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({
+      error: 'Failed to update profile',
+    });
+  }
+});
+
+// Upload profile image
+router.post(
+  '/profile/image',
+  authenticate,
+  upload.single('profileImage'),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.user!.userId;
+      const file = req.file;
+
+      if (!file) {
+        return res.status(400).json({
+          error: 'Please upload an image file',
+        });
+      }
+
+      // Upload image to Cloudinary
+      const uploadResult = await uploadToCloudinary(file.buffer, `profile-${userId}`);
+
+      // Update user profile image
+      const user = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          profileImage: uploadResult.url,
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          phone: true,
+          role: true,
+          profileImage: true,
+          address: true,
+          city: true,
+          state: true,
+          pincode: true,
+          country: true,
+          bio: true,
+          isAadhaarVerified: true,
+          aadhaarVerifiedAt: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      res.json({
+        message: 'Profile image uploaded successfully',
+        user,
+      });
+    } catch (error) {
+      console.error('Upload profile image error:', error);
+      res.status(500).json({
+        error: 'Failed to upload profile image',
+      });
+    }
+  }
+);
 
 // Forgot Password - Request reset token
 router.post('/forgot-password', async (req: Request, res: Response) => {
@@ -322,22 +459,6 @@ router.post('/reset-password', async (req: Request, res: Response) => {
       error: 'Internal server error',
     });
   }
-});
-
-// Configure multer for Aadhaar upload
-const storage = multer.memoryStorage();
-const upload = multer({
-  storage: storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
-  },
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only image files are allowed!'));
-    }
-  },
 });
 
 // Upload Aadhaar documents

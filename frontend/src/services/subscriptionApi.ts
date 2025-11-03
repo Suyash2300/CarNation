@@ -64,6 +64,16 @@ export const subscriptionApi = api.injectEndpoints({
       }),
       invalidatesTags: ['User'],
     }),
+    cancelSubscription: builder.mutation<
+      { message: string; endDate: string; note: string },
+      void
+    >({
+      query: () => ({
+        url: '/subscriptions/cancel',
+        method: 'POST',
+      }),
+      invalidatesTags: ['User'],
+    }),
   }),
   overrideExisting: false,
 });
@@ -74,5 +84,6 @@ export const {
   useCreateSubscriptionOrderMutation,
   useVerifySubscriptionPaymentMutation,
   useActivateFreeTierMutation,
+  useCancelSubscriptionMutation,
 } = subscriptionApi;
 

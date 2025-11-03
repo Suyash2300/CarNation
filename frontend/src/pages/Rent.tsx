@@ -4,8 +4,11 @@ import Select from 'react-select';
 import { useGetRentalCarsQuery, type Car } from '../services/carApi';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
-import AvailabilityBadge from '../components/rental/AvailabilityBadge';
-import { Filter, MapPin, DollarSign } from 'lucide-react';
+import { Filter, MapPin, DollarSign, Car as CarIcon } from 'lucide-react';
+import CarCard from '../components/cars/CarCard';
+import CarCardSkeleton from '../components/cars/CarCardSkeleton';
+import EmptyState from '../components/common/EmptyState';
+import FilterChip from '../components/common/FilterChip';
 
 const Rent = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -61,18 +64,58 @@ const Rent = () => {
     <div className="min-h-screen bg-light-subtle">
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-dark-900 mb-2">Rental Cars</h1>
-          <p className="text-dark-600">Find the perfect car for your journey</p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <div className="space-section">
+          <h1 className="text-4xl md:text-5xl font-bold text-dark-900 mb-3 text-balance">
+            Rental Cars
+          </h1>
+          <p className="text-lg text-dark-600 max-w-2xl">
+            Find the perfect car for your journey
+          </p>
         </div>
 
         {/* Filters and Sorting */}
-        <div className="glass rounded-xl p-6 mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <Filter className="w-5 h-5 text-primary-600" />
-            <h2 className="text-xl font-semibold text-dark-900">Filters & Sort</h2>
+        <div className="glass rounded-2xl p-6 md:p-8 space-component">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Filter className="w-5 h-5 text-primary-600" />
+              <h2 className="text-xl font-semibold text-dark-900">Filters & Sort</h2>
+              {(selectedCity || selectedBrand) && (
+                <span className="ml-2 px-2 py-1 bg-primary-100 text-primary-700 rounded-full text-xs font-semibold">
+                  {(selectedCity ? 1 : 0) + (selectedBrand ? 1 : 0)}
+                </span>
+              )}
+            </div>
           </div>
+
+          {/* Active Filter Chips */}
+          {(selectedCity || selectedBrand) && (
+            <div className="flex flex-wrap gap-2 mb-4 pb-4 border-b border-dark-200">
+              {selectedCity && (
+                <FilterChip
+                  label={`City: ${cityOptions.find((opt) => opt.value === selectedCity)?.label || selectedCity}`}
+                  onRemove={() => setSelectedCity('')}
+                />
+              )}
+              {selectedBrand && (
+                <FilterChip
+                  label={`Brand: ${brandOptions.find((opt) => opt.value === selectedBrand)?.label || selectedBrand}`}
+                  onRemove={() => setSelectedBrand('')}
+                />
+              )}
+              <button
+                onClick={() => {
+                  setSelectedCity('');
+                  setSelectedBrand('');
+                  setSortBy('price');
+                  setSortOrder('asc');
+                }}
+                className="text-xs text-primary-600 hover:text-primary-700 font-semibold underline"
+              >
+                Clear All
+              </button>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
@@ -138,96 +181,30 @@ const Rent = () => {
 
         {/* Cars Grid */}
         {isLoading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-            <p className="mt-4 text-dark-600">Loading cars...</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <CarCardSkeleton key={index} />
+            ))}
           </div>
         ) : cars.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-xl text-dark-600 mb-2">No cars found</p>
-            <p className="text-dark-500">Try adjusting your filters</p>
+          <div className="glass rounded-2xl">
+            <EmptyState
+              icon={CarIcon}
+              title="No cars available"
+              description="We couldn't find any rental cars matching your filters. Try adjusting your search criteria or check back later."
+              actionLabel="Clear Filters"
+              onAction={() => {
+                setSelectedCity('');
+                setSelectedBrand('');
+                setSortBy('price');
+                setSortOrder('asc');
+              }}
+            />
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {cars.map((car) => (
-              <Link
-                key={car.id}
-                to={`/car/${car.id}`}
-                className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer"
-              >
-              {car.primaryImage && (
-                <div className="relative w-full h-64 overflow-hidden">
-                  <img
-                    src={car.primaryImage}
-                    alt={`${car.brand} ${car.model}`}
-                    className="w-full h-full object-cover"
-                  />
-                  {car.images && car.images.length > 1 && (
-                    <div className="absolute top-2 right-2 bg-black/60 text-white px-2 py-1 rounded text-xs font-semibold">
-                      +{car.images.length - 1} more
-                    </div>
-                  )}
-                  <div className="absolute top-2 left-2">
-                    <AvailabilityBadge availability={car.availability} />
-                  </div>
-                </div>
-              )}
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <h3 className="text-xl font-bold text-dark-900">
-                        {car.brand} {car.model}
-                      </h3>
-                      <p className="text-sm text-dark-600">{car.year}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-primary-600">
-                        ₹{car.rentalPrice}
-                      </p>
-                      <p className="text-xs text-dark-500">per day</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between mb-3">
-                    {car.city && (
-                      <div className="flex items-center gap-1 text-sm text-dark-600">
-                        <MapPin className="w-4 h-4" />
-                        <span>{car.city}</span>
-                      </div>
-                    )}
-                    {!car.primaryImage && (
-                      <AvailabilityBadge availability={car.availability} />
-                    )}
-                  </div>
-                  {car.availability?.nextAvailableDate && (
-                    <p className="text-xs text-warning-600 mb-2">
-                      Available after {new Date(car.availability.nextAvailableDate).toLocaleDateString()}
-                    </p>
-                  )}
-
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {car.fuelType && (
-                      <span className="px-2 py-1 bg-primary-50 text-primary-700 rounded text-xs font-medium">
-                        {car.fuelType}
-                      </span>
-                    )}
-                    {car.transmission && (
-                      <span className="px-2 py-1 bg-secondary-50 text-secondary-700 rounded text-xs font-medium">
-                        {car.transmission}
-                      </span>
-                    )}
-                    {car.seats && (
-                      <span className="px-2 py-1 bg-accent-50 text-accent-700 rounded text-xs font-medium">
-                        {car.seats} Seats
-                      </span>
-                    )}
-                  </div>
-
-                  <button className="w-full bg-gradient-primary hover:bg-gradient-primary-dark text-white px-4 py-3 rounded-lg font-semibold transition shadow-lg hover:shadow-xl">
-                    Rent Now
-                  </button>
-                </div>
-              </Link>
+              <CarCard key={car.id} car={car} variant="rental" />
             ))}
           </div>
         )}

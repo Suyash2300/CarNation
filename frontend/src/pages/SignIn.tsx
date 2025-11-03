@@ -3,11 +3,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useLoginMutation } from '../services/authApi';
 import { useAppDispatch } from '../hooks/redux';
 import { setCredentials } from '../store/slices/authSlice';
+import Input from '../components/common/Input';
+import Button from '../components/common/Button';
+import { useToast } from '../components/common/ToastContainer';
 
 const SignIn = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const [login, { isLoading, error }] = useLoginMutation();
+  const { showError, showSuccess } = useToast();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -26,9 +30,11 @@ const SignIn = () => {
     try {
       const result = await login(formData).unwrap();
       dispatch(setCredentials({ user: result.user, token: result.token }));
+      showSuccess('Welcome back!');
       navigate('/dashboard');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Login failed:', err);
+      showError(err?.data?.error || 'Login failed. Please try again.');
     }
   };
 
@@ -41,53 +47,35 @@ const SignIn = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-dark-900 mb-2">
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary focus:outline-none transition-smooth"
-              placeholder="you@example.com"
-            />
-          </div>
+          <Input
+            label="Email"
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+            placeholder="you@example.com"
+          />
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-dark-900 mb-2">
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary focus:outline-none transition-smooth"
-              placeholder="••••••••"
-            />
-          </div>
+          <Input
+            label="Password"
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+            placeholder="••••••••"
+          />
 
-          {error && 'data' in error && (
-            <div className="bg-error/10 border border-error text-error px-4 py-3 rounded-xl">
-              {'data' in error && typeof error.data === 'object' && error.data && 'error' in error.data
-                ? String(error.data.error)
-                : 'Login failed. Please try again.'}
-            </div>
-          )}
-
-          <button
+          <Button
             type="submit"
-            disabled={isLoading}
-            className="w-full bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary/90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            variant="primary"
+            size="lg"
+            isLoading={isLoading}
+            className="w-full"
           >
-            {isLoading ? 'Signing in...' : 'Sign In'}
-          </button>
+            Sign In
+          </Button>
         </form>
 
         <div className="mt-6 text-center">

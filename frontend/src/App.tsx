@@ -15,6 +15,7 @@ import Chat from './pages/Chat';
 import RentalBooking from './pages/RentalBooking';
 import PurchaseBooking from './pages/PurchaseBooking';
 import VerifyAadhaar from './pages/VerifyAadhaar';
+import Profile from './pages/Profile';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -84,6 +85,14 @@ function App() {
           element={
             <ProtectedRoute>
               <VerifyAadhaar />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
             </ProtectedRoute>
           }
         />

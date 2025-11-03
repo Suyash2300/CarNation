@@ -18,26 +18,35 @@
   
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading font-semibold text-dark-900 tracking-tight;
+    line-height: 1.2;
   }
   
   h1 {
     @apply text-4xl md:text-5xl lg:text-6xl;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
   }
   
   h2 {
     @apply text-3xl md:text-4xl lg:text-5xl;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
   }
   
   h3 {
     @apply text-2xl md:text-3xl;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
   }
   
   h4 {
     @apply text-xl md:text-2xl;
+    line-height: 1.25;
   }
   
   p {
-    @apply text-dark-700 leading-relaxed;
+    @apply text-dark-700;
+    line-height: 1.7;
   }
   
   a {
@@ -139,6 +148,46 @@
   /* Card hover effects */
   .card-hover {
     @apply hover:shadow-xl hover:-translate-y-1 transition-all duration-300;
+  }
+
+  /* Improved spacing utilities */
+  .space-section {
+    @apply mb-8 md:mb-12 lg:mb-16;
+  }
+
+  .space-component {
+    @apply mb-6 md:mb-8;
+  }
+
+  .space-element {
+    @apply mb-4;
+  }
+
+  /* Better text utilities */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Line clamp utilities */
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
   }
   
   /* Focus styles */

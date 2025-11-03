@@ -224,12 +224,32 @@ router.get('/stats', authenticate, async (req: AuthRequest, res: Response) => {
       0
     );
 
+    // Calculate total revenue from completed purchases (seller earnings)
+    const completedPurchases = await prisma.purchase.findMany({
+      where: {
+        car: {
+          sellerId: sellerId,
+        },
+        status: 'COMPLETED',
+        paymentStatus: 'PAID',
+      },
+      select: {
+        sellerEarnings: true,
+      },
+    });
+
+    const totalRevenue = completedPurchases.reduce(
+      (sum, purchase) => sum + (purchase.sellerEarnings || 0),
+      0
+    );
+
     res.json({
       stats: {
         totalCars,
         availableCars,
         soldCars,
         totalValue,
+        totalRevenue,
       },
     });
   } catch (error) {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useGetTiersQuery, useGetSubscriptionStatusQuery, useCreateSubscriptionOrderMutation, useVerifySubscriptionPaymentMutation, useActivateFreeTierMutation } from '../../services/subscriptionApi';
+import { useGetTiersQuery, useGetSubscriptionStatusQuery, useCreateSubscriptionOrderMutation, useVerifySubscriptionPaymentMutation, useActivateFreeTierMutation, useCancelSubscriptionMutation } from '../../services/subscriptionApi';
 import StripePayment from '../payment/StripePayment';
-import { CheckCircle, XCircle, Crown, Zap, Gift } from 'lucide-react';
+import { CheckCircle, XCircle, Crown, Zap, Gift, AlertCircle } from 'lucide-react';
 
 const SubscriptionManagement = () => {
   const [selectedTier, setSelectedTier] = useState<'BASIC' | 'PREMIUM' | null>(null);
@@ -12,6 +12,7 @@ const SubscriptionManagement = () => {
   const [createOrder] = useCreateSubscriptionOrderMutation();
   const [verifyPayment] = useVerifySubscriptionPaymentMutation();
   const [activateFree, { isLoading: isActivatingFree }] = useActivateFreeTierMutation();
+  const [cancelSubscription, { isLoading: isCancelling }] = useCancelSubscriptionMutation();
 
   const tiers = tiersData?.tiers || {};
   const status = statusData;
@@ -23,6 +24,20 @@ const SubscriptionManagement = () => {
       refetchStatus();
     } catch (error: any) {
       alert(error?.data?.error || 'Failed to activate FREE tier');
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!window.confirm('Are you sure you want to cancel your subscription? You will still have access until the end of your billing period.')) {
+      return;
+    }
+
+    try {
+      const result = await cancelSubscription().unwrap();
+      alert(result.message + '\n' + result.note);
+      refetchStatus();
+    } catch (error: any) {
+      alert(error?.data?.error || 'Failed to cancel subscription');
     }
   };
 
@@ -87,7 +102,7 @@ const SubscriptionManagement = () => {
   };
 
   const isCurrentTier = (tierKey: string) => {
-    return status?.tier === tierKey && status?.status === 'ACTIVE';
+    return status?.tier === tierKey && (status?.status === 'ACTIVE' || status?.status === 'CANCELLED');
   };
 
   return (
@@ -114,6 +129,8 @@ const SubscriptionManagement = () => {
                 <span className="font-bold text-dark-900">{status.tierInfo.name}</span>
                 {status.status === 'ACTIVE' ? (
                   <CheckCircle className="w-5 h-5 text-success-600" />
+                ) : status.status === 'CANCELLED' ? (
+                  <AlertCircle className="w-5 h-5 text-warning-600" />
                 ) : (
                   <XCircle className="w-5 h-5 text-error-600" />
                 )}
@@ -123,12 +140,29 @@ const SubscriptionManagement = () => {
               </p>
               {status.endDate && (
                 <p className="text-xs text-dark-500 mt-1">
-                  {status.status === 'ACTIVE' ? 'Expires' : 'Expired'} on{' '}
-                  {new Date(status.endDate).toLocaleDateString()}
+                  {status.status === 'CANCELLED' ? (
+                    <span className="flex items-center gap-1 text-warning-700">
+                      <AlertCircle className="w-3 h-3" />
+                      Cancelled - Active until {new Date(status.endDate).toLocaleDateString()}
+                    </span>
+                  ) : status.status === 'ACTIVE' ? (
+                    `Expires on ${new Date(status.endDate).toLocaleDateString()}`
+                  ) : (
+                    `Expired on ${new Date(status.endDate).toLocaleDateString()}`
+                  )}
                 </p>
               )}
             </div>
           </div>
+          {status.status === 'ACTIVE' && status.tier !== 'FREE' && (
+            <button
+              onClick={handleCancelSubscription}
+              disabled={isCancelling}
+              className="mt-4 w-full px-4 py-2 bg-error-100 hover:bg-error-200 text-error-700 font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed border border-error-300"
+            >
+              {isCancelling ? 'Cancelling...' : 'Cancel Subscription'}
+            </button>
+          )}
         </div>
       )}
 

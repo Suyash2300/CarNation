@@ -59,6 +59,14 @@ model User {
   // Profile image
   profileImage  String?
   
+  // Profile details
+  address       String?
+  city          String?
+  state         String?
+  pincode       String?
+  country       String?         @default("India")
+  bio           String?         // Brief bio/description
+  
   // Aadhaar Verification
   aadhaarNumber      String?         // Encrypted Aadhaar number
   aadhaarFrontImage  String?         // Aadhaar front image URL

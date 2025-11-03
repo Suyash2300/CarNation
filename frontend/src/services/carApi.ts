@@ -76,6 +76,7 @@ export interface SellerStats {
   availableCars: number;
   soldCars: number;
   totalValue: number;
+  totalRevenue: number;
 }
 
 export interface AdminStats {
