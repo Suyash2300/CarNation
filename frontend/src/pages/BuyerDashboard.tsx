@@ -4,7 +4,7 @@ import { useGetRentalCarsQuery } from '../services/carApi';
 import { useGetDealsQuery } from '../services/dealsApi';
 import { useGetRentalsQuery } from '../services/rentalApi';
 import DealStatusBadge from '../components/deals/DealStatusBadge';
-import { Car as CarIcon, MapPin, Search, Calendar, UserCheck, Handshake, MessageCircle } from 'lucide-react';
+import { Car as CarIcon, MapPin, Search, Calendar, UserCheck, Handshake, MessageCircle, CreditCard, Clock, Phone, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Breadcrumbs from '../components/common/Breadcrumbs';
 
@@ -183,40 +183,139 @@ const BuyerDashboard = () => {
                   My Rentals
                 </h3>
                 <div className="space-y-4">
-                  {rentals.map((rental) => (
-                    <div key={rental.id} className="border border-dark-200 rounded-lg p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          {rental.car.primaryImage && (
-                            <img
-                              src={rental.car.primaryImage}
-                              alt={`${rental.car.brand} ${rental.car.model}`}
-                              className="w-16 h-16 rounded-lg object-cover"
-                            />
-                          )}
-                          <div>
-                            <h4 className="font-semibold text-dark-900">
-                              {rental.car.brand} {rental.car.model}
-                            </h4>
-                            <p className="text-sm text-dark-600">
-                              {new Date(rental.startDate).toLocaleDateString()} - {new Date(rental.endDate).toLocaleDateString()}
-                            </p>
-                            <p className="text-sm text-dark-600">{rental.totalDays} days</p>
+                  {rentals.map((rental) => {
+                    const formatAddress = () => {
+                      const parts = [];
+                      if (rental.buyer.address) parts.push(rental.buyer.address);
+                      if (rental.buyer.city) parts.push(rental.buyer.city);
+                      if (rental.buyer.state) parts.push(rental.buyer.state);
+                      if (rental.buyer.pincode) parts.push(rental.buyer.pincode);
+                      if (rental.buyer.country) parts.push(rental.buyer.country);
+                      return parts.length > 0 ? parts.join(', ') : 'Address not provided';
+                    };
+
+                    return (
+                      <div key={rental.id} className="border border-dark-200 rounded-lg p-5 hover:shadow-lg transition-shadow">
+                        <div className="flex flex-col md:flex-row gap-4">
+                          {/* Left Section - Car Image and Basic Info */}
+                          <div className="flex items-start gap-4 flex-1">
+                            {rental.car.primaryImage && (
+                              <img
+                                src={rental.car.primaryImage}
+                                alt={`${rental.car.brand} ${rental.car.model}`}
+                                className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
+                              />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-bold text-lg text-dark-900 mb-2">
+                                {rental.car.brand} {rental.car.model} ({rental.car.year})
+                              </h4>
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-sm text-dark-600">
+                                  <Calendar className="w-4 h-4" />
+                                  <span>
+                                    {new Date(rental.startDate).toLocaleDateString('en-IN', { 
+                                      day: 'numeric', 
+                                      month: 'short', 
+                                      year: 'numeric' 
+                                    })} - {new Date(rental.endDate).toLocaleDateString('en-IN', { 
+                                      day: 'numeric', 
+                                      month: 'short', 
+                                      year: 'numeric' 
+                                    })}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm text-dark-600">
+                                  <Clock className="w-4 h-4" />
+                                  <span>{rental.totalDays} {rental.totalDays === 1 ? 'day' : 'days'}</span>
+                                </div>
+                                {rental.car.city && (
+                                  <div className="flex items-center gap-2 text-sm text-dark-600">
+                                    <MapPin className="w-4 h-4 text-primary-600" />
+                                    <span className="font-medium">Pickup Location: {rental.car.city}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Right Section - Amount and Status */}
+                          <div className="flex flex-col items-end gap-2">
+                            <div className="text-right">
+                              <p className="text-sm text-dark-600 mb-1">Total Amount</p>
+                              <p className="text-2xl font-bold text-primary-600">₹{rental.totalAmount.toLocaleString()}</p>
+                            </div>
+                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                              rental.status === 'COMPLETED' ? 'bg-success-100 text-success-700' :
+                              rental.status === 'ACTIVE' ? 'bg-primary-100 text-primary-700' :
+                              rental.status === 'PENDING' ? 'bg-warning-100 text-warning-700' :
+                              'bg-error-100 text-error-700'
+                            }`}>
+                              {rental.status}
+                            </span>
+                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold mt-1 ${
+                              rental.paymentStatus === 'PAID' ? 'bg-success-100 text-success-700' :
+                              rental.paymentStatus === 'PENDING' ? 'bg-warning-100 text-warning-700' :
+                              'bg-error-100 text-error-700'
+                            }`}>
+                              <CreditCard className="w-3 h-3 inline mr-1" />
+                              {rental.paymentStatus}
+                            </span>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-semibold text-dark-900">₹{rental.totalAmount.toLocaleString()}</p>
-                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                            rental.status === 'COMPLETED' ? 'bg-success-100 text-success-700' :
-                            rental.status === 'ACTIVE' ? 'bg-primary-100 text-primary-700' :
-                            'bg-warning-100 text-warning-700'
-                          }`}>
-                            {rental.status}
-                          </span>
+
+                        {/* Detailed Information Section */}
+                        <div className="mt-4 pt-4 border-t border-dark-200">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Rental Details */}
+                            <div>
+                              <h5 className="font-semibold text-dark-900 mb-2 text-sm">Rental Details</h5>
+                              <div className="space-y-1 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-dark-600">Daily Rate:</span>
+                                  <span className="font-medium text-dark-900">₹{rental.dailyPrice.toLocaleString()}/day</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-dark-600">Total Days:</span>
+                                  <span className="font-medium text-dark-900">{rental.totalDays} days</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-dark-600">Booking ID:</span>
+                                  <span className="font-mono text-xs text-dark-900">{rental.id.substring(0, 8)}...</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Buyer Address */}
+                            <div>
+                              <h5 className="font-semibold text-dark-900 mb-2 text-sm flex items-center gap-2">
+                                <MapPin className="w-4 h-4" />
+                                Your Address
+                              </h5>
+                              <div className="text-sm text-dark-700 space-y-1">
+                                {rental.buyer.name && (
+                                  <p className="font-medium">{rental.buyer.name}</p>
+                                )}
+                                <p className="text-dark-600">{formatAddress()}</p>
+                                {rental.buyer.phone && (
+                                  <div className="flex items-center gap-1 mt-2 text-dark-600">
+                                    <Phone className="w-3 h-3" />
+                                    <span className="text-xs">{rental.buyer.phone}</span>
+                                  </div>
+                                )}
+                                {rental.buyer.email && (
+                                  <div className="flex items-center gap-1 text-dark-600">
+                                    <Mail className="w-3 h-3" />
+                                    <span className="text-xs">{rental.buyer.email}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

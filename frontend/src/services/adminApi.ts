@@ -36,6 +36,7 @@ export interface Rental {
     model: string;
     year: number;
     primaryImage?: string;
+    city?: string;
   };
   buyer: {
     id: string;
@@ -43,6 +44,11 @@ export interface Rental {
     email: string;
     phone?: string;
     isAadhaarVerified: boolean;
+    address?: string | null;
+    city?: string | null;
+    state?: string | null;
+    pincode?: string | null;
+    country?: string | null;
   };
   createdAt: string;
 }
@@ -122,7 +128,20 @@ export const adminApi = api.injectEndpoints({
       }),
       providesTags: ['Rental'],
     }),
-    getAdminEarnings: builder.query<{ period: string; totalEarnings: number; earnings: any[]; count: number }, { period?: string }>({
+    getAdminEarnings: builder.query<{ 
+      period: string; 
+      totalEarnings: number; 
+      earnings: Array<{
+        id: string;
+        totalAmount: number;
+        createdAt: string;
+        car: {
+          brand: string;
+          model: string;
+        };
+      }>; 
+      count: number 
+    }, { period?: string }>({
       query: (params) => ({
         url: '/admin/earnings',
         params,

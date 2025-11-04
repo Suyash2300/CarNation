@@ -32,6 +32,11 @@ export interface Rental {
     email: string;
     phone?: string;
     isAadhaarVerified: boolean;
+    address?: string | null;
+    city?: string | null;
+    state?: string | null;
+    pincode?: string | null;
+    country?: string | null;
   };
   createdAt: string;
   updatedAt: string;

@@ -282,10 +282,11 @@ const AddCarModal = ({ isOpen, onClose, onSuccess }: AddCarModalProps) => {
               value={formData.primaryImage}
               onChange={(url) => {
                 setFormData((prev) => {
-                  // Set as primary image and add to images array if not already there
-                  const newImages = prev.images || [];
-                  if (url && !newImages.includes(url)) {
-                    newImages.unshift(url); // Add at beginning
+                  // Create a new array copy to avoid mutating frozen arrays
+                  const existingImages = prev.images ? [...prev.images] : [];
+                  let newImages = existingImages;
+                  if (url && !existingImages.includes(url)) {
+                    newImages = [url, ...existingImages]; // Add at beginning
                   }
                   return {
                     ...prev,

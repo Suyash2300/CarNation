@@ -300,9 +300,11 @@ const AddSellerCarModal = ({ isOpen, onClose, onSuccess }: AddSellerCarModalProp
               value={formData.primaryImage}
               onChange={(url) => {
                 setFormData((prev) => {
-                  const newImages = prev.images || [];
-                  if (url && !newImages.includes(url)) {
-                    newImages.unshift(url);
+                  // Create a new array copy to avoid mutating frozen arrays
+                  const existingImages = prev.images ? [...prev.images] : [];
+                  let newImages = existingImages;
+                  if (url && !existingImages.includes(url)) {
+                    newImages = [url, ...existingImages];
                   }
                   return {
                     ...prev,

@@ -1,150 +1,286 @@
-import { Shield, Car, Award, MessageCircle, Zap } from "lucide-react";
-import ConnectionsSVG from "../ConnectionsSVG";
+import { useState, useEffect, useRef } from "react";
+import { Shield, Store, Award, MessageCircle, Zap, CheckCircle2, ArrowRight } from "lucide-react";
+
+interface Feature {
+  icon: typeof Shield;
+  title: string;
+  description: string;
+  metric: string;
+  color: string;
+  bgColor: string;
+  borderColor: string;
+}
 
 const FeaturesSection = () => {
-  // Staggered 5-card layout with consistent icon set
-  const features = {
-    central: {
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
+    return () => {
+      if (sectionRef.current) {
+        observer.unobserve(sectionRef.current);
+      }
+    };
+  }, []);
+
+  const features: Feature[] = [
+    {
       icon: Shield,
       title: "Fully Insured & Secure",
       description:
-        "Drive with peace. All rentals and transactions are protected with insurance and secure processes.",
-      position: "center",
+        "Drive with complete peace of mind. All rentals and transactions are protected with comprehensive insurance and secure processes.",
+      metric: "100% Coverage",
+      color: "text-primary-700",
+      bgColor: "bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700",
+      borderColor: "border-primary-200",
     },
-    surrounding: [
-      {
-        icon: Car,
-        title: "Wide Selection",
-        description:
-          "Discover a vast fleet from economy to luxury, and a diverse marketplace of used cars.",
-        position: "top-left",
-      },
-      {
-        icon: Award,
-        title: "Best Prices",
-        description:
-          "Competitive rates with transparent pricing. No hidden fees, guaranteed.",
-        position: "top-right",
-      },
-      {
-        icon: MessageCircle,
-        title: "24/7 Support",
-        description:
-          "Our expert support team is always on standby to assist you every step of the way.",
-        position: "bottom-right",
-      },
-      {
-        icon: Zap,
-        title: "Easy Booking",
-        description:
-          "Simple and secure booking process. Get your car in minutes, not hours.",
-        position: "bottom-left",
-      },
-    ],
-  };
+    {
+      icon: Store,
+      title: "Wide Selection",
+      description:
+        "Discover a vast fleet from economy to luxury vehicles, and a diverse marketplace of quality used cars.",
+      metric: "500+ Vehicles",
+      color: "text-primary-700",
+      bgColor: "bg-gradient-to-br from-primary-400 via-primary-500 to-primary-600",
+      borderColor: "border-primary-200",
+    },
+    {
+      icon: Award,
+      title: "Best Prices",
+      description:
+        "Competitive rates with transparent pricing. No hidden fees, no surprises. Guaranteed best deals.",
+      metric: "Price Match",
+      color: "text-accent-700",
+      bgColor: "bg-gradient-to-br from-accent-500 via-accent-600 to-accent-700",
+      borderColor: "border-accent-200",
+    },
+    {
+      icon: MessageCircle,
+      title: "24/7 Support",
+      description:
+        "Our expert support team is always on standby to assist you every step of the way, anytime you need us.",
+      metric: "Always Available",
+      color: "text-primary-700",
+      bgColor: "bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800",
+      borderColor: "border-primary-200",
+    },
+    {
+      icon: Zap,
+      title: "Easy Booking",
+      description:
+        "Simple and secure booking process. Get your car in minutes, not hours. Fast, efficient, and hassle-free.",
+      metric: "5 Min Setup",
+      color: "text-accent-700",
+      bgColor: "bg-gradient-to-br from-accent-400 via-accent-500 to-accent-600",
+      borderColor: "border-accent-200",
+    },
+  ];
 
   return (
-    <section className="py-16 md:py-24 bg-light-subtle">
+    <section ref={sectionRef} className="py-12 md:py-16 bg-light-subtle">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl md:text-4xl font-bold text-center text-dark-900 mb-16 font-heading">
-          Why Choose CarNation?
-        </h2>
-
-        {/* Hub and Spoke Layout - Staggered */}
-        <div
-          className="relative min-h-[650px] flex items-center justify-center"
-          id="features-container"
-        >
-          {/* Central Feature - Larger and elevated */}
-          <div
-            id="central-feature"
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20"
-          >
-            <div className="glass rounded-xl p-8 shadow-2xl max-w-xs border-2 border-primary/20 hover:shadow-3xl hover:-translate-y-2 transition-all duration-300">
-              <div className="text-primary-600 mb-4 flex justify-center">
-                <features.central.icon className="w-16 h-16" />
-              </div>
-              <h3 className="text-xl font-bold text-dark-900 mb-3 text-center">
-                {features.central.title}
-              </h3>
-              <p className="text-dark-700 text-left text-sm leading-relaxed">
-                {features.central.description}
-              </p>
-            </div>
-          </div>
-
-          {/* Surrounding Features - Staggered positions */}
-          {features.surrounding.map((feature, index) => {
-            const IconComponent = feature.icon;
-            const positions = {
-              "top-left": "top-12 left-12",
-              "top-right": "top-12 right-12",
-              "bottom-left": "bottom-12 left-12",
-              "bottom-right": "bottom-12 right-12",
-            };
-
-            return (
-              <div
-                key={index}
-                id={`feature-${index}`}
-                className={`absolute ${
-                  positions[feature.position as keyof typeof positions]
-                } z-10`}
-              >
-                <div className="glass rounded-xl p-6 shadow-xl w-[280px] border border-primary/10 hover:border-primary/30 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
-                  <div className="text-primary-600 mb-4 flex justify-center">
-                    <IconComponent className="w-14 h-14" />
-                  </div>
-                  <h3 className="text-lg font-bold text-dark-900 mb-2 text-center">
-                    {feature.title}
-                  </h3>
-                  <p className="text-dark-700 text-left text-sm leading-relaxed">
-                    {feature.description}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-
-          {/* Connecting Lines - Light dotted lines */}
-          <ConnectionsSVG />
+        <div className="text-center mb-10 md:mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-dark-900 mb-3 font-heading">
+            Why Choose CarNation?
+          </h2>
+          <p className="text-dark-600 text-lg max-w-2xl mx-auto">
+            Experience the best in car rental and buying with unmatched benefits
+          </p>
         </div>
 
-        {/* Mobile Layout - Stack vertically */}
-        <div className="md:hidden space-y-6 mt-8">
-          {/* Central Feature for Mobile */}
-          <div className="glass rounded-xl p-6 shadow-xl border-2 border-primary/20 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-            <div className="text-primary mb-4 flex justify-center">
-              <features.central.icon className="w-14 h-14" />
-            </div>
-            <h3 className="text-xl font-bold text-dark-900 mb-3 text-center">
-              {features.central.title}
-            </h3>
-            <p className="text-dark-700 text-left text-sm leading-relaxed">
-              {features.central.description}
-            </p>
-          </div>
+        {/* Pipeline Nodes Design - Desktop */}
+        <div className="hidden lg:block relative">
+          {/* Pipeline Container with connecting line */}
+          <div className="relative py-12">
+            {/* Horizontal Connecting Line */}
+            <div className={`absolute top-20 left-0 right-0 h-0.5 bg-gradient-to-r from-primary-300 via-primary-400 via-accent-400 via-primary-500 to-accent-500 opacity-50 transition-opacity duration-1000 ${isVisible ? 'opacity-70' : ''}`} />
+            
+            {/* Nodes Container */}
+            <div className="relative flex items-start justify-between px-4">
+              {features.map((feature, index) => {
+                const IconComponent = feature.icon;
+                const isLast = index === features.length - 1;
+                const animationDelay = index * 150; // Staggered animation
+                
+                return (
+                  <div 
+                    key={index} 
+                    className="relative flex-1 flex flex-col items-center group z-10"
+                    style={{
+                      opacity: isVisible ? 1 : 0,
+                      transform: isVisible ? 'translateY(0)' : 'translateY(30px)',
+                      transition: `opacity 0.6s ease-out ${animationDelay}ms, transform 0.6s ease-out ${animationDelay}ms`
+                    }}
+                  >
+                    {/* Connecting Arrow (except last node) */}
+                    {!isLast && (
+                      <div className="absolute top-20 left-[calc(50%+40px)] right-[-40px] h-0.5 pointer-events-none">
+                        <div className="relative h-full">
+                          {/* Arrow Line - Color matched to nodes with cohesive theme */}
+                          <div 
+                            className={`absolute left-0 right-0 h-full opacity-60 group-hover:opacity-100 transition-opacity duration-300 ${
+                              index === 0 
+                                ? 'bg-gradient-to-r from-primary-400 to-primary-500' 
+                                : index === 1
+                                ? 'bg-gradient-to-r from-primary-500 to-primary-600'
+                                : index === 2
+                                ? 'bg-gradient-to-r from-primary-600 to-accent-500'
+                                : 'bg-gradient-to-r from-accent-500 to-accent-600'
+                            }`}
+                          />
+                          {/* Arrow Head */}
+                          <ArrowRight className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-5 h-5 transition-colors drop-shadow-sm ${
+                            index === 0 ? 'text-primary-500 group-hover:text-primary-700' :
+                            index === 1 ? 'text-primary-500 group-hover:text-primary-700' :
+                            index === 2 ? 'text-accent-500 group-hover:text-accent-700' :
+                            'text-accent-500 group-hover:text-accent-700'
+                          }`} />
+                        </div>
+                      </div>
+                    )}
 
-          {/* Surrounding Features for Mobile */}
-          {features.surrounding.map((feature, index) => {
+                    {/* Node Circle */}
+                    <div className="relative mb-6">
+                      <div className={`${feature.bgColor} w-20 h-20 rounded-full flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:shadow-2xl transition-all duration-300 border-4 border-white relative z-10`}>
+                        <IconComponent className="w-10 h-10 text-white drop-shadow-sm" />
+                      </div>
+                      {/* Pulse Animation Ring */}
+                      <div className={`absolute inset-0 rounded-full opacity-0 group-hover:opacity-30 group-hover:animate-ping ${
+                        index === 0 || index === 1 || index === 3 ? 'bg-primary-500' : 'bg-accent-500'
+                      }`} />
+                    </div>
+
+                    {/* Node Content Card - Fixed height for consistency */}
+                    <div className="w-full max-w-[220px] mx-auto bg-white rounded-xl p-5 shadow-lg border-2 border-dark-100 group-hover:border-primary-300 group-hover:shadow-xl transition-all duration-300 transform group-hover:-translate-y-1 min-h-[180px] flex flex-col">
+                      {/* Metric Badge */}
+                      <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full mb-3 ${
+                        index === 0 || index === 1 || index === 3 
+                          ? 'bg-primary-50 border border-primary-200' 
+                          : 'bg-accent-50 border border-accent-200'
+                      }`}>
+                        <CheckCircle2 className={`w-3.5 h-3.5 ${feature.color}`} />
+                        <span className={`text-xs font-bold ${feature.color}`}>
+                          {feature.metric}
+                        </span>
+                      </div>
+
+                      {/* Title */}
+                      <h3 className="text-lg font-bold text-dark-900 mb-2 group-hover:text-primary-700 transition-colors">
+                        {feature.title}
+                      </h3>
+
+                      {/* Description */}
+                      <p className="text-dark-600 text-xs leading-relaxed flex-grow">
+                        {feature.description}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile/Tablet Layout - Vertical Stack */}
+        <div className="lg:hidden space-y-6">
+          {features.map((feature, index) => {
             const IconComponent = feature.icon;
+            const isLast = index === features.length - 1;
+            const animationDelay = index * 100;
+            
             return (
-              <div
-                key={index}
-                className="glass rounded-xl p-6 shadow-lg border border-primary/10 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+              <div 
+                key={index} 
+                className="relative"
+                style={{
+                  opacity: isVisible ? 1 : 0,
+                  transform: isVisible ? 'translateX(0)' : 'translateX(-20px)',
+                  transition: `opacity 0.5s ease-out ${animationDelay}ms, transform 0.5s ease-out ${animationDelay}ms`
+                }}
               >
-                <div className="text-primary-600 mb-4 flex justify-center">
-                  <IconComponent className="w-12 h-12" />
+                <div className="flex items-start gap-4 group">
+                  {/* Node Circle */}
+                  <div className="relative flex-shrink-0">
+                    <div className={`${feature.bgColor} w-16 h-16 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300 border-4 border-white`}>
+                      <IconComponent className="w-8 h-8 text-white" />
+                    </div>
+                    {/* Connecting Line (vertical, except last) */}
+                    {!isLast && (
+                      <div className={`absolute top-16 left-1/2 -translate-x-1/2 w-0.5 h-12 bg-gradient-to-b opacity-60 ${
+                        index === 0 
+                          ? 'from-primary-400 to-primary-500' 
+                          : index === 1
+                          ? 'from-primary-500 to-primary-600'
+                          : index === 2
+                          ? 'from-primary-600 to-accent-500'
+                          : 'from-accent-500 to-accent-600'
+                      }`} />
+                    )}
+                  </div>
+
+                  {/* Content Card - Fixed height for consistency */}
+                  <div className="flex-1 bg-white rounded-xl p-5 shadow-md border border-dark-100 group-hover:shadow-lg group-hover:border-primary-300 transition-all duration-300 min-h-[140px] flex flex-col">
+                    {/* Metric Badge */}
+                    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full mb-3 ${
+                      index === 0 || index === 1 || index === 3 
+                        ? 'bg-primary-50 border border-primary-200' 
+                        : 'bg-accent-50 border border-accent-200'
+                    }`}>
+                      <CheckCircle2 className={`w-3.5 h-3.5 ${feature.color}`} />
+                      <span className={`text-xs font-bold ${feature.color}`}>
+                        {feature.metric}
+                      </span>
+                    </div>
+
+                    {/* Title */}
+                    <h3 className="text-lg font-bold text-dark-900 mb-2 group-hover:text-primary-700 transition-colors">
+                      {feature.title}
+                    </h3>
+
+                    {/* Description */}
+                    <p className="text-dark-600 text-sm leading-relaxed flex-grow">
+                      {feature.description}
+                    </p>
+                  </div>
                 </div>
-                <h3 className="text-lg font-bold text-dark-900 mb-2 text-center">
-                  {feature.title}
-                </h3>
-                <p className="text-dark-700 text-left text-sm leading-relaxed">
-                  {feature.description}
-                </p>
               </div>
             );
           })}
+        </div>
+
+        {/* Trust Indicators */}
+        <div className="mt-12 pt-8 border-t border-dark-100">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 text-center">
+            <div>
+              <div className="text-3xl md:text-4xl font-bold text-primary-600 mb-1">4.9/5</div>
+              <div className="text-sm text-dark-600">Customer Rating</div>
+            </div>
+            <div>
+              <div className="text-3xl md:text-4xl font-bold text-primary-600 mb-1">2000+</div>
+              <div className="text-sm text-dark-600">Happy Customers</div>
+            </div>
+            <div>
+              <div className="text-3xl md:text-4xl font-bold text-primary-600 mb-1">500+</div>
+              <div className="text-sm text-dark-600">Available Cars</div>
+            </div>
+            <div>
+              <div className="text-3xl md:text-4xl font-bold text-primary-600 mb-1">25+</div>
+              <div className="text-sm text-dark-600">Cities Covered</div>
+            </div>
+          </div>
         </div>
       </div>
     </section>

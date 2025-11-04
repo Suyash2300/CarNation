@@ -105,6 +105,7 @@ export interface Rental {
     model: string;
     year: number;
     primaryImage?: string;
+    city?: string;
   };
   buyer: {
     id: string;
@@ -112,6 +113,11 @@ export interface Rental {
     email: string;
     phone?: string;
     isAadhaarVerified: boolean;
+    address?: string | null;
+    city?: string | null;
+    state?: string | null;
+    pincode?: string | null;
+    country?: string | null;
   };
   createdAt: string;
 }
@@ -175,7 +181,7 @@ export const carApi = api.injectEndpoints({
       query: (id) => ({
         url: `/cars/${id}`,
       }),
-      providesTags: (result, error, id) => [{ type: 'Car' as const, id }],
+      providesTags: (_result, _error, id) => [{ type: 'Car' as const, id }],
     }),
     getUnavailableDates: builder.query<{ unavailableDates: string[] }, string>({
       query: (carId) => `/cars/${carId}/unavailable-dates`,
