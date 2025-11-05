@@ -75,7 +75,7 @@ const Rent = () => {
         </div>
 
         {/* Filters and Sorting */}
-        <div className="glass rounded-2xl p-6 md:p-8 space-component">
+        <div className="glass rounded-2xl p-6 md:p-8 space-component relative z-50">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Filter className="w-5 h-5 text-primary-600" />
