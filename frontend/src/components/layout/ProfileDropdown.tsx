@@ -86,7 +86,7 @@ const ProfileDropdown = () => {
               Messages
             </Link>
             <Link
-              to="/profile"
+              to="/settings"
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-3 px-4 py-2 hover:bg-primary-50 text-dark-700 hover:text-primary-600 transition text-sm"
             >

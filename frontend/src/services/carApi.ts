@@ -147,6 +147,7 @@ export const carApi = api.injectEndpoints({
         sortOrder?: 'asc' | 'desc';
         page?: number;
         limit?: number;
+        includeUnavailable?: boolean;
       }
     >({
       query: (params) => ({
@@ -191,7 +192,9 @@ export const carApi = api.injectEndpoints({
 
 export const {
   useGetRentalCarsQuery,
+  useLazyGetRentalCarsQuery,
   useGetUsedCarsQuery,
+  useLazyGetUsedCarsQuery,
   useGetCarByIdQuery,
   useGetUnavailableDatesQuery,
 } = carApi;

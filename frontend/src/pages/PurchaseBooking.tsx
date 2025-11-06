@@ -6,12 +6,11 @@ import { useCreatePurchaseOrderMutation, useVerifyPurchasePaymentMutation } from
 import { useAppSelector } from '../hooks/redux';
 import Navbar from '../components/layout/Navbar';
 import StripePayment from '../components/payment/StripePayment';
-import { DollarSign, AlertCircle, CheckCircle, ArrowLeft, CreditCard, Calculator } from 'lucide-react';
+import { DollarSign, CheckCircle, ArrowLeft, CreditCard, Calculator } from 'lucide-react';
 
 const PurchaseBooking = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAppSelector((state) => state.auth);
   const { data: carData, isLoading: carLoading } = useGetCarByIdQuery(id!);
   const [createPurchase, { isLoading: isCreating }] = useCreatePurchaseMutation();
   const [createPurchaseOrder, { isLoading: isCreatingOrder }] = useCreatePurchaseOrderMutation();
@@ -124,7 +123,7 @@ const PurchaseBooking = () => {
     );
   }
 
-  if (!car || !car.isForSale) {
+  if (!car || !(car as any).isForSale) {
     return (
       <div className="min-h-screen bg-light-subtle">
         <Navbar />

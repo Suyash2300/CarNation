@@ -16,12 +16,20 @@ router.get('/rent', async (req: Request, res: Response) => {
       sortOrder = 'asc',
       page = '1',
       limit = '12',
+      includeUnavailable,
     } = req.query;
 
     const where: any = {
       isForRent: true,
-      status: 'AVAILABLE',
     };
+
+    // By default show only AVAILABLE cars; if includeUnavailable=true, include RENTED/BOOKED as well
+    const includeAll = String(includeUnavailable).toLowerCase() === 'true';
+    if (!includeAll) {
+      where.status = 'AVAILABLE';
+    } else {
+      where.status = { in: ['AVAILABLE', 'RENTED', 'MAINTENANCE'] };
+    }
 
     // Filter by city
     if (city && city !== 'all') {

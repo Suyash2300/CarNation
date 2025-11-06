@@ -4,8 +4,6 @@ import Rent from './pages/Rent';
 import UsedCars from './pages/UsedCars';
 import CarDetail from './pages/CarDetail';
 import Auth from './pages/Auth';
-import SignIn from './pages/SignIn';
-import SignUp from './pages/SignUp';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
@@ -16,6 +14,7 @@ import RentalBooking from './pages/RentalBooking';
 import PurchaseBooking from './pages/PurchaseBooking';
 import VerifyAadhaar from './pages/VerifyAadhaar';
 import Profile from './pages/Profile';
+import Settings from './pages/Settings';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -93,6 +92,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <Settings />
             </ProtectedRoute>
           }
         />

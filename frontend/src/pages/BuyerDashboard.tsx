@@ -1,12 +1,24 @@
-import { useAppSelector } from '../hooks/redux';
-import Navbar from '../components/layout/Navbar';
-import { useGetRentalCarsQuery } from '../services/carApi';
-import { useGetDealsQuery } from '../services/dealsApi';
-import { useGetRentalsQuery } from '../services/rentalApi';
-import DealStatusBadge from '../components/deals/DealStatusBadge';
-import { Car as CarIcon, MapPin, Search, Calendar, UserCheck, Handshake, MessageCircle, CreditCard, Clock, Phone, Mail } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import Breadcrumbs from '../components/common/Breadcrumbs';
+import { useAppSelector } from "../hooks/redux";
+import Navbar from "../components/layout/Navbar";
+import { useGetRentalCarsQuery } from "../services/carApi";
+import { useGetDealsQuery } from "../services/dealsApi";
+import { useGetRentalsQuery } from "../services/rentalApi";
+import DealStatusBadge from "../components/deals/DealStatusBadge";
+import {
+  Car as CarIcon,
+  MapPin,
+  Search,
+  Calendar,
+  UserCheck,
+  Handshake,
+  MessageCircle,
+  CreditCard,
+  Clock,
+  Phone,
+  Mail,
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import Breadcrumbs from "../components/common/Breadcrumbs";
 
 const BuyerDashboard = () => {
   const { user } = useAppSelector((state) => state.auth);
@@ -25,16 +37,19 @@ const BuyerDashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Breadcrumbs
           items={[
-            { label: 'Dashboard', path: '/dashboard' },
-            { label: 'Buyer Dashboard' },
+            { label: "Dashboard", path: "/dashboard" },
+            { label: "Buyer Dashboard" },
           ]}
         />
 
         <div className="mb-8 flex justify-between items-start mt-6">
           <div>
-            <h1 className="text-4xl font-bold text-dark-900 mb-2">Welcome Back!</h1>
+            <h1 className="text-4xl font-bold text-dark-900 mb-2">
+              Welcome Back!
+            </h1>
             <p className="text-dark-600">
-              Hello, <span className="font-semibold text-primary">{user?.name}</span>! 
+              Hello,{" "}
+              <span className="font-semibold text-primary">{user?.name}</span>!
               Ready to find your perfect ride?
             </p>
           </div>
@@ -55,7 +70,9 @@ const BuyerDashboard = () => {
                 <UserCheck className="w-8 h-8 text-primary-600" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-dark-900 mb-1">Account Status</h2>
+                <h2 className="text-xl font-semibold text-dark-900 mb-1">
+                  Account Status
+                </h2>
                 <div className="flex items-center gap-3">
                   <p className="text-dark-700">
                     <span className="font-semibold">Email:</span> {user?.email}
@@ -99,7 +116,8 @@ const BuyerDashboard = () => {
               </div>
             </div>
             <p className="text-sm text-dark-500">
-              Find the perfect car for your journey. Available now for immediate booking.
+              Find the perfect car for your journey. Available now for immediate
+              booking.
             </p>
           </Link>
 
@@ -117,7 +135,8 @@ const BuyerDashboard = () => {
               </div>
             </div>
             <p className="text-sm text-dark-500">
-              Quality used cars from verified sellers. Great deals waiting for you.
+              Quality used cars from verified sellers. Great deals waiting for
+              you.
             </p>
           </Link>
         </div>
@@ -125,8 +144,10 @@ const BuyerDashboard = () => {
         {/* Active Deals & Rentals */}
         {(deals.length > 0 || rentals.length > 0) && (
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-dark-900 mb-4">My Deals & Rentals</h2>
-            
+            <h2 className="text-2xl font-bold text-dark-900 mb-4">
+              My Deals & Rentals
+            </h2>
+
             {deals.length > 0 && (
               <div className="glass rounded-xl p-6 mb-6">
                 <h3 className="text-lg font-semibold text-dark-900 mb-4 flex items-center gap-2">
@@ -135,7 +156,10 @@ const BuyerDashboard = () => {
                 </h3>
                 <div className="space-y-4">
                   {deals.map((deal) => (
-                    <div key={deal.id} className="border border-dark-200 rounded-lg p-4">
+                    <div
+                      key={deal.id}
+                      className="border border-dark-200 rounded-lg p-4"
+                    >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
@@ -148,10 +172,14 @@ const BuyerDashboard = () => {
                             )}
                             <div>
                               <h4 className="font-semibold text-dark-900">
-                                {deal.car.brand} {deal.car.model} ({deal.car.year})
+                                {deal.car.brand} {deal.car.model} (
+                                {deal.car.year})
                               </h4>
                               <p className="text-sm text-dark-600">
-                                {deal.dealType === 'PURCHASE' ? 'Purchase' : 'Rental'} with {deal.seller.name}
+                                {deal.dealType === "PURCHASE"
+                                  ? "Purchase"
+                                  : "Rental"}{" "}
+                                with {deal.seller.name}
                               </p>
                             </div>
                           </div>
@@ -161,12 +189,18 @@ const BuyerDashboard = () => {
                       <div className="flex items-center justify-between mt-3">
                         <div>
                           <p className="text-sm text-dark-600">Agreed Price</p>
-                          <p className="font-semibold text-dark-900">₹{deal.agreedPrice.toLocaleString()}</p>
+                          <p className="font-semibold text-dark-900">
+                            ₹{deal.agreedPrice.toLocaleString()}
+                          </p>
                         </div>
                         {deal.purchase?.platformFee && (
                           <div>
-                            <p className="text-sm text-dark-600">Platform Fee</p>
-                            <p className="font-semibold text-primary-600">₹{deal.purchase.platformFee.toLocaleString()}</p>
+                            <p className="text-sm text-dark-600">
+                              Platform Fee
+                            </p>
+                            <p className="font-semibold text-primary-600">
+                              ₹{deal.purchase.platformFee.toLocaleString()}
+                            </p>
                           </div>
                         )}
                       </div>
@@ -186,16 +220,24 @@ const BuyerDashboard = () => {
                   {rentals.map((rental) => {
                     const formatAddress = () => {
                       const parts = [];
-                      if (rental.buyer.address) parts.push(rental.buyer.address);
+                      if (rental.buyer.address)
+                        parts.push(rental.buyer.address);
                       if (rental.buyer.city) parts.push(rental.buyer.city);
                       if (rental.buyer.state) parts.push(rental.buyer.state);
-                      if (rental.buyer.pincode) parts.push(rental.buyer.pincode);
-                      if (rental.buyer.country) parts.push(rental.buyer.country);
-                      return parts.length > 0 ? parts.join(', ') : 'Address not provided';
+                      if (rental.buyer.pincode)
+                        parts.push(rental.buyer.pincode);
+                      if (rental.buyer.country)
+                        parts.push(rental.buyer.country);
+                      return parts.length > 0
+                        ? parts.join(", ")
+                        : "Address not provided";
                     };
 
                     return (
-                      <div key={rental.id} className="border border-dark-200 rounded-lg p-5 hover:shadow-lg transition-shadow">
+                      <div
+                        key={rental.id}
+                        className="border border-dark-200 rounded-lg p-5 hover:shadow-lg transition-shadow"
+                      >
                         <div className="flex flex-col md:flex-row gap-4">
                           {/* Left Section - Car Image and Basic Info */}
                           <div className="flex items-start gap-4 flex-1">
@@ -208,31 +250,43 @@ const BuyerDashboard = () => {
                             )}
                             <div className="flex-1 min-w-0">
                               <h4 className="font-bold text-lg text-dark-900 mb-2">
-                                {rental.car.brand} {rental.car.model} ({rental.car.year})
+                                {rental.car.brand} {rental.car.model} (
+                                {rental.car.year})
                               </h4>
                               <div className="space-y-2">
                                 <div className="flex items-center gap-2 text-sm text-dark-600">
                                   <Calendar className="w-4 h-4" />
                                   <span>
-                                    {new Date(rental.startDate).toLocaleDateString('en-IN', { 
-                                      day: 'numeric', 
-                                      month: 'short', 
-                                      year: 'numeric' 
-                                    })} - {new Date(rental.endDate).toLocaleDateString('en-IN', { 
-                                      day: 'numeric', 
-                                      month: 'short', 
-                                      year: 'numeric' 
+                                    {new Date(
+                                      rental.startDate
+                                    ).toLocaleDateString("en-IN", {
+                                      day: "numeric",
+                                      month: "short",
+                                      year: "numeric",
+                                    })}{" "}
+                                    -{" "}
+                                    {new Date(
+                                      rental.endDate
+                                    ).toLocaleDateString("en-IN", {
+                                      day: "numeric",
+                                      month: "short",
+                                      year: "numeric",
                                     })}
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-2 text-sm text-dark-600">
                                   <Clock className="w-4 h-4" />
-                                  <span>{rental.totalDays} {rental.totalDays === 1 ? 'day' : 'days'}</span>
+                                  <span>
+                                    {rental.totalDays}{" "}
+                                    {rental.totalDays === 1 ? "day" : "days"}
+                                  </span>
                                 </div>
                                 {rental.car.city && (
                                   <div className="flex items-center gap-2 text-sm text-dark-600">
                                     <MapPin className="w-4 h-4 text-primary-600" />
-                                    <span className="font-medium">Pickup Location: {rental.car.city}</span>
+                                    <span className="font-medium">
+                                      Pickup Location: {rental.car.city}
+                                    </span>
                                   </div>
                                 )}
                               </div>
@@ -242,22 +296,64 @@ const BuyerDashboard = () => {
                           {/* Right Section - Amount and Status */}
                           <div className="flex flex-col items-end gap-2">
                             <div className="text-right">
-                              <p className="text-sm text-dark-600 mb-1">Total Amount</p>
-                              <p className="text-2xl font-bold text-primary-600">₹{rental.totalAmount.toLocaleString()}</p>
+                              <p className="text-sm text-dark-600 mb-1">
+                                Total Amount
+                              </p>
+                              <p className="text-2xl font-bold text-primary-600">
+                                ₹{rental.totalAmount.toLocaleString()}
+                              </p>
                             </div>
-                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                              rental.status === 'COMPLETED' ? 'bg-success-100 text-success-700' :
-                              rental.status === 'ACTIVE' ? 'bg-primary-100 text-primary-700' :
-                              rental.status === 'PENDING' ? 'bg-warning-100 text-warning-700' :
-                              'bg-error-100 text-error-700'
-                            }`}>
-                              {rental.status}
-                            </span>
-                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold mt-1 ${
-                              rental.paymentStatus === 'PAID' ? 'bg-success-100 text-success-700' :
-                              rental.paymentStatus === 'PENDING' ? 'bg-warning-100 text-warning-700' :
-                              'bg-error-100 text-error-700'
-                            }`}>
+                            {(() => {
+                              // Check if rental period has ended
+                              const endDate = new Date(rental.endDate);
+                              endDate.setHours(23, 59, 59, 999); // End of the day
+                              const today = new Date();
+                              const isRentalPeriodOver = today > endDate;
+
+                              // Determine display status
+                              let displayStatus = rental.status;
+
+                              // If rental period has ended, mark as COMPLETED
+                              if (
+                                isRentalPeriodOver &&
+                                rental.status !== "COMPLETED" &&
+                                rental.status !== "CANCELLED"
+                              ) {
+                                displayStatus = "COMPLETED";
+                              }
+                              // If payment is PAID but status is still PENDING, treat as ACTIVE
+                              else if (
+                                rental.paymentStatus === "PAID" &&
+                                rental.status === "PENDING"
+                              ) {
+                                displayStatus = "ACTIVE";
+                              }
+
+                              const statusClass =
+                                displayStatus === "COMPLETED"
+                                  ? "bg-success-100 text-success-700"
+                                  : displayStatus === "ACTIVE"
+                                  ? "bg-primary-100 text-primary-700"
+                                  : displayStatus === "PENDING"
+                                  ? "bg-warning-100 text-warning-700"
+                                  : "bg-error-100 text-error-700";
+                              return (
+                                <span
+                                  className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${statusClass}`}
+                                >
+                                  {displayStatus}
+                                </span>
+                              );
+                            })()}
+                            <span
+                              className={`inline-block px-3 py-1 rounded-full text-xs font-semibold mt-1 ${
+                                rental.paymentStatus === "PAID"
+                                  ? "bg-success-100 text-success-700"
+                                  : rental.paymentStatus === "PENDING"
+                                  ? "bg-warning-100 text-warning-700"
+                                  : "bg-error-100 text-error-700"
+                              }`}
+                            >
                               <CreditCard className="w-3 h-3 inline mr-1" />
                               {rental.paymentStatus}
                             </span>
@@ -269,19 +365,33 @@ const BuyerDashboard = () => {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* Rental Details */}
                             <div>
-                              <h5 className="font-semibold text-dark-900 mb-2 text-sm">Rental Details</h5>
+                              <h5 className="font-semibold text-dark-900 mb-2 text-sm">
+                                Rental Details
+                              </h5>
                               <div className="space-y-1 text-sm">
                                 <div className="flex justify-between">
-                                  <span className="text-dark-600">Daily Rate:</span>
-                                  <span className="font-medium text-dark-900">₹{rental.dailyPrice.toLocaleString()}/day</span>
+                                  <span className="text-dark-600">
+                                    Daily Rate:
+                                  </span>
+                                  <span className="font-medium text-dark-900">
+                                    ₹{rental.dailyPrice.toLocaleString()}/day
+                                  </span>
                                 </div>
                                 <div className="flex justify-between">
-                                  <span className="text-dark-600">Total Days:</span>
-                                  <span className="font-medium text-dark-900">{rental.totalDays} days</span>
+                                  <span className="text-dark-600">
+                                    Total Days:
+                                  </span>
+                                  <span className="font-medium text-dark-900">
+                                    {rental.totalDays} days
+                                  </span>
                                 </div>
                                 <div className="flex justify-between">
-                                  <span className="text-dark-600">Booking ID:</span>
-                                  <span className="font-mono text-xs text-dark-900">{rental.id.substring(0, 8)}...</span>
+                                  <span className="text-dark-600">
+                                    Booking ID:
+                                  </span>
+                                  <span className="font-mono text-xs text-dark-900">
+                                    {rental.id.substring(0, 8)}...
+                                  </span>
                                 </div>
                               </div>
                             </div>
@@ -294,19 +404,27 @@ const BuyerDashboard = () => {
                               </h5>
                               <div className="text-sm text-dark-700 space-y-1">
                                 {rental.buyer.name && (
-                                  <p className="font-medium">{rental.buyer.name}</p>
+                                  <p className="font-medium">
+                                    {rental.buyer.name}
+                                  </p>
                                 )}
-                                <p className="text-dark-600">{formatAddress()}</p>
+                                <p className="text-dark-600">
+                                  {formatAddress()}
+                                </p>
                                 {rental.buyer.phone && (
                                   <div className="flex items-center gap-1 mt-2 text-dark-600">
                                     <Phone className="w-3 h-3" />
-                                    <span className="text-xs">{rental.buyer.phone}</span>
+                                    <span className="text-xs">
+                                      {rental.buyer.phone}
+                                    </span>
                                   </div>
                                 )}
                                 {rental.buyer.email && (
                                   <div className="flex items-center gap-1 text-dark-600">
                                     <Mail className="w-3 h-3" />
-                                    <span className="text-xs">{rental.buyer.email}</span>
+                                    <span className="text-xs">
+                                      {rental.buyer.email}
+                                    </span>
                                   </div>
                                 )}
                               </div>
@@ -325,7 +443,9 @@ const BuyerDashboard = () => {
         {/* Featured Rental Cars */}
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold text-dark-900">Featured Rental Cars</h2>
+            <h2 className="text-2xl font-bold text-dark-900">
+              Featured Rental Cars
+            </h2>
             <Link
               to="/rent"
               className="text-primary-600 hover:text-primary-700 font-semibold flex items-center gap-1"
@@ -346,7 +466,9 @@ const BuyerDashboard = () => {
         ) : cars.length === 0 ? (
           <div className="text-center py-12">
             <CarIcon className="w-16 h-16 text-dark-300 mx-auto mb-4" />
-            <p className="text-xl text-dark-600 mb-2">No rental cars available</p>
+            <p className="text-xl text-dark-600 mb-2">
+              No rental cars available
+            </p>
             <p className="text-dark-500">Check back later for new listings</p>
           </div>
         ) : (
@@ -423,7 +545,9 @@ const BuyerDashboard = () => {
 
         {/* Info Section */}
         <div className="glass rounded-xl p-6 mt-8">
-          <h3 className="text-lg font-semibold text-dark-900 mb-4">How It Works</h3>
+          <h3 className="text-lg font-semibold text-dark-900 mb-4">
+            How It Works
+          </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <div className="bg-primary-100 w-12 h-12 rounded-lg flex items-center justify-center mb-3">
@@ -438,7 +562,9 @@ const BuyerDashboard = () => {
               <div className="bg-secondary-100 w-12 h-12 rounded-lg flex items-center justify-center mb-3">
                 <span className="text-2xl">2️⃣</span>
               </div>
-              <h4 className="font-semibold text-dark-900 mb-2">Verify Aadhaar</h4>
+              <h4 className="font-semibold text-dark-900 mb-2">
+                Verify Aadhaar
+              </h4>
               <p className="text-sm text-dark-600">
                 Complete Aadhaar verification to unlock rental booking
               </p>
@@ -460,4 +586,3 @@ const BuyerDashboard = () => {
 };
 
 export default BuyerDashboard;
-

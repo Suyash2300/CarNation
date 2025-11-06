@@ -203,19 +203,48 @@ const RentalManagement = () => {
                       </p>
                     </div>
                     <div className="flex flex-col gap-2">
-                      <span
-                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold w-fit ${
-                          rental.status === "COMPLETED"
+                      {(() => {
+                        // Check if rental period has ended
+                        const endDate = new Date(rental.endDate);
+                        endDate.setHours(23, 59, 59, 999); // End of the day
+                        const today = new Date();
+                        const isRentalPeriodOver = today > endDate;
+
+                        // Determine display status
+                        let displayStatus = rental.status;
+
+                        // If rental period has ended, mark as COMPLETED
+                        if (
+                          isRentalPeriodOver &&
+                          rental.status !== "COMPLETED" &&
+                          rental.status !== "CANCELLED"
+                        ) {
+                          displayStatus = "COMPLETED";
+                        }
+                        // If payment is PAID but status is still PENDING, treat as ACTIVE
+                        else if (
+                          rental.paymentStatus === "PAID" &&
+                          rental.status === "PENDING"
+                        ) {
+                          displayStatus = "ACTIVE";
+                        }
+
+                        const statusClass =
+                          displayStatus === "COMPLETED"
                             ? "bg-success-100 text-success-700"
-                            : rental.status === "ACTIVE"
+                            : displayStatus === "ACTIVE"
                             ? "bg-primary-100 text-primary-700"
-                            : rental.status === "PENDING"
+                            : displayStatus === "PENDING"
                             ? "bg-warning-100 text-warning-700"
-                            : "bg-error-100 text-error-700"
-                        }`}
-                      >
-                        {rental.status}
-                      </span>
+                            : "bg-error-100 text-error-700";
+                        return (
+                          <span
+                            className={`inline-block px-3 py-1 rounded-full text-xs font-semibold w-fit ${statusClass}`}
+                          >
+                            {displayStatus}
+                          </span>
+                        );
+                      })()}
                       <span
                         className={`inline-block px-3 py-1 rounded-full text-xs font-semibold w-fit ${
                           rental.paymentStatus === "PAID"

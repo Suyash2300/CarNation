@@ -5,14 +5,13 @@ import type { Car } from '../../services/carApi';
 
 interface StickyBookingSectionProps {
   car: Car;
-  isAuthenticated: boolean;
+  isAuthenticated?: boolean;
   onContactSeller: () => void;
   isCreatingConversation: boolean;
 }
 
 const StickyBookingSection = ({
   car,
-  isAuthenticated,
   onContactSeller,
   isCreatingConversation,
 }: StickyBookingSectionProps) => {
@@ -50,7 +49,7 @@ const StickyBookingSection = ({
               Book Now
             </Button>
           )}
-          {car.isForSale && (
+          {(car as any).isForSale && (
             <>
               <Button
                 onClick={() => navigate(`/purchase-booking/${car.id}`)}
@@ -72,7 +71,7 @@ const StickyBookingSection = ({
               </Button>
             </>
           )}
-          {car.isForRent && car.owner && (
+          {car.isForRent && (car as any).owner && (
             <Button
               onClick={onContactSeller}
               disabled={isCreatingConversation}
