@@ -16,6 +16,7 @@ interface StatCardProps {
     current: number;
     max: number;
   };
+  animate?: boolean;
 }
 
 const StatCard = ({
@@ -27,12 +28,18 @@ const StatCard = ({
   suffix = '',
   prefix = '',
   progress,
+  animate = false,
 }: StatCardProps) => {
-  const [displayValue, setDisplayValue] = useState(0);
+  const [displayValue, setDisplayValue] = useState(value);
 
   useEffect(() => {
-    const duration = 1000;
-    const steps = 60;
+    if (!animate) {
+      setDisplayValue(value);
+      return;
+    }
+
+    const duration = 800;
+    const steps = 40;
     const increment = value / steps;
     const stepDuration = duration / steps;
 
@@ -48,7 +55,7 @@ const StatCard = ({
     }, stepDuration);
 
     return () => clearInterval(timer);
-  }, [value]);
+  }, [value, animate]);
 
   const colorClasses = {
     primary: {

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useAppSelector } from "../hooks/redux";
 import Navbar from "../components/layout/Navbar";
 import { useGetRentalCarsQuery } from "../services/carApi";
@@ -33,13 +34,27 @@ const PickupAddress: React.FC<{ city?: string }> = ({ city }) => {
 
 const BuyerDashboard = () => {
   const { user } = useAppSelector((state) => state.auth);
-  const { data, isLoading } = useGetRentalCarsQuery({});
-  const { data: dealsData } = useGetDealsQuery();
-  const { data: rentalsData } = useGetRentalsQuery();
+  const { data, isLoading } = useGetRentalCarsQuery({ limit: 6 }, {
+    refetchOnFocus: false,
+    refetchOnReconnect: false,
+  });
+  const { data: dealsData, isFetching: dealsLoading } = useGetDealsQuery(
+    undefined,
+    {
+      refetchOnFocus: false,
+      refetchOnReconnect: false,
+    }
+  );
+  const { data: rentalsData, isFetching: rentalsLoading } = useGetRentalsQuery(undefined, {
+    refetchOnFocus: false,
+    refetchOnReconnect: false,
+  });
 
   const cars = data?.cars || [];
   const deals = dealsData?.deals || [];
   const rentals = rentalsData?.rentals || [];
+
+  const featuredCars = useMemo(() => cars.slice(0, 6), [cars]);
 
   return (
     <div className="min-h-screen bg-light-subtle">
@@ -159,7 +174,12 @@ const BuyerDashboard = () => {
               My Deals & Rentals
             </h2>
 
-            {deals.length > 0 && (
+            {dealsLoading && deals.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600"></div>
+                <p className="mt-4 text-dark-600">Loading your deals...</p>
+              </div>
+            ) : deals.length > 0 && (
               <div className="glass rounded-xl p-6 mb-6">
                 <h3 className="text-lg font-semibold text-dark-900 mb-4 flex items-center gap-2">
                   <Handshake className="w-5 h-5" />
@@ -171,7 +191,7 @@ const BuyerDashboard = () => {
                       key={deal.id}
                       className="border border-dark-200 rounded-lg p-4"
                     >
-                      <div className="flex items-start justify-between mb-2">
+                      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-2">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
                             {deal.car.primaryImage && (
@@ -195,9 +215,11 @@ const BuyerDashboard = () => {
                             </div>
                           </div>
                         </div>
-                        <DealStatusBadge status={deal.status} />
+                        <div className="md:self-start">
+                          <DealStatusBadge status={deal.status} />
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between mt-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-3">
                         <div>
                           <p className="text-sm text-dark-600">Agreed Price</p>
                           <p className="font-semibold text-dark-900">
@@ -221,7 +243,12 @@ const BuyerDashboard = () => {
               </div>
             )}
 
-            {rentals.length > 0 && (
+            {rentalsLoading && rentals.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600"></div>
+                <p className="mt-4 text-dark-600">Loading your rentals...</p>
+              </div>
+            ) : rentals.length > 0 && (
               <div className="glass rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-dark-900 mb-4 flex items-center gap-2">
                   <Calendar className="w-5 h-5" />
@@ -474,7 +501,7 @@ const BuyerDashboard = () => {
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
             <p className="mt-4 text-dark-600">Loading cars...</p>
           </div>
-        ) : cars.length === 0 ? (
+        ) : featuredCars.length === 0 ? (
           <div className="text-center py-12">
             <CarIcon className="w-16 h-16 text-dark-300 mx-auto mb-4" />
             <p className="text-xl text-dark-600 mb-2">
@@ -484,7 +511,7 @@ const BuyerDashboard = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {cars.slice(0, 6).map((car) => (
+            {featuredCars.map((car) => (
               <Link
                 key={car.id}
                 to={`/rent`}

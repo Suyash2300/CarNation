@@ -117,17 +117,19 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
 });
 
 // Helper function to create deal for a completed purchase
-async function createDealForPurchase(purchase: any) {
+async function createDealForPurchase(purchase: any, options: { skipExistingCheck?: boolean } = {}) {
   try {
-    // Check if deal already exists
-    const existingDeal = await prisma.deal.findFirst({
-      where: {
-        purchaseId: purchase.id,
-      },
-    });
+    if (!options.skipExistingCheck) {
+      // Check if deal already exists
+      const existingDeal = await prisma.deal.findFirst({
+        where: {
+          purchaseId: purchase.id,
+        },
+      });
 
-    if (existingDeal) {
-      return existingDeal;
+      if (existingDeal) {
+        return existingDeal;
+      }
     }
 
     if (!purchase.car?.sellerId) {
@@ -206,18 +208,29 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
       },
     });
 
-    // Create deals for purchases that don't have them
-    for (const purchase of purchasesWithoutDeals) {
-      const existingDeal = await prisma.deal.findFirst({
-        where: {
-          purchaseId: purchase.id,
+    const purchaseIds = purchasesWithoutDeals.map((purchase) => purchase.id);
+    const existingDeals = await prisma.deal.findMany({
+      where: {
+        purchaseId: {
+          in: purchaseIds,
         },
-      });
+      },
+      select: {
+        purchaseId: true,
+      },
+    });
 
-      if (!existingDeal) {
-        await createDealForPurchase(purchase);
-      }
-    }
+    const existingDealIds = new Set(existingDeals.map((deal) => deal.purchaseId));
+
+    const purchasesNeedingDeals = purchasesWithoutDeals.filter(
+      (purchase) => !existingDealIds.has(purchase.id)
+    );
+
+    await Promise.all(
+      purchasesNeedingDeals.map((purchase) =>
+        createDealForPurchase(purchase, { skipExistingCheck: true })
+      )
+    );
 
     // Now fetch all deals
     const where: any = {

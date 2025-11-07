@@ -32,6 +32,13 @@ const ConfirmDialog = ({
     info: 'border-primary-500 bg-primary-50',
   };
 
+  const confirmButtonClasses =
+    variant === 'danger'
+      ? 'bg-error-600 hover:bg-error-700 focus:ring-error-500 text-white border border-error-600 shadow-lg hover:shadow-xl'
+      : variant === 'warning'
+      ? 'bg-warning-600 hover:bg-warning-700 focus:ring-warning-500 text-white border border-warning-600 shadow-lg hover:shadow-xl'
+      : 'bg-gradient-primary hover:bg-gradient-primary-dark focus:ring-primary-500 text-white border border-primary-600 shadow-lg hover:shadow-xl';
+
   return (
     <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4">
       {/* Backdrop */}
@@ -83,6 +90,7 @@ const ConfirmDialog = ({
             variant={variant === 'danger' ? 'danger' : 'primary'}
             onClick={onConfirm}
             isLoading={isLoading}
+            className={confirmButtonClasses}
           >
             {confirmLabel}
           </Button>
