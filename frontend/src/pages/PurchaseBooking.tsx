@@ -7,6 +7,7 @@ import { useAppSelector } from '../hooks/redux';
 import Navbar from '../components/layout/Navbar';
 import StripePayment from '../components/payment/StripePayment';
 import { DollarSign, CheckCircle, ArrowLeft, CreditCard, Calculator } from 'lucide-react';
+import { useConfirm } from '../components/common/ConfirmProvider';
 
 const PurchaseBooking = () => {
   const { id } = useParams<{ id: string }>();
@@ -15,6 +16,7 @@ const PurchaseBooking = () => {
   const [createPurchase, { isLoading: isCreating }] = useCreatePurchaseMutation();
   const [createPurchaseOrder, { isLoading: isCreatingOrder }] = useCreatePurchaseOrderMutation();
   const [verifyPayment] = useVerifyPurchasePaymentMutation();
+  const confirm = useConfirm();
 
   const [salePrice, setSalePrice] = useState('');
   const [error, setError] = useState('');
@@ -70,7 +72,15 @@ const PurchaseBooking = () => {
 
     const priceNum = parseFloat(salePrice);
     if (priceNum < car.salePrice * 0.5 || priceNum > car.salePrice * 1.5) {
-      if (!window.confirm(`The entered price (₹${priceNum.toLocaleString()}) is significantly different from the listed price (₹${car.salePrice.toLocaleString()}). Continue?`)) {
+      const proceed = await confirm({
+        title: 'Confirm Price Difference',
+        message: `The entered price (₹${priceNum.toLocaleString()}) is significantly different from the listed price (₹${car.salePrice.toLocaleString()}). Continue?`,
+        confirmLabel: 'Continue',
+        cancelLabel: 'Review Price',
+        variant: 'warning',
+      });
+
+      if (!proceed) {
         return;
       }
     }
@@ -207,6 +217,14 @@ const PurchaseBooking = () => {
                     <p className="font-semibold text-dark-900">{car.city}</p>
                   </div>
                 )}
+                {typeof car.ownersCount === 'number' && (
+                  <div>
+                    <p className="text-sm text-dark-600 mb-1">Number of Owners</p>
+                    <p className="font-semibold text-dark-900">
+                      {car.ownersCount} {car.ownersCount === 1 ? 'owner' : 'owners'}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -275,11 +293,11 @@ const PurchaseBooking = () => {
                   </div>
                 )}
 
-                <div className="flex gap-4">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <button
                     type="button"
                     onClick={() => navigate(-1)}
-                    className="px-6 py-3 border-2 border-dark-300 text-dark-700 font-semibold rounded-lg hover:bg-dark-50 transition"
+                    className="w-full sm:w-auto px-6 py-3 border-2 border-dark-300 text-dark-700 font-semibold rounded-lg hover:bg-dark-50 transition"
                   >
                     Cancel
                   </button>

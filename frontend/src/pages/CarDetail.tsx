@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useGetCarByIdQuery } from "../services/carApi";
 import { useCreateConversationMutation } from "../services/chatApi";
@@ -41,17 +41,27 @@ const CarDetail = () => {
   const { showError, showSuccess } = useToast();
 
   const car = data?.car;
-  // Narrow optional fields that might not be present on the Car type
-  const isForSale: boolean = Boolean(
-    (car as unknown as { isForSale?: boolean })?.isForSale
+
+  // Memoize computed values to prevent unnecessary recalculations
+  const isForSale = useMemo(
+    () => Boolean((car as unknown as { isForSale?: boolean })?.isForSale),
+    [car]
   );
-  const ownerUser = (car as unknown as { owner?: { id?: string } })?.owner;
-  const allImages =
-    car?.images && car.images.length > 0
-      ? car.images
-      : car?.primaryImage
-      ? [car.primaryImage]
-      : [];
+
+  const ownerUser = useMemo(
+    () => (car as unknown as { owner?: { id?: string } })?.owner,
+    [car]
+  );
+
+  const allImages = useMemo(
+    () =>
+      car?.images && car.images.length > 0
+        ? car.images
+        : car?.primaryImage
+        ? [car.primaryImage]
+        : [],
+    [car?.images, car?.primaryImage]
+  );
 
   // Handle sticky booking section visibility
   useEffect(() => {
@@ -189,6 +199,8 @@ const CarDetail = () => {
                     }`}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     onClick={() => setIsZoomOpen(true)}
+                    loading="eager"
+                    decoding="async"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
@@ -249,6 +261,8 @@ const CarDetail = () => {
                       src={image}
                       alt={`Thumbnail ${index + 1}`}
                       className="w-full h-full object-cover"
+                      loading="lazy"
+                      decoding="async"
                     />
                   </button>
                 ))}
@@ -281,7 +295,7 @@ const CarDetail = () => {
                   <button
                     onClick={handleContactSeller}
                     disabled={isCreatingConversation}
-                    className="flex items-center justify-center gap-2 px-6 py-4 border-3 border-primary-600 dark:border-primary-500 text-primary-600 dark:text-primary-500 font-bold rounded-xl hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+                    className="flex-1 flex items-center justify-center gap-2 px-6 py-4 border-3 border-primary-600 dark:border-primary-500 text-primary-600 dark:text-primary-500 font-bold rounded-xl hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
                   >
                     <MessageCircle className="w-5 h-5" />
                     {isCreatingConversation ? "Starting..." : "Contact"}
@@ -292,7 +306,7 @@ const CarDetail = () => {
                 <button
                   onClick={handleContactSeller}
                   disabled={isCreatingConversation}
-                  className="flex items-center justify-center gap-2 px-6 py-4 border-3 border-primary-600 dark:border-primary-500 text-primary-600 dark:text-primary-500 font-bold rounded-xl hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+                  className="flex-1 flex items-center justify-center gap-2 px-6 py-4 border-3 border-primary-600 dark:border-primary-500 text-primary-600 dark:text-primary-500 font-bold rounded-xl hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
                 >
                   <MessageCircle className="w-5 h-5" />
                   Chat with Admin
@@ -300,9 +314,9 @@ const CarDetail = () => {
               )}
             </div>
 
-            {/* Description - Mobile/Tablet */}
+            {/* Description - Below buttons on left side */}
             {car.description && (
-              <div className="lg:hidden bg-white dark:bg-dark-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-dark-700">
+              <div className="bg-white dark:bg-dark-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-dark-700">
                 <h2 className="text-xl sm:text-2xl font-bold text-dark-900 dark:text-white mb-4 flex items-center gap-2">
                   <Car className="w-6 h-6 text-primary-600" />
                   Description
@@ -326,7 +340,7 @@ const CarDetail = () => {
               </p>
 
               <div className="flex items-baseline gap-2 mb-4">
-                <span className="text-4xl sm:text-5xl font-black text-primary-600 dark:text-primary-500">
+                <span className="text-3xl sm:text-5xl font-black text-primary-600 dark:text-primary-500">
                   ₹
                   {car.isForRent
                     ? car.rentalPrice?.toLocaleString()
@@ -488,10 +502,23 @@ const CarDetail = () => {
                     <Gauge className="w-6 h-6 text-blue-600 dark:text-blue-500 flex-shrink-0" />
                     <div>
                       <p className="text-xs font-semibold text-slate-600 dark:text-dark-400 mb-0.5">
-                        Mileage
+                        KM Driven
                       </p>
                       <p className="font-bold text-dark-900 dark:text-white">
                         {car.mileage.toLocaleString()} km
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {isForSale && typeof car.ownersCount === 'number' && (
+                  <div className="flex items-center gap-3 bg-slate-50 dark:bg-dark-700 p-4 rounded-xl border-2 border-slate-100 dark:border-dark-700">
+                    <Users className="w-6 h-6 text-slate-600 dark:text-slate-400 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs font-semibold text-slate-600 dark:text-dark-400 mb-0.5">
+                        Previous Owners
+                      </p>
+                      <p className="font-bold text-dark-900 dark:text-white">
+                        {car.ownersCount} {car.ownersCount === 1 ? 'owner' : 'owners'}
                       </p>
                     </div>
                   </div>
@@ -522,19 +549,6 @@ const CarDetail = () => {
                 </div>
               </div>
             </div>
-
-            {/* Description - Desktop */}
-            {car.description && (
-              <div className="hidden lg:block bg-white dark:bg-dark-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-dark-700">
-                <h2 className="text-xl sm:text-2xl font-bold text-dark-900 dark:text-white mb-4 flex items-center gap-2">
-                  <Car className="w-6 h-6 text-primary-600" />
-                  Description
-                </h2>
-                <p className="text-slate-700 dark:text-dark-300 leading-relaxed whitespace-pre-wrap">
-                  {car.description}
-                </p>
-              </div>
-            )}
 
             {/* Seller Information (for used cars) */}
             {isForSale && car.seller && (
@@ -577,8 +591,6 @@ const CarDetail = () => {
                 </div>
               </div>
             )}
-
-            {/* Action Buttons moved under images */}
           </div>
         </div>
       </div>

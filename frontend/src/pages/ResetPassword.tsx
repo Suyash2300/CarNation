@@ -86,9 +86,9 @@ const ResetPassword = () => {
 
   if (!token || !email) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-dark-900 via-dark-800 to-dark-950 relative overflow-hidden flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gradient-to-br from-dark-900 via-dark-800 to-dark-950 relative overflow-hidden flex items-center justify-center px-4 py-20 sm:py-24">
         <div className="relative z-10 w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 text-center">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 text-center">
             <div className="text-error-600 mb-4">❌</div>
             <h2 className="text-2xl font-bold text-dark-900 mb-2">Invalid Reset Link</h2>
             <p className="text-dark-700 mb-6">
@@ -107,7 +107,7 @@ const ResetPassword = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-dark-900 via-dark-800 to-dark-950 relative overflow-hidden flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-dark-900 via-dark-800 to-dark-950 relative overflow-hidden flex items-center justify-center px-4 py-20 sm:py-24">
       {/* Background with banner image */}
       <div className="absolute inset-0">
         <img
@@ -131,7 +131,7 @@ const ResetPassword = () => {
 
       {/* Reset Password Form */}
       <div className="relative z-10 w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
+        <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8">
           {success ? (
             <div className="text-center">
               <div className="w-16 h-16 bg-success-100 rounded-full flex items-center justify-center mx-auto mb-4">

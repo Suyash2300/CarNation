@@ -3,22 +3,38 @@ import { useGetAdminCarsQuery, useDeleteCarMutation, type Car } from '../../serv
 import { Plus, Edit, Trash2, Car as CarIcon } from 'lucide-react';
 import AddCarModal from './AddCarModal';
 import EditCarModal from './EditCarModal';
+import { useToast } from '../common/ToastContainer';
+import { useConfirm } from '../common/ConfirmProvider';
 
 const CarManagement = () => {
   const { data, isLoading } = useGetAdminCarsQuery();
   const [deleteCar] = useDeleteCarMutation();
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingCar, setEditingCar] = useState<Car | null>(null);
+  const { showSuccess, showError } = useToast();
+  const confirm = useConfirm();
 
   const cars = data?.cars || [];
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this car?')) {
-      try {
-        await deleteCar(id).unwrap();
-      } catch (error) {
-        console.error('Failed to delete car:', error);
-      }
+    const confirmed = await confirm({
+      title: 'Delete Car',
+      message: 'Are you sure you want to delete this car?',
+      confirmLabel: 'Delete',
+      cancelLabel: 'Cancel',
+      variant: 'danger',
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await deleteCar(id).unwrap();
+      showSuccess('Car deleted successfully');
+    } catch (error: any) {
+      console.error('Failed to delete car:', error);
+      showError(error?.data?.error || 'Failed to delete car');
     }
   };
 
@@ -36,14 +52,14 @@ const CarManagement = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h2 className="text-2xl font-bold text-dark-900">Car Management</h2>
           <p className="text-dark-600 mt-1">Manage your rental fleet</p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="bg-gradient-primary hover:bg-gradient-primary-dark text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition shadow-lg hover:shadow-xl"
+          className="w-full sm:w-auto bg-gradient-primary hover:bg-gradient-primary-dark text-white px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition shadow-lg hover:shadow-xl"
         >
           <Plus className="w-5 h-5" />
           Add New Car

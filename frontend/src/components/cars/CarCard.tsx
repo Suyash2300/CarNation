@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Link } from "react-router-dom";
 import {
   MapPin,
@@ -7,9 +8,11 @@ import {
   ChevronRight,
   Car as CarIcon,
   CheckCircle,
+  UserCheck,
 } from "lucide-react";
 import type { Car } from "../../services/carApi";
 import AvailabilityBadge from "../rental/AvailabilityBadge";
+import LazyImage from "../common/LazyImage";
 
 interface CarCardProps {
   car: Car;
@@ -40,28 +43,27 @@ const CarCard = ({ car, variant = "rental" }: CarCardProps) => {
   const seats = car.seats || null;
   const city = car.city || null;
   const mileage = car.mileage || null;
+  const ownersCount =
+    typeof car.ownersCount === "number" ? car.ownersCount : null;
 
   return (
     <Link
       to={`/car/${car.id}`}
-      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-dark-200/60 bg-white shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-card focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:border-dark-700 dark:bg-dark-800"
+      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border-2 border-slate-200/80 bg-white shadow-lg transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:border-primary-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:border-dark-700 dark:bg-dark-800"
     >
       {/* Image Section */}
-      <div className="relative w-full h-52 sm:h-56 md:h-60 overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 dark:from-dark-800 dark:to-dark-900">
+      <div className="relative w-full overflow-hidden bg-slate-100 dark:bg-dark-800 aspect-[16/10] sm:aspect-[16/9]">
         {imageUrl ? (
           <>
-            <img
-              src={imageUrl}
-              alt={`${brand} ${model} ${year}`}
-              className="h-full w-full object-cover transition-all duration-500 group-hover:scale-110"
-              onError={(e) => {
-                // Fallback if image fails to load
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-              }}
-            />
-            {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-60 transition-opacity duration-300 group-hover:opacity-80" />
+            <div className="absolute inset-0 flex items-center justify-center p-3">
+              <LazyImage
+                src={imageUrl}
+                alt={`${brand} ${model} ${year}`}
+                containerClassName="h-full w-full flex items-center justify-center"
+                imageClassName="max-h-full max-w-full object-contain transition-transform duration-700 group-hover:scale-105"
+              />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent opacity-60 transition-opacity duration-300 group-hover:opacity-80 pointer-events-none" />
           </>
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 dark:from-dark-800 dark:to-dark-900">
@@ -75,19 +77,19 @@ const CarCard = ({ car, variant = "rental" }: CarCardProps) => {
         )}
 
         {/* Badge Overlays */}
-        <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
+        <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2 z-10">
           <div className="flex flex-col gap-2">
             {variant === "rental" && car.availability && (
               <AvailabilityBadge availability={car.availability} />
             )}
             {variant === "sale" && car.status && (
               <span
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold backdrop-blur-md shadow-lg ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold backdrop-blur-sm shadow-lg border ${
                   car.status === "AVAILABLE"
-                    ? "bg-emerald-500/95 text-white"
+                    ? "bg-emerald-500/90 text-white border-emerald-400/50"
                     : car.status === "SOLD"
-                    ? "bg-slate-700/95 text-white"
-                    : "bg-amber-500/95 text-white"
+                    ? "bg-slate-700/90 text-white border-slate-600/50"
+                    : "bg-amber-500/90 text-white border-amber-400/50"
                 }`}
               >
                 {car.status}
@@ -97,15 +99,15 @@ const CarCard = ({ car, variant = "rental" }: CarCardProps) => {
 
           {/* Image Count Badge */}
           {hasMultipleImages && imagesArray.length > 0 && (
-            <div className="bg-black/80 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-lg">
+            <div className="bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-lg border border-white/10">
               +{imagesArray.length - 1}
             </div>
           )}
         </div>
 
         {/* View Details Overlay on Hover */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 group-hover:opacity-100">
-          <div className="translate-y-6 rounded-xl bg-white/98 dark:bg-dark-800/98 px-6 py-3.5 font-bold text-dark-900 dark:text-white shadow-2xl backdrop-blur-md transition-all duration-300 group-hover:translate-y-0 flex items-center gap-2.5 border border-dark-200/20">
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 group-hover:opacity-100 z-10 bg-black/30 backdrop-blur-[2px]">
+          <div className="translate-y-6 rounded-xl bg-white dark:bg-dark-800 px-6 py-3.5 font-bold text-dark-900 dark:text-white shadow-2xl transition-all duration-300 group-hover:translate-y-0 flex items-center gap-2.5 border-2 border-primary-500">
             View Details
             <ChevronRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
           </div>
@@ -168,31 +170,41 @@ const CarCard = ({ car, variant = "rental" }: CarCardProps) => {
               <span className="truncate">{seats} seats</span>
             </div>
           )}
-          {variant === "rental" && car.availability?.nextAvailableDate && (() => {
-            const nextDate = new Date(car.availability.nextAvailableDate);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            nextDate.setHours(0, 0, 0, 0);
-            
-            // Only show if the date is in the future
-            if (nextDate > today) {
-              return (
-                <div className="flex items-center gap-1.5 rounded-lg border-2 border-emerald-200 bg-emerald-100 dark:bg-emerald-900/30 dark:border-emerald-800 px-2.5 py-2 text-xs font-bold text-emerald-700 dark:text-emerald-400">
-                  <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span className="truncate">
-                    {nextDate.toLocaleDateString("en-IN", {
-                      day: "numeric",
-                      month: "short",
-                    })}
-                  </span>
-                </div>
-              );
-            }
-            return null;
-          })()}
+          {variant === "rental" &&
+            car.availability?.nextAvailableDate &&
+            (() => {
+              const nextDate = new Date(car.availability.nextAvailableDate);
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              nextDate.setHours(0, 0, 0, 0);
+
+              // Only show if the date is in the future
+              if (nextDate > today) {
+                return (
+                  <div className="flex items-center gap-1.5 rounded-lg border-2 border-emerald-200 bg-emerald-100 dark:bg-emerald-900/30 dark:border-emerald-800 px-2.5 py-2 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                    <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span className="truncate">
+                      {nextDate.toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                      })}
+                    </span>
+                  </div>
+                );
+              }
+              return null;
+            })()}
           {variant === "sale" && mileage && (
             <div className="flex items-center gap-1.5 rounded-lg border-2 border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 px-2.5 py-2 text-xs font-bold text-blue-700 dark:text-blue-400">
               <span className="truncate">{mileage.toLocaleString()} km</span>
+            </div>
+          )}
+          {variant === "sale" && ownersCount !== null && (
+            <div className="flex items-center gap-1.5 rounded-lg border-2 border-slate-200 bg-slate-50 dark:bg-dark-700 dark:border-dark-600 px-2.5 py-2 text-xs font-bold text-slate-700 dark:text-dark-200">
+              <UserCheck className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="truncate">
+                {ownersCount} {ownersCount === 1 ? "owner" : "owners"}
+              </span>
             </div>
           )}
         </div>
@@ -209,4 +221,17 @@ const CarCard = ({ car, variant = "rental" }: CarCardProps) => {
   );
 };
 
-export default CarCard;
+// Memoize CarCard to prevent unnecessary re-renders
+export default memo(CarCard, (prevProps, nextProps) => {
+  // Only re-render if car data or variant changes
+  return (
+    prevProps.car.id === nextProps.car.id &&
+    prevProps.car.primaryImage === nextProps.car.primaryImage &&
+    prevProps.car.rentalPrice === nextProps.car.rentalPrice &&
+    prevProps.car.salePrice === nextProps.car.salePrice &&
+    prevProps.car.availability?.status === nextProps.car.availability?.status &&
+    prevProps.car.availability?.nextAvailableDate ===
+      nextProps.car.availability?.nextAvailableDate &&
+    prevProps.variant === nextProps.variant
+  );
+});

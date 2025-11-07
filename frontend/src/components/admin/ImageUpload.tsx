@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
 import { uploadImage } from '../../services/uploadService';
+import { useToast } from '../common/ToastContainer';
 
 interface ImageUploadProps {
   value?: string;
@@ -13,6 +14,7 @@ const ImageUpload = ({ value, onChange, label = 'Image', required = false }: Ima
   const [isUploading, setIsUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(value || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { showWarning, showError } = useToast();
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -20,13 +22,13 @@ const ImageUpload = ({ value, onChange, label = 'Image', required = false }: Ima
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+      showWarning('Please select an image file');
       return;
     }
 
     // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image size must be less than 5MB');
+      showWarning('Image size must be less than 5MB');
       return;
     }
 
@@ -45,7 +47,7 @@ const ImageUpload = ({ value, onChange, label = 'Image', required = false }: Ima
       setPreview(result.url);
     } catch (error) {
       console.error('Failed to upload image:', error);
-      alert('Failed to upload image. Please try again.');
+      showError('Failed to upload image. Please try again.');
       setPreview(null);
     } finally {
       setIsUploading(false);

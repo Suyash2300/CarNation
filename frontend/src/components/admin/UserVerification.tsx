@@ -5,24 +5,43 @@ import {
   type User,
 } from '../../services/carApi';
 import { Shield, CheckCircle, XCircle, Eye } from 'lucide-react';
+import { useToast } from '../common/ToastContainer';
+import { useConfirm } from '../common/ConfirmProvider';
 
 const UserVerification = () => {
   const { data, isLoading, refetch } = useGetPendingVerificationsQuery();
   const [verifyAadhaar, { isLoading: isVerifying }] = useVerifyAadhaarMutation();
   const [viewingUser, setViewingUser] = useState<User | null>(null);
+  const { showSuccess, showError } = useToast();
+  const confirm = useConfirm();
 
   const users = data?.users || [];
 
   const handleVerify = async (userId: string) => {
-    if (window.confirm('Are you sure you want to verify this user\'s Aadhaar?')) {
-      try {
-        await verifyAadhaar(userId).unwrap();
-        if (viewingUser?.id === userId) {
-          setViewingUser(null);
-        }
-      } catch (error) {
-        console.error('Failed to verify Aadhaar:', error);
+    const confirmed = await confirm({
+      title: 'Verify Aadhaar',
+      message: "Are you sure you want to verify this user's Aadhaar?",
+      confirmLabel: 'Verify',
+      cancelLabel: 'Cancel',
+      variant: 'warning',
+    });
+
+    if (!confirmed) {
+      return false;
+    }
+
+    try {
+      await verifyAadhaar(userId).unwrap();
+      showSuccess('User verified successfully');
+      await refetch();
+      if (viewingUser?.id === userId) {
+        setViewingUser(null);
       }
+      return true;
+    } catch (error: any) {
+      console.error('Failed to verify Aadhaar:', error);
+      showError(error?.data?.error || 'Failed to verify Aadhaar');
+      return false;
     }
   };
 
@@ -85,7 +104,9 @@ const UserVerification = () => {
                     </button>
                   )}
                   <button
-                    onClick={() => handleVerify(user.id)}
+                    onClick={() => {
+                      void handleVerify(user.id);
+                    }}
                     disabled={isVerifying}
                     className="flex items-center justify-center gap-2 bg-success-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-success-700 transition disabled:opacity-50"
                   >
@@ -144,9 +165,11 @@ const UserVerification = () => {
                 Close
               </button>
               <button
-                onClick={() => {
-                  handleVerify(viewingUser.id);
-                  setViewingUser(null);
+                onClick={async () => {
+                  const success = await handleVerify(viewingUser.id);
+                  if (success) {
+                    setViewingUser(null);
+                  }
                 }}
                 className="px-6 py-2 bg-success-600 text-white rounded-lg font-semibold hover:bg-success-700 transition"
               >

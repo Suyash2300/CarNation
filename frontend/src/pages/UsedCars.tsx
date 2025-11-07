@@ -1,14 +1,14 @@
-import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
-import Select from "react-select";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useLazyGetUsedCarsQuery, type Car } from "../services/carApi";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
-import { Filter, MapPin, DollarSign, Car as CarIcon } from "lucide-react";
+import { Filter, MapPin, Car as CarIcon } from "lucide-react";
 import CarCard from "../components/cars/CarCard";
 import CarCardSkeleton from "../components/cars/CarCardSkeleton";
 import EmptyState from "../components/common/EmptyState";
 import FilterChip from "../components/common/FilterChip";
+import { useDebounce } from "../hooks/useDebounce";
+import LazySelect from "../components/common/LazySelect";
 
 const UsedCars = () => {
   // Filter states
@@ -30,10 +30,15 @@ const UsedCars = () => {
 
   const limit = 9;
 
-  const fetchPage = async (nextPage: number, replace = false) => {
+  // Debounce filter changes to reduce API calls
+  const debouncedCity = useDebounce(selectedCity, 300);
+  const debouncedBrand = useDebounce(selectedBrand, 300);
+
+  // Memoize fetchPage function
+  const fetchPage = useCallback(async (nextPage: number, replace = false) => {
     const { data } = await trigger({
-      city: selectedCity || undefined,
-      brand: selectedBrand || undefined,
+      city: debouncedCity || undefined,
+      brand: debouncedBrand || undefined,
       sortBy,
       sortOrder,
       page: nextPage,
@@ -50,33 +55,38 @@ const UsedCars = () => {
       });
     }
     setCars((prev) => (replace ? data.cars : [...prev, ...data.cars]));
-  };
+  }, [debouncedCity, debouncedBrand, sortBy, sortOrder, trigger, limit]);
 
+  // Reset when filters/sort change (using debounced values)
   useEffect(() => {
     setPage(1);
     setCars([]);
     setHasMore(true);
     fetchPage(1, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCity, selectedBrand, sortBy, sortOrder]);
+  }, [debouncedCity, debouncedBrand, sortBy, sortOrder, fetchPage]);
 
+  // IntersectionObserver to load more
   useEffect(() => {
     const el = loadMoreRef.current;
-    if (!el) return;
+    if (!el || !hasMore || isFetching) return;
+    
     const obs = new IntersectionObserver(
       (entries) => {
         const first = entries[0];
         if (first.isIntersecting && hasMore && !isFetching) {
-          const next = page + 1;
-          setPage(next);
-          fetchPage(next);
+          setPage((prevPage) => {
+            const nextPage = prevPage + 1;
+            // Fetch the next page
+            fetchPage(nextPage).catch(console.error);
+            return nextPage;
+          });
         }
       },
       { rootMargin: "200px" }
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [page, hasMore, isFetching]);
+  }, [hasMore, isFetching, fetchPage]);
 
   const cityOptions = [
     { value: "", label: "All Cities" },
@@ -122,8 +132,8 @@ const UsedCars = () => {
         </div>
 
         {/* Filters and Sorting */}
-        <div className="glass rounded-2xl p-6 md:p-8 space-component relative z-10">
-          <div className="flex items-center justify-between mb-4">
+        <div className="glass rounded-2xl p-5 sm:p-6 lg:p-8 space-component relative z-20">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-2">
               <Filter className="w-5 h-5 text-primary-600" />
               <h2 className="text-xl font-semibold text-dark-900">
@@ -172,13 +182,13 @@ const UsedCars = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
+            <div className="min-w-0">
               <label className="block text-sm font-medium text-dark-900 mb-2">
                 <MapPin className="w-4 h-4 inline mr-1" />
                 City
               </label>
-              <Select
+              <LazySelect
                 options={cityOptions}
                 value={cityOptions.find((opt) => opt.value === selectedCity)}
                 onChange={(selected) => setSelectedCity(selected?.value || "")}
@@ -188,11 +198,11 @@ const UsedCars = () => {
               />
             </div>
 
-            <div>
+            <div className="min-w-0">
               <label className="block text-sm font-medium text-dark-900 mb-2">
                 Brand
               </label>
-              <Select
+              <LazySelect
                 options={brandOptions}
                 value={brandOptions.find((opt) => opt.value === selectedBrand)}
                 onChange={(selected) => setSelectedBrand(selected?.value || "")}
@@ -202,11 +212,11 @@ const UsedCars = () => {
               />
             </div>
 
-            <div>
+            <div className="min-w-0">
               <label className="block text-sm font-medium text-dark-900 mb-2">
                 Sort By
               </label>
-              <Select
+              <LazySelect
                 options={sortOptions}
                 value={sortOptions.find(
                   (opt) =>
@@ -220,7 +230,7 @@ const UsedCars = () => {
               />
             </div>
 
-            <div className="flex items-end">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:col-span-2 xl:col-span-1">
               <button
                 onClick={() => {
                   setSelectedCity("");
@@ -228,10 +238,13 @@ const UsedCars = () => {
                   setSortBy("price");
                   setSortOrder("asc");
                 }}
-                className="w-full px-4 py-2 bg-gradient-primary hover:bg-gradient-primary-dark text-white rounded-lg font-semibold transition shadow-md hover:shadow-lg"
+                className="w-full sm:w-auto px-4 py-2 bg-gradient-primary hover:bg-gradient-primary-dark text-white rounded-lg font-semibold transition shadow-md hover:shadow-lg"
               >
                 Reset Filters
               </button>
+              <label className="text-sm text-dark-600 sm:text-right">
+                Showing {cars.length} cars
+              </label>
             </div>
           </div>
         </div>
@@ -263,7 +276,14 @@ const UsedCars = () => {
             {cars.map((car) => (
               <CarCard key={car.id} car={car} variant="sale" />
             ))}
-            <div ref={loadMoreRef} className="h-1" />
+            {/* Sentinel for infinite scroll */}
+            {hasMore && (
+              <div ref={loadMoreRef} className="h-10 flex items-center justify-center">
+                {isFetching && (
+                  <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

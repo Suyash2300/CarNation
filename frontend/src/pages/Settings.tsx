@@ -3,17 +3,32 @@ import { useAppSelector, useAppDispatch } from '../hooks/redux';
 import { logout } from '../store/slices/authSlice';
 import Navbar from '../components/layout/Navbar';
 import { LogOut, Settings as SettingsIcon, User } from 'lucide-react';
+import { useConfirm } from '../components/common/ConfirmProvider';
+import { useToast } from '../components/common/ToastContainer';
 
 const Settings = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.auth);
+  const confirm = useConfirm();
+  const { showSuccess } = useToast();
 
-  const handleLogout = () => {
-    if (window.confirm('Are you sure you want to logout?')) {
-      dispatch(logout());
-      navigate('/');
+  const handleLogout = async () => {
+    const confirmed = await confirm({
+      title: 'Confirm Logout',
+      message: 'Are you sure you want to logout?',
+      confirmLabel: 'Logout',
+      cancelLabel: 'Stay Logged In',
+      variant: 'warning',
+    });
+
+    if (!confirmed) {
+      return;
     }
+
+    dispatch(logout());
+    showSuccess('You have been logged out');
+    navigate('/');
   };
 
   if (!user) {
@@ -33,7 +48,7 @@ const Settings = () => {
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-dark-900 dark:text-white mb-2 flex items-center gap-3">
+          <h1 className="text-3xl sm:text-4xl font-bold text-dark-900 dark:text-white mb-2 flex items-center gap-3">
             <SettingsIcon className="w-8 h-8 text-primary-600" />
             Settings
           </h1>
@@ -81,7 +96,7 @@ const Settings = () => {
             </div>
 
             <div className="p-4 bg-gradient-to-br from-red-50 via-orange-50 to-pink-50 dark:from-red-900/20 dark:via-orange-900/20 dark:to-pink-900/20 rounded-xl border-2 border-red-200 dark:border-red-800">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-gradient-to-br from-red-500 to-orange-500 rounded-lg shadow-md">
                     <LogOut className="w-5 h-5 text-white" />
@@ -95,7 +110,7 @@ const Settings = () => {
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-red-500 via-orange-500 to-pink-500 hover:from-red-600 hover:via-orange-600 hover:to-pink-600 text-white rounded-xl font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 transform"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3 bg-gradient-to-r from-red-500 via-orange-500 to-pink-500 hover:from-red-600 hover:via-orange-600 hover:to-pink-600 text-white rounded-xl font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 transform"
                 >
                   <LogOut className="w-5 h-5" />
                   Logout

@@ -5,14 +5,21 @@ import { BrowserRouter } from 'react-router-dom'
 import { store } from './store/store'
 import App from './App.tsx'
 import { ToastProvider } from './components/common/ToastContainer'
+import { ConfirmProvider } from './components/common/ConfirmProvider'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <Provider store={store}>
-      <BrowserRouter>
+      <BrowserRouter
+        future={{
+          v7_relativeSplatPath: true,
+        }}
+      >
         <ToastProvider>
-          <App />
+          <ConfirmProvider>
+            <App />
+          </ConfirmProvider>
         </ToastProvider>
       </BrowserRouter>
     </Provider>

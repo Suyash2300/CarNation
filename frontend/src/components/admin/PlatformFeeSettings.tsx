@@ -1,12 +1,16 @@
 import { useState } from 'react';
 import { useGetCurrentFeeQuery, useGetFeeHistoryQuery, useUpdateFeeMutation } from '../../services/platformFeesApi';
 import { Settings, DollarSign, TrendingUp } from 'lucide-react';
+import { useToast } from '../common/ToastContainer';
+import { useConfirm } from '../common/ConfirmProvider';
 
 const PlatformFeeSettings = () => {
   const [newFeePercentage, setNewFeePercentage] = useState('');
   const { data: currentFeeData } = useGetCurrentFeeQuery();
   const { data: historyData } = useGetFeeHistoryQuery();
   const [updateFee, { isLoading }] = useUpdateFeeMutation();
+  const { showSuccess, showError, showWarning } = useToast();
+  const confirm = useConfirm();
 
   const currentFee = currentFeeData?.feePercentage || 5.0;
   const history = historyData?.fees || [];
@@ -16,18 +20,28 @@ const PlatformFeeSettings = () => {
     const fee = parseFloat(newFeePercentage);
     
     if (isNaN(fee) || fee < 0 || fee > 100) {
-      alert('Please enter a valid fee percentage between 0 and 100');
+      showWarning('Please enter a valid fee percentage between 0 and 100');
       return;
     }
 
-    if (window.confirm(`Are you sure you want to update the platform fee to ${fee}%?`)) {
-      try {
-        await updateFee({ feePercentage: fee }).unwrap();
-        alert('Platform fee updated successfully!');
-        setNewFeePercentage('');
-      } catch (error: any) {
-        alert(error?.data?.error || 'Failed to update platform fee');
-      }
+    const confirmed = await confirm({
+      title: 'Update Platform Fee',
+      message: `Are you sure you want to update the platform fee to ${fee}%?`,
+      confirmLabel: 'Update Fee',
+      cancelLabel: 'Cancel',
+      variant: 'warning',
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await updateFee({ feePercentage: fee }).unwrap();
+      showSuccess('Platform fee updated successfully!');
+      setNewFeePercentage('');
+    } catch (error: any) {
+      showError(error?.data?.error || 'Failed to update platform fee');
     }
   };
 

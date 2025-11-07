@@ -30,11 +30,19 @@ const Navbar = () => {
     <nav className="bg-dark-900 text-white sticky top-0 z-50 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link
-            to="/"
-            className="text-2xl font-bold text-primary-500 hover:text-primary-400 transition"
-          >
-            CarNation
+          <Link to="/" className="flex items-center gap-3 group select-none">
+            <span className="inline-flex items-center justify-center h-11 w-11 rounded-2xl bg-gradient-to-br from-primary-400 via-primary-500 to-primary-700 text-dark-950 font-black text-lg tracking-wide shadow-[0_8px_20px_rgba(0,0,0,0.35)] ring-2 ring-white/20 ring-offset-2 ring-offset-dark-900 group-hover:scale-105 group-hover:rotate-3 transition-transform duration-200">
+              CN
+            </span>
+            <span className="leading-tight">
+              <span className="block text-[1.35rem] sm:text-[1.6rem] font-black uppercase tracking-wide bg-gradient-to-r from-white via-primary-100 to-primary-300 bg-clip-text text-transparent drop-shadow-[0_4px_12px_rgba(0,0,0,0.35)]">
+                <span className="pr-1">Car</span>
+                <span className="text-primary-200">Nation</span>
+              </span>
+              <span className="block text-[0.7rem] sm:text-xs font-semibold text-white/70 group-hover:text-primary-100 transition-colors">
+                Drive Beyond Ordinary
+              </span>
+            </span>
           </Link>
 
           {/* Desktop Menu */}
@@ -119,8 +127,9 @@ const Navbar = () => {
 
           {/* Mobile Menu Button */}
           <button
-            className="md:hidden"
+            className="md:hidden p-2 rounded-lg hover:bg-dark-800 transition focus:outline-none focus:ring-2 focus:ring-primary-500"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label="Toggle navigation"
           >
             {isMenuOpen ? (
               <X className="w-6 h-6" />

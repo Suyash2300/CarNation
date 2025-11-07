@@ -19,6 +19,17 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import Breadcrumbs from "../components/common/Breadcrumbs";
+import { useGetShopsByCityQuery } from "../services/shopApi";
+
+const PickupAddress: React.FC<{ city?: string }> = ({ city }) => {
+  const { data } = useGetShopsByCityQuery({ city: city || undefined }, { skip: !city });
+  const shop = data?.shops?.[0];
+  if (!city) return null;
+  const address = shop?.addressLine
+    ? `${shop.addressLine}${shop.landmark ? ", " + shop.landmark : ""}${shop.pincode ? " - " + shop.pincode : ""}`
+    : city;
+  return <span className="font-medium text-dark-900 break-words">{address}</span>;
+};
 
 const BuyerDashboard = () => {
   const { user } = useAppSelector((state) => state.auth);
@@ -42,7 +53,7 @@ const BuyerDashboard = () => {
           ]}
         />
 
-        <div className="mb-8 flex justify-between items-start mt-6">
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mt-6">
           <div>
             <h1 className="text-4xl font-bold text-dark-900 mb-2">
               Welcome Back!
@@ -55,7 +66,7 @@ const BuyerDashboard = () => {
           </div>
           <Link
             to="/chat"
-            className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold transition shadow-lg hover:shadow-xl"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold transition shadow-lg hover:shadow-xl"
           >
             <MessageCircle className="w-5 h-5" />
             Messages
@@ -64,7 +75,7 @@ const BuyerDashboard = () => {
 
         {/* Account Status Card */}
         <div className="glass rounded-xl p-6 mb-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
               <div className="bg-primary-100 p-4 rounded-lg">
                 <UserCheck className="w-8 h-8 text-primary-600" />
@@ -92,7 +103,7 @@ const BuyerDashboard = () => {
             {!user?.isAadhaarVerified && (
               <Link
                 to="/verify-aadhaar"
-                className="bg-warning-600 hover:bg-warning-700 text-white px-6 py-3 rounded-lg font-semibold transition shadow-lg hover:shadow-xl"
+                className="w-full sm:w-auto text-center bg-warning-600 hover:bg-warning-700 text-white px-6 py-3 rounded-lg font-semibold transition shadow-lg hover:shadow-xl"
               >
                 Verify Aadhaar
               </Link>
@@ -281,21 +292,21 @@ const BuyerDashboard = () => {
                                     {rental.totalDays === 1 ? "day" : "days"}
                                   </span>
                                 </div>
-                                {rental.car.city && (
-                                  <div className="flex items-center gap-2 text-sm text-dark-600">
-                                    <MapPin className="w-4 h-4 text-primary-600" />
-                                    <span className="font-medium">
-                                      Pickup Location: {rental.car.city}
-                                    </span>
-                                  </div>
-                                )}
+                                  {rental.car.city && (
+                                    <div className="flex items-center gap-2 text-sm text-dark-600">
+                                      <MapPin className="w-4 h-4 text-primary-600" />
+                                      <span>
+                                        Pickup Location: <PickupAddress city={rental.car.city} />
+                                      </span>
+                                    </div>
+                                  )}
                               </div>
                             </div>
                           </div>
 
                           {/* Right Section - Amount and Status */}
-                          <div className="flex flex-col items-end gap-2">
-                            <div className="text-right">
+                          <div className="flex flex-col items-start sm:items-end gap-2 text-left sm:text-right">
+                            <div>
                               <p className="text-sm text-dark-600 mb-1">
                                 Total Amount
                               </p>
@@ -346,7 +357,7 @@ const BuyerDashboard = () => {
                               );
                             })()}
                             <span
-                              className={`inline-block px-3 py-1 rounded-full text-xs font-semibold mt-1 ${
+                              className={`inline-block px-3 py-1 rounded-full text-xs font-semibold mt-1 self-start sm:self-auto ${
                                 rental.paymentStatus === "PAID"
                                   ? "bg-success-100 text-success-700"
                                   : rental.paymentStatus === "PENDING"
@@ -408,7 +419,7 @@ const BuyerDashboard = () => {
                                     {rental.buyer.name}
                                   </p>
                                 )}
-                                <p className="text-dark-600">
+                                <p className="text-dark-600 break-words">
                                   {formatAddress()}
                                 </p>
                                 {rental.buyer.phone && (
@@ -442,13 +453,13 @@ const BuyerDashboard = () => {
 
         {/* Featured Rental Cars */}
         <div className="mb-6">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
             <h2 className="text-2xl font-bold text-dark-900">
               Featured Rental Cars
             </h2>
             <Link
               to="/rent"
-              className="text-primary-600 hover:text-primary-700 font-semibold flex items-center gap-1"
+              className="w-full md:w-auto text-primary-600 hover:text-primary-700 font-semibold flex items-center gap-1"
             >
               View All <span>→</span>
             </Link>

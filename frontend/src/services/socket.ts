@@ -7,6 +7,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const SOCKET_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 
 let socket: Socket | null = null;
+let previewSocket: Socket | null = null;
 
 export const getSocket = (): Socket | null => {
   const token = localStorage.getItem('token');
@@ -79,10 +80,35 @@ export const getSocket = (): Socket | null => {
   return socket;
 };
 
+export const getSocketWithToken = (overrideToken: string): Socket => {
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const URL = API_BASE.replace(/\/api\/?$/, '');
+  if (previewSocket && previewSocket.connected) return previewSocket;
+  if (previewSocket && !previewSocket.connected) {
+    previewSocket.disconnect();
+    previewSocket = null;
+  }
+  previewSocket = io(URL, {
+    path: '/socket.io/',
+    auth: { token: overrideToken },
+    transports: ['polling', 'websocket'],
+    reconnection: true,
+    reconnectionDelay: 1000,
+    reconnectionAttempts: 5,
+    forceNew: true,
+    timeout: 10000,
+  });
+  return previewSocket;
+};
+
 export const disconnectSocket = () => {
   if (socket) {
     socket.disconnect();
     socket = null;
+  }
+  if (previewSocket) {
+    previewSocket.disconnect();
+    previewSocket = null;
   }
 };
 

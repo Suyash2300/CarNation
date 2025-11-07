@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useGetTiersQuery, useGetSubscriptionStatusQuery, useCreateSubscriptionOrderMutation, useVerifySubscriptionPaymentMutation, useActivateFreeTierMutation, useCancelSubscriptionMutation } from '../../services/subscriptionApi';
 import StripePayment from '../payment/StripePayment';
 import { CheckCircle, XCircle, Crown, Zap, Gift, AlertCircle } from 'lucide-react';
+import { useToast } from '../common/ToastContainer';
+import { useConfirm } from '../common/ConfirmProvider';
 
 const SubscriptionManagement = () => {
   const [selectedTier, setSelectedTier] = useState<'BASIC' | 'PREMIUM' | null>(null);
@@ -13,6 +15,8 @@ const SubscriptionManagement = () => {
   const [verifyPayment] = useVerifySubscriptionPaymentMutation();
   const [activateFree, { isLoading: isActivatingFree }] = useActivateFreeTierMutation();
   const [cancelSubscription, { isLoading: isCancelling }] = useCancelSubscriptionMutation();
+  const { showSuccess, showError, showInfo } = useToast();
+  const confirm = useConfirm();
 
   const tiers = tiersData?.tiers || {};
   const status = statusData;
@@ -20,24 +24,35 @@ const SubscriptionManagement = () => {
   const handleActivateFree = async () => {
     try {
       await activateFree().unwrap();
-      alert('FREE tier activated successfully! You can now list 2 cars.');
+      showSuccess('FREE tier activated successfully! You can now list 2 cars.');
       refetchStatus();
     } catch (error: any) {
-      alert(error?.data?.error || 'Failed to activate FREE tier');
+      showError(error?.data?.error || 'Failed to activate FREE tier');
     }
   };
 
   const handleCancelSubscription = async () => {
-    if (!window.confirm('Are you sure you want to cancel your subscription? You will still have access until the end of your billing period.')) {
+    const confirmed = await confirm({
+      title: 'Cancel Subscription',
+      message: 'Are you sure you want to cancel your subscription? You will still have access until the end of your billing period.',
+      confirmLabel: 'Cancel Subscription',
+      cancelLabel: 'Keep Subscription',
+      variant: 'danger',
+    });
+
+    if (!confirmed) {
       return;
     }
 
     try {
       const result = await cancelSubscription().unwrap();
-      alert(result.message + '\n' + result.note);
+      showSuccess(result.message);
+      if (result.note) {
+        showInfo(result.note);
+      }
       refetchStatus();
     } catch (error: any) {
-      alert(error?.data?.error || 'Failed to cancel subscription');
+      showError(error?.data?.error || 'Failed to cancel subscription');
     }
   };
 
@@ -65,7 +80,7 @@ const SubscriptionManagement = () => {
       });
       setIsProcessing(false);
     } catch (error: any) {
-      alert(error?.data?.error || 'Failed to create payment order');
+      showError(error?.data?.error || 'Failed to create payment order');
       setIsProcessing(false);
     }
   };
@@ -79,12 +94,12 @@ const SubscriptionManagement = () => {
         tier: paymentData.tier,
       }).unwrap();
       
-      alert('Subscription activated successfully!');
+      showSuccess('Subscription activated successfully!');
       refetchStatus();
       setPaymentData(null);
       setSelectedTier(null);
     } catch (error: any) {
-      alert(error?.data?.error || 'Payment verification failed');
+      showError(error?.data?.error || 'Payment verification failed');
     }
   };
 
@@ -178,7 +193,7 @@ const SubscriptionManagement = () => {
             amount={paymentData.amount * 100}
             onSuccess={handlePaymentSuccess}
             onError={(err) => {
-              alert(err?.message || 'Payment failed');
+              showError(err?.message || 'Payment failed');
               setPaymentData(null);
             }}
           />

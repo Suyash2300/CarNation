@@ -22,27 +22,43 @@ export const setupChatHandler = (io: SocketServer) => {
     socket.on('join-conversation', async (data: { conversationId: string }) => {
       const { conversationId } = data;
 
-      // Verify user is a participant in this conversation
-      const conversation = await prisma.conversation.findUnique({
-        where: { id: conversationId },
-        select: {
-          participant1Id: true,
-          participant2Id: true,
-        },
-      });
+      try {
+        // Verify user is a participant in this conversation
+        const conversation = await prisma.conversation.findUnique({
+          where: { id: conversationId },
+          select: {
+            participant1Id: true,
+            participant2Id: true,
+          },
+        });
 
-      if (!conversation) {
-        socket.emit('error', { message: 'Conversation not found' });
-        return;
+        if (!conversation) {
+          socket.emit('error', { message: 'Conversation not found' });
+          return;
+        }
+
+        if (conversation.participant1Id !== userId && conversation.participant2Id !== userId) {
+          socket.emit('error', { message: 'Unauthorized access to conversation' });
+          return;
+        }
+
+        socket.join(`conversation:${conversationId}`);
+        console.log(`User ${userId} joined conversation ${conversationId}`);
+      } catch (error: any) {
+        console.error('Error joining conversation:', error);
+        if (error.code === 'P1017') {
+          // Database connection lost, try to reconnect
+          try {
+            await prisma.$connect();
+            socket.emit('error', { message: 'Connection issue, please try again' });
+          } catch (reconnectError) {
+            console.error('Failed to reconnect to database:', reconnectError);
+            socket.emit('error', { message: 'Database connection failed' });
+          }
+        } else {
+          socket.emit('error', { message: 'Failed to join conversation' });
+        }
       }
-
-      if (conversation.participant1Id !== userId && conversation.participant2Id !== userId) {
-        socket.emit('error', { message: 'Unauthorized access to conversation' });
-        return;
-      }
-
-      socket.join(`conversation:${conversationId}`);
-      console.log(`User ${userId} joined conversation ${conversationId}`);
     });
 
     // Handle leaving a conversation room
@@ -59,67 +75,83 @@ export const setupChatHandler = (io: SocketServer) => {
       try {
         const { conversationId, content, imageUrl } = data;
 
-        // Verify user is a participant
-        const conversation = await prisma.conversation.findUnique({
-          where: { id: conversationId },
-          select: {
-            participant1Id: true,
-            participant2Id: true,
-          },
-        });
+        try {
+          // Verify user is a participant
+          const conversation = await prisma.conversation.findUnique({
+            where: { id: conversationId },
+            select: {
+              participant1Id: true,
+              participant2Id: true,
+            },
+          });
 
-        if (!conversation || (conversation.participant1Id !== userId && conversation.participant2Id !== userId)) {
-          socket.emit('error', { message: 'Unauthorized' });
-          return;
-        }
+          if (!conversation || (conversation.participant1Id !== userId && conversation.participant2Id !== userId)) {
+            socket.emit('error', { message: 'Unauthorized' });
+            return;
+          }
 
-        // Create message in database
-        const message = await prisma.message.create({
-          data: {
-            conversationId,
-            senderId: userId,
-            content,
-            imageUrl: imageUrl || null,
-          },
-          include: {
-            sender: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                profileImage: true,
+          // Create message in database
+          const message = await prisma.message.create({
+            data: {
+              conversationId,
+              senderId: userId,
+              content,
+              imageUrl: imageUrl || null,
+            },
+            include: {
+              sender: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  profileImage: true,
+                },
               },
             },
-          },
-        });
+          });
 
-        // Update conversation's last message
-        await prisma.conversation.update({
-          where: { id: conversationId },
-          data: {
-            lastMessage: content.substring(0, 100), // Store first 100 chars
-            lastMessageAt: new Date(),
-          },
-        });
+          // Update conversation's last message
+          await prisma.conversation.update({
+            where: { id: conversationId },
+            data: {
+              lastMessage: content.substring(0, 100), // Store first 100 chars
+              lastMessageAt: new Date(),
+            },
+          });
 
-        // Get the other participant
-        const otherParticipantId = conversation.participant1Id === userId 
-          ? conversation.participant2Id 
-          : conversation.participant1Id;
+          // Get the other participant
+          const otherParticipantId = conversation.participant1Id === userId 
+            ? conversation.participant2Id 
+            : conversation.participant1Id;
 
-        // Emit message to all clients in the conversation room
-        io.to(`conversation:${conversationId}`).emit('new-message', message);
+          // Emit message to all clients in the conversation room
+          io.to(`conversation:${conversationId}`).emit('new-message', message);
 
-        // Send notification to other participant if they're not in the room
-        io.to(`user:${otherParticipantId}`).emit('message-notification', {
-          conversationId,
-          message: {
-            ...message,
-            preview: content.substring(0, 50),
-          },
-        });
+          // Send notification to other participant if they're not in the room
+          io.to(`user:${otherParticipantId}`).emit('message-notification', {
+            conversationId,
+            message: {
+              ...message,
+              preview: content.substring(0, 50),
+            },
+          });
 
-        console.log(`Message sent in conversation ${conversationId} by user ${userId}`);
+          console.log(`Message sent in conversation ${conversationId} by user ${userId}`);
+        } catch (dbError: any) {
+          console.error('Database error sending message:', dbError);
+          if (dbError.code === 'P1017') {
+            // Database connection lost, try to reconnect
+            try {
+              await prisma.$connect();
+              socket.emit('error', { message: 'Connection issue, please try again' });
+            } catch (reconnectError) {
+              console.error('Failed to reconnect to database:', reconnectError);
+              socket.emit('error', { message: 'Database connection failed' });
+            }
+          } else {
+            socket.emit('error', { message: 'Failed to send message' });
+          }
+        }
       } catch (error) {
         console.error('Error sending message:', error);
         socket.emit('error', { message: 'Failed to send message' });
@@ -131,24 +163,35 @@ export const setupChatHandler = (io: SocketServer) => {
       try {
         const { conversationId } = data;
 
-        // Mark all unread messages in this conversation as read
-        await prisma.message.updateMany({
-          where: {
-            conversationId,
-            senderId: { not: userId }, // Messages from other users
-            isRead: false,
-          },
-          data: {
-            isRead: true,
-            readAt: new Date(),
-          },
-        });
+        try {
+          // Mark all unread messages in this conversation as read
+          await prisma.message.updateMany({
+            where: {
+              conversationId,
+              senderId: { not: userId }, // Messages from other users
+              isRead: false,
+            },
+            data: {
+              isRead: true,
+              readAt: new Date(),
+            },
+          });
 
-        // Notify the sender that messages were read
-        io.to(`conversation:${conversationId}`).emit('messages-read', {
-          conversationId,
-          readBy: userId,
-        });
+          // Notify the sender that messages were read
+          io.to(`conversation:${conversationId}`).emit('messages-read', {
+            conversationId,
+            readBy: userId,
+          });
+        } catch (dbError: any) {
+          console.error('Database error marking messages as read:', dbError);
+          if (dbError.code === 'P1017') {
+            try {
+              await prisma.$connect();
+            } catch (reconnectError) {
+              console.error('Failed to reconnect to database:', reconnectError);
+            }
+          }
+        }
       } catch (error) {
         console.error('Error marking messages as read:', error);
       }

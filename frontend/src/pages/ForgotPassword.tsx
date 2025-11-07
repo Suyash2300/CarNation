@@ -44,7 +44,7 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-dark-900 via-dark-800 to-dark-950 relative overflow-hidden flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-dark-900 via-dark-800 to-dark-950 relative overflow-hidden flex items-center justify-center px-4 py-20 sm:py-24">
       {/* Background with banner image */}
       <div className="absolute inset-0">
         <img
@@ -68,7 +68,7 @@ const ForgotPassword = () => {
 
       {/* Forgot Password Form */}
       <div className="relative z-10 w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
+        <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8">
           {!isSubmitted ? (
             <>
               <div className="mb-8">

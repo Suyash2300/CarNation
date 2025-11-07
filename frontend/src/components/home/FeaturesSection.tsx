@@ -54,7 +54,7 @@ const FeaturesSection = () => {
         "Discover a vast fleet from economy to luxury vehicles, and a diverse marketplace of quality used cars.",
       metric: "500+ Vehicles",
       color: "text-primary-700",
-      bgColor: "bg-gradient-to-br from-primary-400 via-primary-500 to-primary-600",
+      bgColor: "bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700",
       borderColor: "border-primary-200",
     },
     {
@@ -63,9 +63,9 @@ const FeaturesSection = () => {
       description:
         "Competitive rates with transparent pricing. No hidden fees, no surprises. Guaranteed best deals.",
       metric: "Price Match",
-      color: "text-accent-700",
-      bgColor: "bg-gradient-to-br from-accent-500 via-accent-600 to-accent-700",
-      borderColor: "border-accent-200",
+      color: "text-primary-700",
+      bgColor: "bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700",
+      borderColor: "border-primary-200",
     },
     {
       icon: MessageCircle,
@@ -74,7 +74,7 @@ const FeaturesSection = () => {
         "Our expert support team is always on standby to assist you every step of the way, anytime you need us.",
       metric: "Always Available",
       color: "text-primary-700",
-      bgColor: "bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800",
+      bgColor: "bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700",
       borderColor: "border-primary-200",
     },
     {
@@ -83,9 +83,9 @@ const FeaturesSection = () => {
       description:
         "Simple and secure booking process. Get your car in minutes, not hours. Fast, efficient, and hassle-free.",
       metric: "5 Min Setup",
-      color: "text-accent-700",
-      bgColor: "bg-gradient-to-br from-accent-400 via-accent-500 to-accent-600",
-      borderColor: "border-accent-200",
+      color: "text-primary-700",
+      bgColor: "bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700",
+      borderColor: "border-primary-200",
     },
   ];
 
@@ -106,7 +106,7 @@ const FeaturesSection = () => {
           {/* Pipeline Container with connecting line */}
           <div className="relative py-12">
             {/* Horizontal Connecting Line */}
-            <div className={`absolute top-20 left-0 right-0 h-0.5 bg-gradient-to-r from-primary-300 via-primary-400 via-accent-400 via-primary-500 to-accent-500 opacity-50 transition-opacity duration-1000 ${isVisible ? 'opacity-70' : ''}`} />
+            <div className={`absolute top-20 left-0 right-0 h-0.5 bg-gradient-to-r from-primary-500 to-primary-600 opacity-50 transition-opacity duration-1000 ${isVisible ? 'opacity-70' : ''}`} />
             
             {/* Nodes Container */}
             <div className="relative flex items-start justify-between px-4">
@@ -129,25 +129,12 @@ const FeaturesSection = () => {
                     {!isLast && (
                       <div className="absolute top-20 left-[calc(50%+40px)] right-[-40px] h-0.5 pointer-events-none">
                         <div className="relative h-full">
-                          {/* Arrow Line - Color matched to nodes with cohesive theme */}
+                          {/* Arrow Line - Consistent primary color */}
                           <div 
-                            className={`absolute left-0 right-0 h-full opacity-60 group-hover:opacity-100 transition-opacity duration-300 ${
-                              index === 0 
-                                ? 'bg-gradient-to-r from-primary-400 to-primary-500' 
-                                : index === 1
-                                ? 'bg-gradient-to-r from-primary-500 to-primary-600'
-                                : index === 2
-                                ? 'bg-gradient-to-r from-primary-600 to-accent-500'
-                                : 'bg-gradient-to-r from-accent-500 to-accent-600'
-                            }`}
+                            className="absolute left-0 right-0 h-full opacity-60 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-primary-500 to-primary-600"
                           />
                           {/* Arrow Head */}
-                          <ArrowRight className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-5 h-5 transition-colors drop-shadow-sm ${
-                            index === 0 ? 'text-primary-500 group-hover:text-primary-700' :
-                            index === 1 ? 'text-primary-500 group-hover:text-primary-700' :
-                            index === 2 ? 'text-accent-500 group-hover:text-accent-700' :
-                            'text-accent-500 group-hover:text-accent-700'
-                          }`} />
+                          <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-5 h-5 transition-colors drop-shadow-sm text-primary-500 group-hover:text-primary-700" />
                         </div>
                       </div>
                     )}
@@ -158,21 +145,15 @@ const FeaturesSection = () => {
                         <IconComponent className="w-10 h-10 text-white drop-shadow-sm" />
                       </div>
                       {/* Pulse Animation Ring */}
-                      <div className={`absolute inset-0 rounded-full opacity-0 group-hover:opacity-30 group-hover:animate-ping ${
-                        index === 0 || index === 1 || index === 3 ? 'bg-primary-500' : 'bg-accent-500'
-                      }`} />
+                      <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-30 group-hover:animate-ping bg-primary-500" />
                     </div>
 
                     {/* Node Content Card - Fixed height for consistency */}
                     <div className="w-full max-w-[220px] mx-auto bg-white rounded-xl p-5 shadow-lg border-2 border-dark-100 group-hover:border-primary-300 group-hover:shadow-xl transition-all duration-300 transform group-hover:-translate-y-1 min-h-[180px] flex flex-col">
                       {/* Metric Badge */}
-                      <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full mb-3 ${
-                        index === 0 || index === 1 || index === 3 
-                          ? 'bg-primary-50 border border-primary-200' 
-                          : 'bg-accent-50 border border-accent-200'
-                      }`}>
-                        <CheckCircle2 className={`w-3.5 h-3.5 ${feature.color}`} />
-                        <span className={`text-xs font-bold ${feature.color}`}>
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full mb-3 bg-primary-50 border border-primary-200">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-primary-700" />
+                        <span className="text-xs font-bold text-primary-700">
                           {feature.metric}
                         </span>
                       </div>
@@ -219,28 +200,16 @@ const FeaturesSection = () => {
                     </div>
                     {/* Connecting Line (vertical, except last) */}
                     {!isLast && (
-                      <div className={`absolute top-16 left-1/2 -translate-x-1/2 w-0.5 h-12 bg-gradient-to-b opacity-60 ${
-                        index === 0 
-                          ? 'from-primary-400 to-primary-500' 
-                          : index === 1
-                          ? 'from-primary-500 to-primary-600'
-                          : index === 2
-                          ? 'from-primary-600 to-accent-500'
-                          : 'from-accent-500 to-accent-600'
-                      }`} />
+                      <div className="absolute top-16 left-1/2 -translate-x-1/2 w-0.5 h-12 bg-gradient-to-b from-primary-500 to-primary-600 opacity-60" />
                     )}
                   </div>
 
                   {/* Content Card - Fixed height for consistency */}
                   <div className="flex-1 bg-white rounded-xl p-5 shadow-md border border-dark-100 group-hover:shadow-lg group-hover:border-primary-300 transition-all duration-300 min-h-[140px] flex flex-col">
                     {/* Metric Badge */}
-                    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full mb-3 ${
-                      index === 0 || index === 1 || index === 3 
-                        ? 'bg-primary-50 border border-primary-200' 
-                        : 'bg-accent-50 border border-accent-200'
-                    }`}>
-                      <CheckCircle2 className={`w-3.5 h-3.5 ${feature.color}`} />
-                      <span className={`text-xs font-bold ${feature.color}`}>
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full mb-3 bg-primary-50 border border-primary-200">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-primary-700" />
+                      <span className="text-xs font-bold text-primary-700">
                         {feature.metric}
                       </span>
                     </div>

@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,6 +5,251 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    String                @id @default(uuid())
+  email                 String                @unique
+  name                  String
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  password              String
+  phone                 String?
+  profileImage          String?
+  role                  UserRole              @default(BUYER)
+  resetToken            String?
+  resetTokenExpiry      DateTime?
+  aadhaarBackImage      String?
+  aadhaarFrontImage     String?
+  aadhaarNumber         String?
+  aadhaarVerifiedAt     DateTime?
+  aadhaarVerifiedBy     String?
+  isAadhaarVerified     Boolean               @default(false)
+  subscriptionEndDate   DateTime?
+  subscriptionStartDate DateTime?
+  subscriptionStatus    SubscriptionStatus    @default(ACTIVE)
+  subscriptionTier      SubscriptionTier      @default(FREE)
+  address               String?
+  bio                   String?
+  city                  String?
+  country               String?               @default("India")
+  pincode               String?
+  state                 String?
+  carsOwned             Car[]                 @relation("CarOwner")
+  carsForSale           Car[]                 @relation("CarSeller")
+  conversations1        Conversation[]        @relation("ConversationParticipant1")
+  conversations2        Conversation[]        @relation("ConversationParticipant2")
+  dealsAsBuyer          Deal[]                @relation("DealBuyer")
+  dealsAsSeller         Deal[]                @relation("DealSeller")
+  messagesSent          Message[]             @relation("MessageSender")
+  purchases             Purchase[]            @relation("PurchaseBuyer")
+  rentals               Rental[]              @relation("RentalBuyer")
+  subscriptionPayments  SubscriptionPayment[]
+}
+
+model Car {
+  id            String         @id @default(uuid())
+  brand         String
+  model         String
+  year          Int
+  color         String?
+  mileage       Float?
+  transmission  String?
+  fuelType      String?
+  seats         Int?
+  rentalPrice   Float?
+  salePrice     Float?
+  isForRent     Boolean        @default(false)
+  isForSale     Boolean        @default(false)
+  status        CarStatus      @default(AVAILABLE)
+  images        String[]
+  primaryImage  String?
+  description   String?
+  ownerId       String?
+  sellerId      String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  city          String?
+  ownersCount   Int?
+  owner         User?          @relation("CarOwner", fields: [ownerId], references: [id])
+  seller        User?          @relation("CarSeller", fields: [sellerId], references: [id])
+  conversations Conversation[]
+  deals         Deal[]
+  purchases     Purchase[]
+  rentals       Rental[]
+
+  @@index([ownerId])
+  @@index([sellerId])
+  @@index([status])
+  @@index([isForRent, status])
+  @@index([isForSale, status])
+  @@index([isForRent, status, city])
+  @@index([isForSale, status, city])
+  @@index([brand])
+  @@index([city])
+  @@index([rentalPrice])
+  @@index([salePrice])
+}
+
+model Rental {
+  id                String        @id @default(uuid())
+  carId             String
+  buyerId           String
+  startDate         DateTime
+  endDate           DateTime
+  totalDays         Int
+  dailyPrice        Float
+  totalAmount       Float
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  paymentStatus     String        @default("PENDING")
+  status            RentalStatus  @default(PENDING)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  conversationId    String?       @unique
+  deals             Deal[]
+  buyer             User          @relation("RentalBuyer", fields: [buyerId], references: [id])
+  car               Car           @relation(fields: [carId], references: [id])
+  conversation      Conversation? @relation(fields: [conversationId], references: [id])
+
+  @@index([buyerId])
+  @@index([carId])
+  @@index([conversationId])
+}
+
+model ShopLocation {
+  id          String   @id @default(uuid())
+  city        String
+  addressLine String
+  landmark    String?
+  pincode     String?
+  lat         Float?
+  lng         Float?
+  hoursStart  String   @default("09:00")
+  hoursEnd    String   @default("19:00")
+  phone       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([city])
+}
+
+model Purchase {
+  id                String         @id @default(uuid())
+  carId             String
+  buyerId           String
+  salePrice         Float
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  paymentStatus     String         @default("PENDING")
+  status            PurchaseStatus @default(PENDING)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  conversationId    String?
+  platformFee       Float?
+  sellerEarnings    Float?
+  deals             Deal[]
+  buyer             User           @relation("PurchaseBuyer", fields: [buyerId], references: [id])
+  car               Car            @relation(fields: [carId], references: [id])
+  conversation      Conversation?  @relation(fields: [conversationId], references: [id])
+
+  @@index([buyerId])
+  @@index([carId])
+  @@index([conversationId])
+}
+
+model Conversation {
+  id             String     @id @default(uuid())
+  participant1Id String
+  participant2Id String
+  carId          String?
+  lastMessageAt  DateTime?
+  lastMessage    String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  car            Car?       @relation(fields: [carId], references: [id])
+  participant1   User       @relation("ConversationParticipant1", fields: [participant1Id], references: [id])
+  participant2   User       @relation("ConversationParticipant2", fields: [participant2Id], references: [id])
+  deals          Deal[]
+  messages       Message[]
+  purchases      Purchase[]
+  rental         Rental?
+
+  @@unique([participant1Id, participant2Id, carId])
+  @@index([participant1Id])
+  @@index([participant2Id])
+  @@index([carId])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  senderId       String
+  content        String
+  imageUrl       String?
+  isRead         Boolean      @default(false)
+  readAt         DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation("MessageSender", fields: [senderId], references: [id])
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([createdAt])
+}
+
+model PlatformFee {
+  id            String   @id @default(uuid())
+  feePercentage Float    @default(5.0)
+  isActive      Boolean  @default(true)
+  updatedBy     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Deal {
+  id             String       @id @default(uuid())
+  conversationId String
+  carId          String
+  buyerId        String
+  sellerId       String
+  agreedPrice    Float
+  dealType       String
+  purchaseId     String?
+  rentalId       String?
+  status         String       @default("PENDING")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  buyer          User         @relation("DealBuyer", fields: [buyerId], references: [id])
+  car            Car          @relation(fields: [carId], references: [id])
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  purchase       Purchase?    @relation(fields: [purchaseId], references: [id])
+  rental         Rental?      @relation(fields: [rentalId], references: [id])
+  seller         User         @relation("DealSeller", fields: [sellerId], references: [id])
+
+  @@index([conversationId])
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([carId])
+}
+
+model SubscriptionPayment {
+  id                String           @id @default(uuid())
+  userId            String
+  amount            Float
+  tier              SubscriptionTier
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  paymentStatus     String           @default("PENDING")
+  startDate         DateTime
+  endDate           DateTime
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  user              User             @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 
 enum UserRole {
@@ -46,306 +288,4 @@ enum SubscriptionStatus {
   ACTIVE
   EXPIRED
   CANCELLED
-}
-
-model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  password      String    // Hashed password
-  name          String
-  phone         String?
-  role          UserRole  @default(BUYER)
-  
-  // Profile image
-  profileImage  String?
-  
-  // Profile details
-  address       String?
-  city          String?
-  state         String?
-  pincode       String?
-  country       String?         @default("India")
-  bio           String?         // Brief bio/description
-  
-  // Aadhaar Verification
-  aadhaarNumber      String?         // Encrypted Aadhaar number
-  aadhaarFrontImage  String?         // Aadhaar front image URL
-  aadhaarBackImage   String?         // Aadhaar back image URL
-  isAadhaarVerified  Boolean         @default(false)
-  aadhaarVerifiedAt  DateTime?
-  aadhaarVerifiedBy  String?         // Admin ID who verified
-  
-  // Password Reset
-  resetToken        String?
-  resetTokenExpiry  DateTime?
-  
-  // Subscription (for sellers)
-  subscriptionTier      SubscriptionTier    @default(FREE)
-  subscriptionStatus    SubscriptionStatus  @default(ACTIVE)
-  subscriptionStartDate DateTime?
-  subscriptionEndDate   DateTime?
-  subscriptionPayments  SubscriptionPayment[]
-  
-  // Relationships
-  carsOwned     Car[]     @relation("CarOwner")      // Admin's cars for rent
-  carsForSale   Car[]     @relation("CarSeller")     // Seller's cars
-  rentals       Rental[]  @relation("RentalBuyer")    // Buyer's rentals
-  purchases     Purchase[] @relation("PurchaseBuyer") // Buyer's purchases
-  
-  // Chat relationships
-  conversations1 Conversation[] @relation("ConversationParticipant1")
-  conversations2 Conversation[] @relation("ConversationParticipant2")
-  messagesSent   Message[]       @relation("MessageSender")
-  dealsAsBuyer  Deal[]          @relation("DealBuyer")
-  dealsAsSeller Deal[]          @relation("DealSeller")
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-}
-
-model Car {
-  id              String         @id @default(uuid())
-  
-  // Basic Info
-  brand           String
-  model           String
-  year            Int
-  color           String?
-  mileage         Float?         // in km
-  transmission    String?        // Automatic, Manual
-  fuelType        String?        // Petrol, Diesel, Electric, Hybrid
-  seats           Int?
-  city            String?        // City where car is available
-  
-  // Pricing
-  rentalPrice     Float?         // Daily rental price (for admin)
-  salePrice       Float?         // Sale price (for seller)
-  
-  // Car Type
-  isForRent       Boolean        @default(false)  // Admin rents out
-  isForSale       Boolean        @default(false)  // Seller sells
-  
-  // Status
-  status          CarStatus      @default(AVAILABLE)
-  
-  // Images (Cloudinary URLs)
-  images          String[]       // Array of Cloudinary image URLs
-  primaryImage    String?        // Main image URL
-  
-  // Description
-  description     String?
-  
-  // Relationships
-  ownerId         String?        // Admin who owns this car for rent
-  owner           User?          @relation("CarOwner", fields: [ownerId], references: [id])
-  
-  sellerId        String?        // Seller who is selling this car
-  seller          User?          @relation("CarSeller", fields: [sellerId], references: [id])
-  
-  rentals         Rental[]
-  purchases       Purchase[]
-  conversations   Conversation[]
-  deals           Deal[]
-  
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  
-  @@index([ownerId])
-  @@index([sellerId])
-  @@index([status])
-}
-
-model Rental {
-  id              String         @id @default(uuid())
-  
-  carId           String
-  car             Car            @relation(fields: [carId], references: [id])
-  
-  buyerId         String
-  buyer           User            @relation("RentalBuyer", fields: [buyerId], references: [id])
-  
-  // Rental Period
-  startDate       DateTime
-  endDate         DateTime
-  totalDays       Int
-  dailyPrice      Float
-  
-  // Payment
-  totalAmount     Float
-  razorpayOrderId String?        // Razorpay order ID
-  razorpayPaymentId String?      // Razorpay payment ID
-  paymentStatus   String         @default("PENDING") // PENDING, PAID, FAILED
-  
-  // Status
-  status          RentalStatus   @default(PENDING)
-  
-  // Optional conversation link
-  conversationId  String?        @unique
-  conversation    Conversation?  @relation(fields: [conversationId], references: [id])
-  deals           Deal[]
-  
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  
-  @@index([buyerId])
-  @@index([carId])
-  @@index([conversationId])
-}
-
-model Purchase {
-  id              String         @id @default(uuid())
-  
-  carId           String
-  car             Car            @relation(fields: [carId], references: [id])
-  
-  buyerId         String
-  buyer           User           @relation("PurchaseBuyer", fields: [buyerId], references: [id])
-  
-  // Payment
-  salePrice       Float
-  razorpayOrderId String?        // Razorpay order ID
-  razorpayPaymentId String?      // Razorpay payment ID
-  paymentStatus   String         @default("PENDING") // PENDING, PAID, FAILED
-  
-  // Platform Fees
-  platformFee     Float?         // Platform fee amount
-  sellerEarnings  Float?         // Amount seller receives after fee
-  conversationId  String?        // Links to chat where deal was made
-  conversation    Conversation?  @relation(fields: [conversationId], references: [id])
-  deals           Deal[]
-  
-  // Status
-  status          PurchaseStatus @default(PENDING)
-  
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  
-  @@index([buyerId])
-  @@index([carId])
-  @@index([conversationId])
-}
-
-model Conversation {
-  id              String         @id @default(uuid())
-  
-  // Participants
-  participant1Id  String        // User 1
-  participant1    User           @relation("ConversationParticipant1", fields: [participant1Id], references: [id])
-  participant2Id  String        // User 2
-  participant2    User           @relation("ConversationParticipant2", fields: [participant2Id], references: [id])
-  
-  // Context (optional - links to car or rental)
-  carId           String?
-  car             Car?           @relation(fields: [carId], references: [id])
-  rental          Rental?
-  
-  // Last message info
-  lastMessageAt   DateTime?
-  lastMessage     String?
-  
-  // Relationships
-  messages        Message[]
-  purchases       Purchase[]
-  deals           Deal[]
-  
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  
-  @@unique([participant1Id, participant2Id, carId])
-  @@index([participant1Id])
-  @@index([participant2Id])
-  @@index([carId])
-}
-
-model Message {
-  id              String         @id @default(uuid())
-  
-  conversationId  String
-  conversation    Conversation   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  
-  senderId        String
-  sender          User           @relation("MessageSender", fields: [senderId], references: [id])
-  
-  content         String         // Message text
-  imageUrl        String?        // Optional image attachment
-  
-  isRead          Boolean        @default(false)
-  readAt          DateTime?
-  
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  
-  @@index([conversationId])
-  @@index([senderId])
-  @@index([createdAt])
-}
-
-model PlatformFee {
-  id              String         @id @default(uuid())
-  
-  feePercentage   Float          @default(5.0) // Default 5% platform fee
-  isActive        Boolean        @default(true)
-  updatedBy       String?        // Admin ID who last updated
-  
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-}
-
-model Deal {
-  id              String         @id @default(uuid())
-  
-  conversationId  String
-  conversation    Conversation   @relation(fields: [conversationId], references: [id])
-  
-  carId           String
-  car             Car            @relation(fields: [carId], references: [id])
-  
-  buyerId         String
-  buyer           User           @relation("DealBuyer", fields: [buyerId], references: [id])
-  
-  sellerId        String
-  seller          User           @relation("DealSeller", fields: [sellerId], references: [id])
-  
-  // Deal details
-  agreedPrice     Float
-  dealType        String         // "PURCHASE" or "RENTAL"
-  
-  // Link to actual transaction
-  purchaseId      String?        // If deal resulted in purchase
-  purchase        Purchase?      @relation(fields: [purchaseId], references: [id])
-  rentalId        String?        // If deal resulted in rental
-  rental          Rental?        @relation(fields: [rentalId], references: [id])
-  
-  status          String         @default("PENDING") // PENDING, ACCEPTED, REJECTED, COMPLETED
-  
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  
-  @@index([conversationId])
-  @@index([buyerId])
-  @@index([sellerId])
-  @@index([carId])
-}
-
-model SubscriptionPayment {
-  id              String         @id @default(uuid())
-  
-  userId          String
-  user            User           @relation(fields: [userId], references: [id])
-  
-  // Payment Details
-  amount          Float
-  tier            SubscriptionTier
-  razorpayOrderId String?
-  razorpayPaymentId String?
-  paymentStatus   String         @default("PENDING") // PENDING, PAID, FAILED
-  
-  // Subscription Period
-  startDate       DateTime
-  endDate         DateTime
-  
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  
-  @@index([userId])
 }

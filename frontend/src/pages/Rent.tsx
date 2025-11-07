@@ -1,14 +1,15 @@
-import { useEffect, useRef, useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
-import Select from "react-select";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useLazyGetRentalCarsQuery, type Car } from "../services/carApi";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
-import { Filter, MapPin, DollarSign, Car as CarIcon } from "lucide-react";
+import { Filter, MapPin, Car as CarIcon } from "lucide-react";
 import CarCard from "../components/cars/CarCard";
 import CarCardSkeleton from "../components/cars/CarCardSkeleton";
 import EmptyState from "../components/common/EmptyState";
 import FilterChip from "../components/common/FilterChip";
+import { useDebounce } from "../hooks/useDebounce";
+import LazySelect from "../components/common/LazySelect";
 
 const Rent = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -41,11 +42,15 @@ const Rent = () => {
 
   const limit = 9;
 
-  // Fetch a page
-  const fetchPage = async (nextPage: number, replace = false) => {
+  // Debounce filter changes to reduce API calls
+  const debouncedCity = useDebounce(selectedCity, 300);
+  const debouncedBrand = useDebounce(selectedBrand, 300);
+
+  // Memoize fetchPage function
+  const fetchPage = useCallback(async (nextPage: number, replace = false) => {
     const { data } = await trigger({
-      city: selectedCity || undefined,
-      brand: selectedBrand || undefined,
+      city: debouncedCity || undefined,
+      brand: debouncedBrand || undefined,
       sortBy,
       sortOrder,
       includeUnavailable: true,
@@ -61,56 +66,69 @@ const Rent = () => {
       });
     }
     setCars((prev) => (replace ? data.cars : [...prev, ...data.cars]));
-  };
+  }, [debouncedCity, debouncedBrand, sortBy, sortOrder, trigger, limit]);
 
-  // Reset when filters/sort change
+  // Reset when filters/sort change (using debounced values)
   useEffect(() => {
     setPage(1);
     setCars([]);
     setHasMore(true);
     fetchPage(1, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCity, selectedBrand, sortBy, sortOrder]);
+  }, [debouncedCity, debouncedBrand, sortBy, sortOrder, fetchPage]);
 
   // IntersectionObserver to load more
   useEffect(() => {
     const el = loadMoreRef.current;
-    if (!el) return;
+    if (!el || !hasMore || isFetching) return;
+    
     const obs = new IntersectionObserver(
       (entries) => {
         const first = entries[0];
         if (first.isIntersecting && hasMore && !isFetching) {
-          const next = page + 1;
-          setPage(next);
-          fetchPage(next);
+          setPage((prevPage) => {
+            const nextPage = prevPage + 1;
+            // Fetch the next page
+            fetchPage(nextPage).catch(console.error);
+            return nextPage;
+          });
         }
       },
       { rootMargin: "200px" }
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [page, hasMore, isFetching]);
+  }, [hasMore, isFetching, fetchPage]);
 
-  const cityOptions = [
-    { value: "", label: "All Cities" },
-    ...filters.cities.map((city) => ({ value: city, label: city })),
-  ];
+  // Memoize filter options to prevent unnecessary re-renders
+  const cityOptions = useMemo(
+    () => [
+      { value: "", label: "All Cities" },
+      ...filters.cities.map((city) => ({ value: city, label: city })),
+    ],
+    [filters.cities]
+  );
 
-  const brandOptions = [
-    { value: "", label: "All Brands" },
-    ...filters.brands.map((brand) => ({ value: brand, label: brand })),
-  ];
+  const brandOptions = useMemo(
+    () => [
+      { value: "", label: "All Brands" },
+      ...filters.brands.map((brand) => ({ value: brand, label: brand })),
+    ],
+    [filters.brands]
+  );
 
-  const sortOptions = [
-    { value: "price", label: "Price (Low to High)" },
-    { value: "price-desc", label: "Price (High to Low)" },
-    { value: "city", label: "City (A-Z)" },
-    { value: "city-desc", label: "City (Z-A)" },
-    { value: "brand", label: "Brand (A-Z)" },
-    { value: "brand-desc", label: "Brand (Z-A)" },
-  ];
+  const sortOptions = useMemo(
+    () => [
+      { value: "price", label: "Price (Low to High)" },
+      { value: "price-desc", label: "Price (High to Low)" },
+      { value: "city", label: "City (A-Z)" },
+      { value: "city-desc", label: "City (Z-A)" },
+      { value: "brand", label: "Brand (A-Z)" },
+      { value: "brand-desc", label: "Brand (Z-A)" },
+    ],
+    []
+  );
 
-  const handleSortChange = (selected: any) => {
+  const handleSortChange = useCallback((selected: any) => {
     if (selected?.value.includes("-desc")) {
       setSortBy(selected.value.split("-")[0]);
       setSortOrder("desc");
@@ -118,7 +136,30 @@ const Rent = () => {
       setSortBy(selected?.value || "price");
       setSortOrder("asc");
     }
-  };
+  }, []);
+
+  // Memoize filtered cars list
+  const filteredCars = useMemo(() => {
+    if (showUnavailable) return cars;
+    return cars.filter((car) => {
+      const status =
+        car.availability?.status ||
+        (car.status as string | undefined);
+      if (status === "RENTED") return false;
+      if (status === "BOOKED_UNTIL") {
+        const next = car.availability?.nextAvailableDate
+          ? new Date(car.availability.nextAvailableDate)
+          : null;
+        if (next) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          next.setHours(0, 0, 0, 0);
+          if (next > today) return false;
+        }
+      }
+      return true;
+    });
+  }, [cars, showUnavailable]);
 
   return (
     <div className="min-h-screen bg-light-subtle">
@@ -135,8 +176,8 @@ const Rent = () => {
         </div>
 
         {/* Filters and Sorting */}
-        <div className="glass rounded-2xl p-6 md:p-8 space-component relative z-10">
-          <div className="flex items-center justify-between mb-4">
+        <div className="glass rounded-2xl p-5 sm:p-6 lg:p-8 space-component relative z-20">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-2">
               <Filter className="w-5 h-5 text-primary-600" />
               <h2 className="text-xl font-semibold text-dark-900">
@@ -185,13 +226,13 @@ const Rent = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
+            <div className="min-w-0">
               <label className="block text-sm font-medium text-dark-900 mb-2">
                 <MapPin className="w-4 h-4 inline mr-1" />
                 City
               </label>
-              <Select
+              <LazySelect
                 options={cityOptions}
                 value={cityOptions.find((opt) => opt.value === selectedCity)}
                 onChange={(selected) => setSelectedCity(selected?.value || "")}
@@ -201,11 +242,11 @@ const Rent = () => {
               />
             </div>
 
-            <div>
+            <div className="min-w-0">
               <label className="block text-sm font-medium text-dark-900 mb-2">
                 Brand
               </label>
-              <Select
+              <LazySelect
                 options={brandOptions}
                 value={brandOptions.find((opt) => opt.value === selectedBrand)}
                 onChange={(selected) => setSelectedBrand(selected?.value || "")}
@@ -215,11 +256,11 @@ const Rent = () => {
               />
             </div>
 
-            <div>
+            <div className="min-w-0">
               <label className="block text-sm font-medium text-dark-900 mb-2">
                 Sort By
               </label>
-              <Select
+              <LazySelect
                 options={sortOptions}
                 value={sortOptions.find(
                   (opt) =>
@@ -233,7 +274,7 @@ const Rent = () => {
               />
             </div>
 
-            <div className="flex items-end">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:col-span-2 xl:col-span-1">
               <button
                 onClick={() => {
                   setSelectedCity("");
@@ -241,13 +282,11 @@ const Rent = () => {
                   setSortBy("price");
                   setSortOrder("asc");
                 }}
-                className="w-full px-4 py-2 bg-gradient-primary hover:bg-gradient-primary-dark text-white rounded-lg font-semibold transition shadow-md hover:shadow-lg"
+                className="w-full sm:w-auto px-4 py-2 bg-gradient-primary hover:bg-gradient-primary-dark text-white rounded-lg font-semibold transition shadow-md hover:shadow-lg"
               >
                 Reset Filters
               </button>
-            </div>
-            <div className="flex items-end">
-              <label className="flex items-center gap-2 text-sm text-dark-700 cursor-pointer select-none">
+              <label className="flex items-center gap-2 text-sm text-dark-700 cursor-pointer select-none justify-between sm:justify-end">
                 <input
                   type="checkbox"
                   checked={showUnavailable}
@@ -283,31 +322,17 @@ const Rent = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
-            {(showUnavailable
-              ? cars
-              : cars.filter((car) => {
-                  const status =
-                    car.availability?.status ||
-                    (car.status as string | undefined);
-                  if (status === "RENTED") return false;
-                  if (status === "BOOKED_UNTIL") {
-                    const next = car.availability?.nextAvailableDate
-                      ? new Date(car.availability.nextAvailableDate)
-                      : null;
-                    if (next) {
-                      const today = new Date();
-                      today.setHours(0, 0, 0, 0);
-                      next.setHours(0, 0, 0, 0);
-                      if (next > today) return false;
-                    }
-                  }
-                  return true;
-                })
-            ).map((car) => (
+            {filteredCars.map((car) => (
               <CarCard key={car.id} car={car} variant="rental" />
             ))}
             {/* Sentinel for infinite scroll */}
-            <div ref={loadMoreRef} className="h-1" />
+            {hasMore && (
+              <div ref={loadMoreRef} className="h-10 flex items-center justify-center">
+                {isFetching && (
+                  <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

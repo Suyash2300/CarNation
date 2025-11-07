@@ -51,23 +51,70 @@ router.get('/:id', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Car not found' });
     }
 
-    // Add availability info for rental cars
+    // Calculate availability using already-fetched rentals (no extra query!)
     let carWithAvailability = car;
     if (car.isForRent) {
-      try {
-        const availability = await getCarAvailability(car.id);
-        carWithAvailability = {
-          ...car,
-          availability,
-        };
-      } catch (error) {
-        // If error, include default availability
+      const rentals = car.rentals || [];
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+
+      if (rentals.length === 0) {
         carWithAvailability = {
           ...car,
           availability: {
             status: 'AVAILABLE' as const,
-            bookedDates: [],
             isCurrentlyRented: false,
+            bookedDates: [],
+            activeRentalsCount: 0,
+          },
+        };
+      } else {
+        // Check if car is currently rented
+        const isCurrentlyRented = rentals.some((rental) => {
+          const start = new Date(rental.startDate);
+          start.setHours(0, 0, 0, 0);
+          const end = new Date(rental.endDate);
+          end.setHours(23, 59, 59, 999);
+          return now >= start && now <= end;
+        });
+
+        // Find the latest end date
+        const latestEndDate = rentals.reduce((latest, rental) => {
+          const rentalEnd = new Date(rental.endDate);
+          return rentalEnd > latest ? rentalEnd : latest;
+        }, new Date(rentals[0].endDate));
+
+        // Calculate next available date
+        const nextAvailableDate = new Date(latestEndDate);
+        nextAvailableDate.setDate(nextAvailableDate.getDate() + 1);
+        nextAvailableDate.setHours(0, 0, 0, 0);
+
+        // Format booked dates
+        const bookedDates = rentals.map((rental) => ({
+          startDate: rental.startDate.toISOString(),
+          endDate: rental.endDate.toISOString(),
+          status: rental.status,
+        }));
+
+        // Determine status
+        let status: 'AVAILABLE' | 'RENTED' | 'BOOKED_UNTIL';
+        if (isCurrentlyRented) {
+          status = 'RENTED';
+        } else if (nextAvailableDate > now) {
+          status = 'BOOKED_UNTIL';
+        } else {
+          status = 'AVAILABLE';
+        }
+
+        carWithAvailability = {
+          ...car,
+          availability: {
+            status,
+            isCurrentlyRented,
+            nextAvailableDate: nextAvailableDate.toISOString().split('T')[0],
+            bookedUntil: latestEndDate.toISOString().split('T')[0],
+            bookedDates,
+            activeRentalsCount: rentals.length,
           },
         };
       }

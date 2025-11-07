@@ -1,5 +1,6 @@
 import { Router, Response } from 'express';
 import prisma from '../db/prisma';
+import { generateToken } from '../utils/jwt';
 import { authenticate, AuthRequest } from '../middleware/auth';
 
 const router = Router();
@@ -126,6 +127,7 @@ router.post('/cars', async (req: AuthRequest, res: Response) => {
       year,
       color,
       mileage,
+      ownersCount,
       transmission,
       fuelType,
       seats,
@@ -154,7 +156,14 @@ router.post('/cars', async (req: AuthRequest, res: Response) => {
         model,
         year: parseInt(year),
         color,
-        mileage: mileage ? parseFloat(mileage) : null,
+        mileage:
+          mileage !== undefined && mileage !== null && mileage !== ''
+            ? parseFloat(mileage)
+            : null,
+        ownersCount:
+          ownersCount !== undefined && ownersCount !== null && ownersCount !== ''
+            ? Number(ownersCount)
+            : null,
         transmission,
         fuelType,
         seats: seats ? parseInt(seats) : null,
@@ -194,7 +203,18 @@ router.put('/cars/:id', async (req: AuthRequest, res: Response) => {
 
     // Convert numeric fields
     if (updateData.year) updateData.year = parseInt(updateData.year);
-    if (updateData.mileage) updateData.mileage = parseFloat(updateData.mileage);
+    if (updateData.mileage !== undefined) {
+      updateData.mileage =
+        updateData.mileage !== null && updateData.mileage !== ''
+          ? parseFloat(updateData.mileage)
+          : null;
+    }
+    if (updateData.ownersCount !== undefined) {
+      updateData.ownersCount =
+        updateData.ownersCount !== null && updateData.ownersCount !== ''
+          ? Number(updateData.ownersCount)
+          : null;
+    }
     if (updateData.seats) updateData.seats = parseInt(updateData.seats);
     if (updateData.rentalPrice) updateData.rentalPrice = parseFloat(updateData.rentalPrice);
 
@@ -428,4 +448,53 @@ router.get('/users', async (req: AuthRequest, res: Response) => {
 });
 
 export default router;
+
+// Public (no auth) support-user endpoint can be registered separately if needed
+export const supportRouter = Router();
+// Public endpoint to pick a support user (ADMIN preferred, fallback SELLER)
+supportRouter.get('/support-user', async (req, res) => {
+  try {
+    const role = (req.query.role as string) || 'ADMIN';
+    const user = await prisma.user.findFirst({ where: { role }, select: { id: true } });
+    if (!user) return res.status(404).json({ error: 'No support user available' });
+    res.json({ userId: user.id });
+  } catch (e) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin-only: mint short-lived JWT to impersonate the other participant in a conversation
+router.post('/conversations/:id/impersonate', async (req: AuthRequest, res: Response) => {
+  try {
+    const adminId = req.user!.userId;
+    if (req.user?.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Admin only' });
+    }
+
+    const { id } = req.params;
+    const convo = await prisma.conversation.findUnique({
+      where: { id },
+      select: { participant1Id: true, participant2Id: true },
+    });
+    if (!convo) return res.status(404).json({ error: 'Conversation not found' });
+
+    // Determine counterpart user id (not the admin)
+    const isAdminP1 = convo.participant1Id === adminId;
+    const isAdminP2 = convo.participant2Id === adminId;
+    if (!isAdminP1 && !isAdminP2) {
+      return res.status(403).json({ error: 'Admin must be a participant' });
+    }
+    const otherUserId = isAdminP1 ? convo.participant2Id : convo.participant1Id;
+
+    const otherUser = await prisma.user.findUnique({ where: { id: otherUserId } });
+    if (!otherUser) return res.status(404).json({ error: 'User not found' });
+
+    // Token with short expiration (15 minutes)
+    const token = generateToken({ userId: otherUser.id, email: otherUser.email, role: otherUser.role }, '15m');
+    res.json({ token });
+  } catch (error) {
+    console.error('Impersonate error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 

@@ -3,6 +3,7 @@ import { Conversation } from '../../services/chatApi';
 import { useCreateDealMutation } from '../../services/dealsApi';
 import { useAppSelector } from '../../hooks/redux';
 import { Handshake } from 'lucide-react';
+import { useToast } from '../common/ToastContainer';
 
 interface DealButtonProps {
   conversation: Conversation;
@@ -15,6 +16,7 @@ const DealButton = ({ conversation, onDealCreated }: DealButtonProps) => {
   const [showDealModal, setShowDealModal] = useState(false);
   const [agreedPrice, setAgreedPrice] = useState('');
   const [dealType, setDealType] = useState<'PURCHASE' | 'RENTAL'>('PURCHASE');
+  const { showWarning, showSuccess, showError } = useToast();
 
   if (!conversation.car) {
     return null; // No car associated with this conversation
@@ -27,7 +29,7 @@ const DealButton = ({ conversation, onDealCreated }: DealButtonProps) => {
 
   const handleCreateDeal = async () => {
     if (!agreedPrice || parseFloat(agreedPrice) <= 0) {
-      alert('Please enter a valid agreed price');
+      showWarning('Please enter a valid agreed price');
       return;
     }
 
@@ -39,12 +41,12 @@ const DealButton = ({ conversation, onDealCreated }: DealButtonProps) => {
         dealType,
       }).unwrap();
 
-      alert('Deal created successfully!');
+      showSuccess('Deal created successfully!');
       setShowDealModal(false);
       setAgreedPrice('');
       onDealCreated?.();
     } catch (error: any) {
-      alert(error?.data?.error || 'Failed to create deal');
+      showError(error?.data?.error || 'Failed to create deal');
     }
   };
 

@@ -81,7 +81,7 @@ const VerifyAadhaar = () => {
       <div className="min-h-screen bg-light-subtle">
         <Navbar />
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="glass rounded-xl p-8 text-center">
+          <div className="glass rounded-xl p-6 sm:p-8 text-center">
             <CheckCircle className="w-16 h-16 text-success-600 mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-dark-900 mb-2">Aadhaar Already Verified</h1>
             <p className="text-dark-600 mb-6">
@@ -111,7 +111,7 @@ const VerifyAadhaar = () => {
           </p>
         </div>
 
-        <div className="glass rounded-xl p-8">
+        <div className="glass rounded-xl p-6 sm:p-8">
           {success && (
             <div className="mb-6 p-4 bg-success-100 border border-success-300 rounded-lg flex items-center gap-3">
               <CheckCircle className="w-5 h-5 text-success-600" />

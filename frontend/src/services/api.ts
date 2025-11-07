@@ -21,6 +21,11 @@ export const api = createApi({
     },
   }),
   tagTypes: ['User', 'Car', 'Rental', 'Purchase', 'Admin', 'Conversations', 'Conversation', 'Messages', 'Deals', 'PlatformFees', 'Payment'],
+  // Performance optimizations: cache configuration
+  keepUnusedDataFor: 60, // Keep unused data for 60 seconds (1 minute)
+  refetchOnMountOrArgChange: false, // Don't refetch on mount if data exists in cache
+  refetchOnFocus: false, // Don't refetch when window regains focus (prevents unnecessary requests)
+  refetchOnReconnect: true, // Refetch on reconnect (network recovery)
   endpoints: () => ({}),
 });
 

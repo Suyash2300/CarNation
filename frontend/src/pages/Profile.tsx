@@ -4,6 +4,7 @@ import { useGetMeQuery, useUpdateProfileMutation, useUploadProfileImageMutation 
 import { updateUser } from '../store/slices/authSlice';
 import Navbar from '../components/layout/Navbar';
 import { User, Camera, Save, X } from 'lucide-react';
+import { useToast } from '../components/common/ToastContainer';
 
 const Profile = () => {
   const { user: authUser } = useAppSelector((state) => state.auth);
@@ -11,6 +12,7 @@ const Profile = () => {
   const { data, refetch } = useGetMeQuery();
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
   const [uploadImage, { isLoading: isUploading }] = useUploadProfileImageMutation();
+  const { showSuccess, showError, showWarning } = useToast();
 
   const user = data?.user || authUser;
 
@@ -55,9 +57,9 @@ const Profile = () => {
       dispatch(updateUser(result.user));
       setIsEditing(false);
       refetch();
-      alert('Profile updated successfully!');
+      showSuccess('Profile updated successfully!');
     } catch (error: any) {
-      alert(error?.data?.error || 'Failed to update profile');
+      showError(error?.data?.error || 'Failed to update profile');
     }
   };
 
@@ -66,12 +68,12 @@ const Profile = () => {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('Please upload an image file');
+      showWarning('Please upload an image file');
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image size should be less than 5MB');
+      showWarning('Image size should be less than 5MB');
       return;
     }
 
@@ -82,9 +84,9 @@ const Profile = () => {
       const result = await uploadImage(formData).unwrap();
       dispatch(updateUser(result.user));
       refetch();
-      alert('Profile image updated successfully!');
+      showSuccess('Profile image updated successfully!');
     } catch (error: any) {
-      alert(error?.data?.error || 'Failed to upload profile image');
+      showError(error?.data?.error || 'Failed to upload profile image');
     }
   };
 
@@ -105,7 +107,7 @@ const Profile = () => {
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-dark-900 mb-2">My Profile</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold text-dark-900 mb-2">My Profile</h1>
           <p className="text-dark-600">Manage your profile information and settings</p>
         </div>
 
@@ -172,7 +174,7 @@ const Profile = () => {
                 }
                 setIsEditing(!isEditing);
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold transition"
+              className="w-full md:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold transition"
             >
               {isEditing ? (
                 <>
@@ -316,7 +318,7 @@ const Profile = () => {
             </div>
 
             {isEditing && (
-              <div className="mt-6 flex justify-end gap-4">
+              <div className="mt-6 flex flex-col sm:flex-row sm:justify-end gap-3 sm:gap-4">
                 <button
                   type="button"
                   onClick={() => {
@@ -332,14 +334,14 @@ const Profile = () => {
                     });
                     setIsEditing(false);
                   }}
-                  className="px-6 py-2 border-2 border-dark-300 text-dark-700 rounded-lg font-semibold hover:bg-dark-50 transition"
+                  className="w-full sm:w-auto px-6 py-2 border-2 border-dark-300 text-dark-700 rounded-lg font-semibold hover:bg-dark-50 transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isUpdating}
-                  className="flex items-center gap-2 px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Save className="w-4 h-4" />
                   {isUpdating ? 'Saving...' : 'Save Changes'}

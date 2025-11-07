@@ -48,6 +48,7 @@ router.post('/cars', authenticate, async (req: AuthRequest, res: Response) => {
       year,
       color,
       mileage,
+      ownersCount,
       transmission,
       fuelType,
       seats,
@@ -78,6 +79,10 @@ router.post('/cars', authenticate, async (req: AuthRequest, res: Response) => {
         year: parseInt(year),
         color,
         mileage: mileage ? parseFloat(mileage) : null,
+        ownersCount:
+          ownersCount !== undefined && ownersCount !== null && ownersCount !== ''
+            ? Number(ownersCount)
+            : null,
         transmission,
         fuelType,
         seats: seats ? parseInt(seats) : null,
@@ -123,6 +128,7 @@ router.put('/cars/:id', authenticate, async (req: AuthRequest, res: Response) =>
       year,
       color,
       mileage,
+      ownersCount,
       transmission,
       fuelType,
       seats,
@@ -147,7 +153,16 @@ router.put('/cars/:id', authenticate, async (req: AuthRequest, res: Response) =>
         ...(model && { model }),
         ...(year && { year: parseInt(year) }),
         ...(color !== undefined && { color }),
-        ...(mileage !== undefined && { mileage: mileage ? parseFloat(mileage) : null }),
+        ...(mileage !== undefined && {
+          mileage:
+            mileage !== null && mileage !== '' ? parseFloat(mileage) : null,
+        }),
+        ...(ownersCount !== undefined && {
+          ownersCount:
+            ownersCount !== null && ownersCount !== ''
+              ? Number(ownersCount)
+              : null,
+        }),
         ...(transmission !== undefined && { transmission }),
         ...(fuelType !== undefined && { fuelType }),
         ...(seats !== undefined && { seats: seats ? parseInt(seats) : null }),

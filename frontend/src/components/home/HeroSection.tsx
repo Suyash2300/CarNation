@@ -8,19 +8,21 @@ const HeroSection = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="relative bg-gradient-to-br from-dark-900 via-dark-800 to-dark-950 text-white overflow-hidden min-h-[90vh] flex items-center">
+    <div className="relative bg-gradient-to-br from-dark-900 via-dark-800 to-dark-950 text-white overflow-hidden min-h-[75vh] sm:min-h-[85vh] lg:min-h-[90vh] flex items-center py-16">
       {/* Banner Image Background */}
       <div className="absolute inset-0">
         <img
           src={bannerImage}
           alt="CarNation Banner"
           className="w-full h-full object-cover"
+          loading="eager"
+          decoding="async"
         />
         {/* Overlay for better text readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-dark-900/90 via-dark-800/80 to-dark-900/60"></div>
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20 lg:py-24 z-10 w-full">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 lg:py-24 z-10 w-full">
         <div className="text-center space-y-6 md:space-y-8 animate-fade-in">
           <div className="space-y-4 md:space-y-6">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight font-heading text-white drop-shadow-2xl animate-fade-in-up">
@@ -33,12 +35,12 @@ const HeroSection = () => {
             </p>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-4 pt-4 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+          <div className="flex flex-col sm:flex-row sm:flex-wrap justify-center gap-3 sm:gap-4 pt-4 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
             <Button
               variant="primary"
               size="lg"
               onClick={() => navigate("/rent")}
-              className="px-8 py-4 text-lg"
+              className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg"
             >
               Rent a Car
             </Button>
@@ -46,7 +48,7 @@ const HeroSection = () => {
               variant="secondary"
               size="lg"
               onClick={() => navigate("/used-cars")}
-              className="px-8 py-4 text-lg"
+              className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg"
             >
               Buy a Car
             </Button>

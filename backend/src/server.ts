@@ -2,10 +2,11 @@ import express, { Express, Request, Response } from 'express';
 import { createServer } from 'http';
 import { Server as SocketServer } from 'socket.io';
 import cors from 'cors';
+import compression from 'compression';
 import dotenv from 'dotenv';
 import prisma from './db/prisma';
 import authRoutes from './routes/auth.routes';
-import adminRoutes from './routes/admin.routes';
+import adminRoutes, { supportRouter } from './routes/admin.routes';
 import { socketAuth } from './middleware/socketAuth';
 import { setupChatHandler } from './socket/chatHandler';
 
@@ -15,6 +16,20 @@ dotenv.config();
 const app: Express = express();
 const httpServer = createServer(app);
 const PORT = process.env.PORT || 3000;
+
+// Compression middleware (gzip/brotli) - should be early in middleware chain
+app.use(compression({
+  filter: (req: Request, res: Response) => {
+    // Don't compress responses if client doesn't support it
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    // Use compression for all other responses
+    return compression.filter(req, res);
+  },
+  level: 6, // Compression level (1-9, 6 is a good balance)
+  threshold: 1024, // Only compress responses larger than 1KB
+}));
 
 // Initialize Socket.io
 const io = new SocketServer(httpServer, {
@@ -104,6 +119,8 @@ app.use('/api/auth', authRoutes);
 
 // Admin routes
 app.use('/api/admin', adminRoutes);
+// Public support helper
+app.use('/api', supportRouter);
 
 // Public car routes
 import carsRoutes from './routes/cars.routes';
@@ -148,6 +165,10 @@ app.use('/api/subscriptions', subscriptionRoutes);
 // Payment routes (requires authentication)
 import paymentRoutes from './routes/payment.routes';
 app.use('/api/payments', paymentRoutes);
+
+// Shops routes (public + admin)
+import shopsRoutes from './routes/shops.routes';
+app.use('/api/shops', shopsRoutes);
 
 
 // Scheduled jobs

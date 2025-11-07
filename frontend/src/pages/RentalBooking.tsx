@@ -19,7 +19,10 @@ import {
   ArrowLeft,
   XCircle,
   CreditCard,
+  MapPin,
+  Clock,
 } from "lucide-react";
+import { useGetShopsByCityQuery } from "../services/shopApi";
 
 const RentalBooking = () => {
   const { id } = useParams<{ id: string }>();
@@ -41,6 +44,7 @@ const RentalBooking = () => {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   const car = carData?.car;
+  const { data: cityShops } = useGetShopsByCityQuery({ city: car?.city || undefined }, { skip: !car?.city });
   const allUnavailableDates = unavailableDatesData?.unavailableDates || [];
 
   // Filter out past dates - only show future unavailable dates
@@ -377,6 +381,22 @@ const RentalBooking = () => {
               </div>
             </div>
 
+            {/* Pickup from shop */}
+            <div className="bg-dark-50 rounded-lg p-4">
+              <h3 className="font-semibold text-dark-900 mb-2 flex items-center gap-2">
+                <MapPin className="w-4 h-4" /> Pickup from shop
+              </h3>
+              <div className="text-sm text-dark-700 space-y-1">
+                <p>
+                  Location: <span className="font-medium">{cityShops?.shops?.[0]?.addressLine ? `${cityShops.shops[0].addressLine}${cityShops.shops[0].landmark ? ', ' + cityShops.shops[0].landmark : ''}${cityShops.shops[0].pincode ? ' - ' + cityShops.shops[0].pincode : ''}` : (car.city || 'Pickup address will be shared after confirmation')}</span>
+                </p>
+                <p className="flex items-center gap-1">
+                  <Clock className="w-4 h-4" /> Working hours: {cityShops?.shops?.[0]?.hoursStart || '09:00'} – {cityShops?.shops?.[0]?.hoursEnd || '19:00'}
+                </p>
+                <p>Bring original DL and Aadhaar for verification during handover.</p>
+              </div>
+            </div>
+
             {startDate && endDate && (
               <div className="bg-dark-50 rounded-lg p-6">
                 <h3 className="font-semibold text-dark-900 mb-4">
@@ -388,6 +408,14 @@ const RentalBooking = () => {
                     <span className="font-semibold text-dark-900">
                       {car.brand} {car.model} ({car.year})
                     </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-dark-600">Pickup Method:</span>
+                    <span className="font-semibold text-dark-900">Pickup from shop</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-dark-600">Pickup Location:</span>
+                    <span className="font-semibold text-dark-900">{cityShops?.shops?.[0]?.addressLine ? `${cityShops.shops[0].addressLine}${cityShops.shops[0].landmark ? ', ' + cityShops.shops[0].landmark : ''}${cityShops.shops[0].pincode ? ' - ' + cityShops.shops[0].pincode : ''}` : (car.city || 'Shared post-confirmation')}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-dark-600">Daily Rate:</span>
@@ -416,11 +444,11 @@ const RentalBooking = () => {
             )}
 
             {!paymentOrder ? (
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <button
                   type="button"
                   onClick={() => navigate(-1)}
-                  className="px-6 py-3 border-2 border-dark-300 text-dark-700 font-semibold rounded-lg hover:bg-dark-50 transition"
+                  className="w-full sm:w-auto px-6 py-3 border-2 border-dark-300 text-dark-700 font-semibold rounded-lg hover:bg-dark-50 transition"
                 >
                   Cancel
                 </button>

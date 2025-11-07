@@ -1,11 +1,12 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../db/prisma';
 import { getCarAvailability, getUnavailableDates } from '../services/availabilityService';
+import { dynamicCache, staticCache } from '../middleware/cache';
 
 const router = Router();
 
-// Get rental cars (public endpoint)
-router.get('/rent', async (req: Request, res: Response) => {
+// Get rental cars (public endpoint) - with dynamic cache (1 minute)
+router.get('/rent', dynamicCache, async (req: Request, res: Response) => {
   try {
     const {
       city,
@@ -65,7 +66,7 @@ router.get('/rent', async (req: Request, res: Response) => {
     const limitNum = parseInt(limit as string);
     const skip = (pageNum - 1) * limitNum;
 
-    const [cars, total] = await Promise.all([
+    const [cars, total, filterData] = await Promise.all([
       prisma.car.findMany({
         where,
         orderBy,
@@ -91,43 +92,103 @@ router.get('/rent', async (req: Request, res: Response) => {
         },
       }),
       prisma.car.count({ where }),
+      // Optimize: Get filters in parallel with main query
+      // Always include all brands/cities (regardless of status) so users can filter by any brand
+      Promise.all([
+        prisma.car.findMany({
+          where: { 
+            isForRent: true, 
+            city: { not: null } 
+          },
+          select: { city: true },
+          distinct: ['city'],
+        }),
+        prisma.car.findMany({
+          where: { 
+            isForRent: true
+          },
+          select: { brand: true },
+          distinct: ['brand'],
+        }),
+      ]),
     ]);
 
-    // Calculate availability for each car
-    const carsWithAvailability = await Promise.all(
-      cars.map(async (car) => {
-        try {
-          const availability = await getCarAvailability(car.id);
-          return {
-            ...car,
-            availability,
-          };
-        } catch (error) {
-          // If error calculating, return car without availability
-          return {
-            ...car,
-            availability: {
-              status: 'AVAILABLE' as const,
-              bookedDates: [],
-              isCurrentlyRented: false,
-            },
-          };
-        }
-      })
-    );
+    // Calculate availability for each car using already-fetched rentals (no extra queries!)
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
 
-    // Get unique cities and brands for filters
-    const cities = await prisma.car.findMany({
-      where: { isForRent: true, status: 'AVAILABLE', city: { not: null } },
-      select: { city: true },
-      distinct: ['city'],
+    const carsWithAvailability = cars.map((car) => {
+      const rentals = car.rentals || [];
+      
+      if (rentals.length === 0) {
+        return {
+          ...car,
+          availability: {
+            status: 'AVAILABLE' as const,
+            isCurrentlyRented: false,
+            bookedDates: [],
+            activeRentalsCount: 0,
+          },
+        };
+      }
+
+      // Check if car is currently rented
+      const isCurrentlyRented = rentals.some((rental) => {
+        const start = new Date(rental.startDate);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(rental.endDate);
+        end.setHours(23, 59, 59, 999);
+        return now >= start && now <= end;
+      });
+
+      // Find the latest end date
+      const latestEndDate = rentals.reduce((latest, rental) => {
+        const rentalEnd = new Date(rental.endDate);
+        return rentalEnd > latest ? rentalEnd : latest;
+      }, new Date(rentals[0].endDate));
+
+      // Calculate next available date
+      const nextAvailableDate = new Date(latestEndDate);
+      nextAvailableDate.setDate(nextAvailableDate.getDate() + 1);
+      nextAvailableDate.setHours(0, 0, 0, 0);
+
+      // Format booked dates
+      const bookedDates = rentals.map((rental) => ({
+        startDate: rental.startDate.toISOString(),
+        endDate: rental.endDate.toISOString(),
+        status: rental.status,
+      }));
+
+      // Determine status
+      let status: 'AVAILABLE' | 'RENTED' | 'BOOKED_UNTIL';
+      if (isCurrentlyRented) {
+        status = 'RENTED';
+      } else if (nextAvailableDate > now) {
+        status = 'BOOKED_UNTIL';
+      } else {
+        status = 'AVAILABLE';
+      }
+
+      return {
+        ...car,
+        availability: {
+          status,
+          isCurrentlyRented,
+          nextAvailableDate: nextAvailableDate.toISOString().split('T')[0],
+          bookedUntil: latestEndDate.toISOString().split('T')[0],
+          bookedDates,
+          activeRentalsCount: rentals.length,
+        },
+      };
     });
 
-    const brands = await prisma.car.findMany({
-      where: { isForRent: true, status: 'AVAILABLE' },
-      select: { brand: true },
-      distinct: ['brand'],
-    });
+    const [cities, brands] = filterData;
+
+    // Sort brands alphabetically and filter out null/undefined
+    const sortedBrands = brands
+      .map((b) => b.brand)
+      .filter((brand): brand is string => Boolean(brand))
+      .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' })); // Case-insensitive sort
 
     res.json({
       cars: carsWithAvailability,
@@ -138,8 +199,8 @@ router.get('/rent', async (req: Request, res: Response) => {
         totalPages: Math.ceil(total / limitNum),
       },
       filters: {
-        cities: cities.map((c) => c.city).filter(Boolean),
-        brands: brands.map((b) => b.brand),
+        cities: cities.map((c) => c.city).filter(Boolean).sort(),
+        brands: sortedBrands,
       },
     });
   } catch (error) {
@@ -148,8 +209,8 @@ router.get('/rent', async (req: Request, res: Response) => {
   }
 });
 
-// Get cars for sale (public endpoint)
-router.get('/buy', async (req: Request, res: Response) => {
+// Get cars for sale (public endpoint) - with dynamic cache (1 minute)
+router.get('/buy', dynamicCache, async (req: Request, res: Response) => {
   try {
     const {
       city,
@@ -220,18 +281,19 @@ router.get('/buy', async (req: Request, res: Response) => {
       prisma.car.count({ where }),
     ]);
 
-    // Get unique cities and brands for filters
-    const cities = await prisma.car.findMany({
-      where: { isForSale: true, status: 'AVAILABLE', city: { not: null } },
-      select: { city: true },
-      distinct: ['city'],
-    });
-
-    const brands = await prisma.car.findMany({
-      where: { isForSale: true, status: 'AVAILABLE' },
-      select: { brand: true },
-      distinct: ['brand'],
-    });
+    // Get unique cities and brands for filters (optimized - single parallel query)
+    const [cities, brands] = await Promise.all([
+      prisma.car.findMany({
+        where: { isForSale: true, status: 'AVAILABLE', city: { not: null } },
+        select: { city: true },
+        distinct: ['city'],
+      }),
+      prisma.car.findMany({
+        where: { isForSale: true, status: 'AVAILABLE' },
+        select: { brand: true },
+        distinct: ['brand'],
+      }),
+    ]);
 
     res.json({
       cars,
@@ -242,8 +304,11 @@ router.get('/buy', async (req: Request, res: Response) => {
         totalPages: Math.ceil(total / limitNum),
       },
       filters: {
-        cities: cities.map((c) => c.city).filter(Boolean),
-        brands: brands.map((b) => b.brand),
+        cities: cities.map((c) => c.city).filter(Boolean).sort(),
+        brands: brands
+          .map((b) => b.brand)
+          .filter((brand): brand is string => Boolean(brand))
+          .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' })), // Case-insensitive sort
       },
     });
   } catch (error) {

@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import StatCard from "../components/common/StatCard";
 import { useToast } from "../components/common/ToastContainer";
-import ConfirmDialog from "../components/common/ConfirmDialog";
+import { useConfirm } from "../components/common/ConfirmProvider";
 import Breadcrumbs from "../components/common/Breadcrumbs";
 import { Link } from "react-router-dom";
 import AddSellerCarModal from "../components/seller/AddSellerCarModal";
@@ -40,32 +40,29 @@ const SellerDashboard = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingCar, setEditingCar] = useState<Car | null>(null);
   const [activeTab, setActiveTab] = useState<'listings' | 'subscription' | 'deals'>('listings');
-  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; carId: string | null; carName: string }>({
-    isOpen: false,
-    carId: null,
-    carName: '',
-  });
 
   const cars = data?.cars || [];
   const stats = statsData?.stats;
   const deals = dealsData?.deals || [];
-  const { showSuccess, showError } = useToast();
+  const { showSuccess, showError, showInfo } = useToast();
+  const confirm = useConfirm();
 
-  const handleDeleteClick = (car: Car) => {
-    setDeleteConfirm({
-      isOpen: true,
-      carId: car.id,
-      carName: `${car.brand} ${car.model}`,
+  const handleDeleteClick = async (car: Car) => {
+    const confirmed = await confirm({
+      title: "Delete Car Listing",
+      message: `Are you sure you want to delete "${car.brand} ${car.model}"? This action cannot be undone.`,
+      confirmLabel: "Delete",
+      cancelLabel: "Cancel",
+      variant: "danger",
     });
-  };
 
-  const handleDelete = async () => {
-    if (!deleteConfirm.carId) return;
-    
+    if (!confirmed) {
+      return;
+    }
+
     try {
-      await deleteCar(deleteConfirm.carId).unwrap();
+      await deleteCar(car.id).unwrap();
       showSuccess('Car listing deleted successfully');
-      setDeleteConfirm({ isOpen: false, carId: null, carName: '' });
     } catch (error: any) {
       console.error("Failed to delete car:", error);
       showError(error?.data?.error || 'Failed to delete car. Please try again.');
@@ -357,13 +354,18 @@ const SellerDashboard = () => {
                         {car.mileage} km
                       </span>
                     )}
+                    {typeof car.ownersCount === 'number' && (
+                      <span className="px-2 py-1 bg-dark-100 text-dark-700 rounded text-xs font-medium">
+                        {car.ownersCount} {car.ownersCount === 1 ? 'owner' : 'owners'}
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex gap-2">
                     <button
                       onClick={() => {
                         if (car.status === 'SOLD') {
-                          alert('This car has been sold and cannot be edited.');
+                          showInfo('This car has been sold and cannot be edited.');
                           return;
                         }
                         setEditingCar(car);
@@ -439,16 +441,6 @@ const SellerDashboard = () => {
         />
       )}
 
-      <ConfirmDialog
-        isOpen={deleteConfirm.isOpen}
-        onClose={() => setDeleteConfirm({ isOpen: false, carId: null, carName: '' })}
-        onConfirm={handleDelete}
-        title="Delete Car Listing"
-        message={`Are you sure you want to delete "${deleteConfirm.carName}"? This action cannot be undone.`}
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
-        variant="danger"
-      />
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
 import { uploadImages } from '../../services/uploadService';
+import { useToast } from '../common/ToastContainer';
 
 interface MultiImageUploadProps {
   value?: string[];
@@ -21,6 +22,7 @@ const MultiImageUpload = ({
   const [uploadProgress, setUploadProgress] = useState<{ [key: number]: number }>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const images = Array.isArray(value) ? value : [];
+  const { showWarning, showError } = useToast();
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -28,7 +30,7 @@ const MultiImageUpload = ({
 
     // Check total image count
     if (images.length + files.length > maxImages) {
-      alert(`Maximum ${maxImages} images allowed. You can add ${maxImages - images.length} more.`);
+      showWarning(`Maximum ${maxImages} images allowed. You can add ${maxImages - images.length} more.`);
       return;
     }
 
@@ -38,7 +40,7 @@ const MultiImageUpload = ({
     );
 
     if (invalidFiles.length > 0) {
-      alert('Some files are invalid. Only image files under 5MB are allowed.');
+      showWarning('Some files are invalid. Only image files under 5MB are allowed.');
       return;
     }
 
@@ -50,7 +52,7 @@ const MultiImageUpload = ({
       onChange([...images, ...newUrls]);
     } catch (error) {
       console.error('Failed to upload images:', error);
-      alert('Failed to upload images. Please try again.');
+      showError('Failed to upload images. Please try again.');
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {

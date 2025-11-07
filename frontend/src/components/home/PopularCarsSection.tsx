@@ -9,13 +9,13 @@ import Button from "../common/Button";
 const PopularCarsSection = () => {
   const navigate = useNavigate();
   const { data, isLoading } = useGetRentalCarsQuery({
-    limit: 8,
+    limit: 4,
     sortBy: 'price',
     sortOrder: 'asc',
   });
 
   const cars = data?.cars || [];
-  const displayedCars = cars.slice(0, 4); // Show top 4 popular cars
+  const displayedCars = cars; // Show all 4 cars fetched
 
   const handleViewAll = () => {
     navigate('/rent');

@@ -1,4 +1,3 @@
-import StarRating from "../common/StarRating";
 import { Quote } from "lucide-react";
 
 const TestimonialsSection = () => {
@@ -8,7 +7,6 @@ const TestimonialsSection = () => {
       role: "Business Traveler",
       comment:
         "Amazing service! The booking process was seamless and the car was in perfect condition.",
-      rating: 5,
       avatar: "SJ",
     },
     {
@@ -16,7 +14,6 @@ const TestimonialsSection = () => {
       role: "Weekend Explorer",
       comment:
         "Great prices and excellent customer support. Highly recommend CarNation for road trips!",
-      rating: 5,
       avatar: "MC",
     },
     {
@@ -24,7 +21,6 @@ const TestimonialsSection = () => {
       role: "Daily Commuter",
       comment:
         "I've been using CarNation for months now. Reliable, affordable, and always on time.",
-      rating: 4.5,
       avatar: "ER",
     },
   ];
@@ -51,9 +47,6 @@ const TestimonialsSection = () => {
                   {testimonial.avatar}
                 </div>
                 <div className="flex-1">
-                  <div className="mb-2">
-                    <StarRating rating={testimonial.rating} size="sm" />
-                  </div>
                   <Quote className="w-5 h-5 text-primary-400 opacity-60 mb-2" />
                 </div>
               </div>

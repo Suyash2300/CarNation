@@ -20,6 +20,7 @@ export interface Car {
   year: number;
   color?: string;
   mileage?: number;
+  ownersCount?: number;
   transmission?: string;
   fuelType?: string;
   seats?: number;
@@ -60,6 +61,7 @@ export interface CreateCarRequest {
   year: number;
   color?: string;
   mileage?: number;
+  ownersCount?: number;
   transmission?: string;
   fuelType?: string;
   seats?: number;

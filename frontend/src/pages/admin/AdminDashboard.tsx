@@ -4,6 +4,8 @@ import Navbar from "../../components/layout/Navbar";
 import AdminOverview from "../../components/admin/AdminOverview";
 import CarManagement from "../../components/admin/CarManagement";
 import RentalManagement from "../../components/admin/RentalManagement";
+import SupportChats from "../../components/admin/SupportChats";
+import ShopLocations from "../../components/admin/ShopLocations";
 import UserVerification from "../../components/admin/UserVerification";
 import UserManagement from "../../components/admin/UserManagement";
 import PlatformFeeSettings from "../../components/admin/PlatformFeeSettings";
@@ -17,6 +19,7 @@ import {
   TrendingUp,
   DollarSign,
   MessageCircle,
+  MapPin,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -43,6 +46,8 @@ const AdminDashboard = () => {
     { id: "overview" as const, label: "Overview", icon: LayoutDashboard },
     { id: "cars" as const, label: "Car Management", icon: Car },
     { id: "rentals" as const, label: "Rentals & Earnings", icon: TrendingUp },
+    { id: "support" as const, label: "Support Chats", icon: MessageCircle },
+    { id: "shops" as const, label: "Shop Locations", icon: MapPin },
     {
       id: "verification" as const,
       label: "Aadhaar Verification",
@@ -100,11 +105,13 @@ const AdminDashboard = () => {
           </aside>
 
           {/* Main Content */}
-          <main className="flex-1">
-            <div className="glass rounded-xl p-6 lg:p-8">
+          <main className="flex-1 min-w-0">
+            <div className="glass rounded-xl p-6 lg:p-8 overflow-hidden">
               {activeSection === "overview" && <AdminOverview />}
               {activeSection === "cars" && <CarManagement />}
               {activeSection === "rentals" && <RentalManagement />}
+              {activeSection === "support" && <SupportChats />}
+              {activeSection === "shops" && <ShopLocations />}
               {activeSection === "verification" && <UserVerification />}
               {activeSection === "users" && <UserManagement />}
               {activeSection === "platform" && <PlatformFeeSettings />}

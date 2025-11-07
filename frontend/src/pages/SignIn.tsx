@@ -39,10 +39,10 @@ const SignIn = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-secondary/5 to-accent/10 px-4">
-      <div className="glass rounded-3xl p-8 md:p-12 max-w-md w-full shadow-2xl">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-secondary/5 to-accent/10 px-4 py-12 sm:py-16">
+      <div className="glass rounded-3xl p-6 sm:p-8 md:p-12 max-w-md w-full shadow-2xl">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-dark-900 mb-2">Welcome Back</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold text-dark-900 mb-2">Welcome Back</h1>
           <p className="text-dark-700">Sign in to your account</p>
         </div>
 
