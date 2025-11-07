@@ -6,9 +6,6 @@
   html {
     scroll-behavior: smooth;
   }
-  * {
-    @apply border-dark-300/30;
-  }
   
   body {
     @apply text-dark-800 dark:text-dark-100 font-body antialiased bg-dark-50 dark:bg-dark-950;

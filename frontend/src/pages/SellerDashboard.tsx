@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState } from "react";
+import { useState } from "react";
 import { useAppSelector } from "../hooks/redux";
 import Navbar from "../components/layout/Navbar";
 import {
@@ -24,18 +24,10 @@ import { useToast } from "../components/common/ToastContainer";
 import { useConfirm } from "../components/common/ConfirmProvider";
 import Breadcrumbs from "../components/common/Breadcrumbs";
 import { Link } from "react-router-dom";
-const SubscriptionManagement = lazy(
-  () => import("../components/seller/SubscriptionManagement")
-);
-const AddSellerCarModal = lazy(
-  () => import("../components/seller/AddSellerCarModal")
-);
-const EditSellerCarModal = lazy(
-  () => import("../components/seller/EditSellerCarModal")
-);
-const DealStatusBadge = lazy(
-  () => import("../components/deals/DealStatusBadge")
-);
+import SubscriptionManagement from "../components/seller/SubscriptionManagement";
+import AddSellerCarModal from "../components/seller/AddSellerCarModal";
+import EditSellerCarModal from "../components/seller/EditSellerCarModal";
+import DealStatusBadge from "../components/deals/DealStatusBadge";
 import { useGetDealsQuery } from "../services/dealsApi";
 
 const SellerDashboard = () => {
@@ -194,17 +186,7 @@ const SellerDashboard = () => {
         </div>
 
         {/* Subscription Tab */}
-        {activeTab === "subscription" && (
-          <Suspense
-            fallback={
-              <div className="py-12 text-center text-dark-500">
-                Loading subscription details…
-              </div>
-            }
-          >
-            <SubscriptionManagement />
-          </Suspense>
-        )}
+        {activeTab === "subscription" && <SubscriptionManagement />}
 
         {/* Deals Tab */}
         {activeTab === "deals" && (
@@ -252,13 +234,7 @@ const SellerDashboard = () => {
                         </div>
                       </div>
                       <div className="md:self-start">
-                        <Suspense
-                          fallback={
-                            <span className="text-sm text-dark-500">…</span>
-                          }
-                        >
-                          <DealStatusBadge status={deal.status} />
-                        </Suspense>
+                        <DealStatusBadge status={deal.status} />
                       </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-dark-200">
@@ -501,24 +477,22 @@ const SellerDashboard = () => {
       </div>
 
       {/* Modals */}
-      <Suspense fallback={null}>
-        {isAddModalOpen && (
-          <AddSellerCarModal
-            isOpen={isAddModalOpen}
-            onClose={() => setIsAddModalOpen(false)}
-            onSuccess={() => setIsAddModalOpen(false)}
-          />
-        )}
+      {isAddModalOpen && (
+        <AddSellerCarModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          onSuccess={() => setIsAddModalOpen(false)}
+        />
+      )}
 
-        {editingCar && (
-          <EditSellerCarModal
-            isOpen={!!editingCar}
-            onClose={() => setEditingCar(null)}
-            car={editingCar}
-            onSuccess={() => setEditingCar(null)}
-          />
-        )}
-      </Suspense>
+      {editingCar && (
+        <EditSellerCarModal
+          isOpen={!!editingCar}
+          onClose={() => setEditingCar(null)}
+          car={editingCar}
+          onSuccess={() => setEditingCar(null)}
+        />
+      )}
     </div>
   );
 };
