@@ -1,28 +1,41 @@
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useGetCarByIdQuery } from '../services/carApi';
-import { useCreatePurchaseMutation } from '../services/purchaseApi';
-import { useCreatePurchaseOrderMutation, useVerifyPurchasePaymentMutation } from '../services/paymentApi';
-import { useAppSelector } from '../hooks/redux';
-import Navbar from '../components/layout/Navbar';
-import StripePayment from '../components/payment/StripePayment';
-import { DollarSign, CheckCircle, ArrowLeft, CreditCard, Calculator } from 'lucide-react';
-import { useConfirm } from '../components/common/ConfirmProvider';
+import { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useGetCarByIdQuery } from "../services/carApi";
+import { useCreatePurchaseMutation } from "../services/purchaseApi";
+import {
+  useCreatePurchaseOrderMutation,
+  useVerifyPurchasePaymentMutation,
+} from "../services/paymentApi";
+import type { StripePaymentIntentResponse } from "../services/paymentApi";
+import Navbar from "../components/layout/Navbar";
+import StripePayment from "../components/payment/StripePayment";
+import {
+  DollarSign,
+  CheckCircle,
+  ArrowLeft,
+  CreditCard,
+  Calculator,
+} from "lucide-react";
+import { useConfirm } from "../components/common/ConfirmProvider";
+import { getApiErrorMessage } from "../utils/error";
 
 const PurchaseBooking = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: carData, isLoading: carLoading } = useGetCarByIdQuery(id!);
-  const [createPurchase, { isLoading: isCreating }] = useCreatePurchaseMutation();
-  const [createPurchaseOrder, { isLoading: isCreatingOrder }] = useCreatePurchaseOrderMutation();
+  const [createPurchase, { isLoading: isCreating }] =
+    useCreatePurchaseMutation();
+  const [createPurchaseOrder, { isLoading: isCreatingOrder }] =
+    useCreatePurchaseOrderMutation();
   const [verifyPayment] = useVerifyPurchasePaymentMutation();
   const confirm = useConfirm();
 
-  const [salePrice, setSalePrice] = useState('');
-  const [error, setError] = useState('');
+  const [salePrice, setSalePrice] = useState("");
+  const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [purchaseId, setPurchaseId] = useState<string | null>(null);
-  const [paymentOrder, setPaymentOrder] = useState<any>(null);
+  const [paymentOrder, setPaymentOrder] =
+    useState<StripePaymentIntentResponse | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [calculatedFees, setCalculatedFees] = useState<{
     platformFee: number;
@@ -34,7 +47,7 @@ const PurchaseBooking = () => {
 
   const handlePriceChange = async (price: string) => {
     setSalePrice(price);
-    setError('');
+    setError("");
 
     const priceNum = parseFloat(price);
     if (isNaN(priceNum) || priceNum <= 0) {
@@ -57,27 +70,27 @@ const PurchaseBooking = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setSuccess(false);
 
     if (!salePrice || parseFloat(salePrice) <= 0) {
-      setError('Please enter a valid sale price');
+      setError("Please enter a valid sale price");
       return;
     }
 
     if (!car?.salePrice) {
-      setError('Car sale price not available');
+      setError("Car sale price not available");
       return;
     }
 
     const priceNum = parseFloat(salePrice);
     if (priceNum < car.salePrice * 0.5 || priceNum > car.salePrice * 1.5) {
       const proceed = await confirm({
-        title: 'Confirm Price Difference',
+        title: "Confirm Price Difference",
         message: `The entered price (₹${priceNum.toLocaleString()}) is significantly different from the listed price (₹${car.salePrice.toLocaleString()}). Continue?`,
-        confirmLabel: 'Continue',
-        cancelLabel: 'Review Price',
-        variant: 'warning',
+        confirmLabel: "Continue",
+        cancelLabel: "Review Price",
+        variant: "warning",
       });
 
       if (!proceed) {
@@ -110,12 +123,17 @@ const PurchaseBooking = () => {
 
         setPaymentOrder(paymentResult);
         setSuccess(true);
-      } catch (orderErr: any) {
-        setError(orderErr?.data?.error || 'Failed to create payment order. Purchase created but payment failed.');
+      } catch (orderErr) {
+        const message = getApiErrorMessage(
+          orderErr,
+          "Failed to create payment order. Purchase created but payment failed."
+        );
+        setError(message);
         setSuccess(true); // Purchase is still created
       }
-    } catch (err: any) {
-      setError(err?.data?.error || 'Failed to create purchase');
+    } catch (err) {
+      const message = getApiErrorMessage(err, "Failed to create purchase");
+      setError(message);
     }
   };
 
@@ -133,13 +151,15 @@ const PurchaseBooking = () => {
     );
   }
 
-  if (!car || !(car as any).isForSale) {
+  if (!car || !car.isForSale) {
     return (
       <div className="min-h-screen bg-light-subtle">
         <Navbar />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center">
-            <p className="text-xl text-dark-600 mb-4">Car not found or not available for sale</p>
+            <p className="text-xl text-dark-600 mb-4">
+              Car not found or not available for sale
+            </p>
             <button
               onClick={() => navigate(-1)}
               className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-semibold transition"
@@ -174,7 +194,9 @@ const PurchaseBooking = () => {
             <div className="bg-success-50 border border-success-200 rounded-lg p-4 mb-6 flex items-start gap-3">
               <CheckCircle className="w-5 h-5 text-success-600 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold text-success-900">Purchase Created Successfully!</p>
+                <p className="font-semibold text-success-900">
+                  Purchase Created Successfully!
+                </p>
                 <p className="text-sm text-success-700 mt-1">
                   Redirecting to dashboard...
                 </p>
@@ -202,13 +224,17 @@ const PurchaseBooking = () => {
                 {car.salePrice && (
                   <div>
                     <p className="text-sm text-dark-600 mb-1">Listed Price</p>
-                    <p className="font-semibold text-primary-600">₹{car.salePrice.toLocaleString()}</p>
+                    <p className="font-semibold text-primary-600">
+                      ₹{car.salePrice.toLocaleString()}
+                    </p>
                   </div>
                 )}
                 {car.seller && (
                   <div>
                     <p className="text-sm text-dark-600 mb-1">Seller</p>
-                    <p className="font-semibold text-dark-900">{car.seller.name}</p>
+                    <p className="font-semibold text-dark-900">
+                      {car.seller.name}
+                    </p>
                   </div>
                 )}
                 {car.city && (
@@ -217,11 +243,14 @@ const PurchaseBooking = () => {
                     <p className="font-semibold text-dark-900">{car.city}</p>
                   </div>
                 )}
-                {typeof car.ownersCount === 'number' && (
+                {typeof car.ownersCount === "number" && (
                   <div>
-                    <p className="text-sm text-dark-600 mb-1">Number of Owners</p>
+                    <p className="text-sm text-dark-600 mb-1">
+                      Number of Owners
+                    </p>
                     <p className="font-semibold text-dark-900">
-                      {car.ownersCount} {car.ownersCount === 1 ? 'owner' : 'owners'}
+                      {car.ownersCount}{" "}
+                      {car.ownersCount === 1 ? "owner" : "owners"}
                     </p>
                   </div>
                 )}
@@ -240,7 +269,11 @@ const PurchaseBooking = () => {
                     type="number"
                     value={salePrice}
                     onChange={(e) => handlePriceChange(e.target.value)}
-                    placeholder={car.salePrice ? `e.g., ${car.salePrice.toLocaleString()}` : 'Enter price'}
+                    placeholder={
+                      car.salePrice
+                        ? `e.g., ${car.salePrice.toLocaleString()}`
+                        : "Enter price"
+                    }
                     min="1"
                     step="1"
                     required
@@ -275,7 +308,9 @@ const PurchaseBooking = () => {
                       </div>
                       <div className="border-t border-primary-200 pt-3 mt-3">
                         <div className="flex justify-between">
-                          <span className="text-lg font-semibold text-dark-900">Seller Earnings</span>
+                          <span className="text-lg font-semibold text-dark-900">
+                            Seller Earnings
+                          </span>
                           <span className="text-lg font-bold text-success-600">
                             ₹{calculatedFees.sellerEarnings.toLocaleString()}
                           </span>
@@ -283,7 +318,9 @@ const PurchaseBooking = () => {
                       </div>
                       <div className="border-t border-primary-200 pt-3 mt-3">
                         <div className="flex justify-between">
-                          <span className="text-lg font-semibold text-dark-900">Total Amount to Pay</span>
+                          <span className="text-lg font-semibold text-dark-900">
+                            Total Amount to Pay
+                          </span>
                           <span className="text-lg font-bold text-primary-600">
                             ₹{calculatedFees.totalAmount.toLocaleString()}
                           </span>
@@ -306,7 +343,9 @@ const PurchaseBooking = () => {
                     disabled={isCreating || !salePrice || isCreatingOrder}
                     className="flex-1 bg-gradient-primary hover:bg-gradient-primary-dark text-white px-6 py-3 rounded-lg font-semibold transition shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isCreating || isCreatingOrder ? 'Processing...' : 'Confirm Purchase'}
+                    {isCreating || isCreatingOrder
+                      ? "Processing..."
+                      : "Confirm Purchase"}
                   </button>
                 </div>
               </>
@@ -316,7 +355,9 @@ const PurchaseBooking = () => {
                   <div className="flex items-start gap-3">
                     <CheckCircle className="w-5 h-5 text-primary-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-semibold text-primary-900">Purchase Created Successfully!</p>
+                      <p className="font-semibold text-primary-900">
+                        Purchase Created Successfully!
+                      </p>
                       <p className="text-sm text-primary-700 mt-1">
                         Please complete the payment to confirm your purchase.
                       </p>
@@ -326,7 +367,9 @@ const PurchaseBooking = () => {
 
                 {calculatedFees && (
                   <div className="bg-dark-50 rounded-lg p-6">
-                    <h3 className="font-semibold text-dark-900 mb-4">Payment Summary</h3>
+                    <h3 className="font-semibold text-dark-900 mb-4">
+                      Payment Summary
+                    </h3>
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-dark-600">Sale Price</span>
@@ -342,7 +385,9 @@ const PurchaseBooking = () => {
                       </div>
                       <div className="border-t border-dark-200 pt-2 mt-2">
                         <div className="flex justify-between">
-                          <span className="text-lg font-semibold text-dark-900">Total</span>
+                          <span className="text-lg font-semibold text-dark-900">
+                            Total
+                          </span>
                           <span className="text-lg font-bold text-primary-600">
                             ₹{calculatedFees.totalAmount.toLocaleString()}
                           </span>
@@ -360,13 +405,17 @@ const PurchaseBooking = () => {
                   <StripePayment
                     clientSecret={paymentOrder.clientSecret}
                     publishableKey={paymentOrder.publishableKey}
-                    amount={calculatedFees ? calculatedFees.totalAmount * 100 : parseFloat(salePrice) * 100}
+                    amount={
+                      calculatedFees
+                        ? calculatedFees.totalAmount * 100
+                        : parseFloat(salePrice) * 100
+                    }
                     onSuccess={async (paymentIntentId) => {
                       if (isProcessingPayment) {
                         return;
                       }
                       setIsProcessingPayment(true);
-                      setError('');
+                      setError("");
                       try {
                         await verifyPayment({
                           purchaseId: purchaseId!,
@@ -374,18 +423,22 @@ const PurchaseBooking = () => {
                         }).unwrap();
 
                         setSuccess(true);
-                        setError('');
+                        setError("");
                         setTimeout(() => {
-                          navigate('/dashboard', { replace: true });
+                          navigate("/dashboard", { replace: true });
                         }, 1500);
-                      } catch (err: any) {
-                        const errorMessage = err?.data?.error || err?.data?.details || err?.message || 'Payment verification failed';
+                      } catch (err) {
+                        const errorMessage = getApiErrorMessage(
+                          err,
+                          "Payment verification failed"
+                        );
                         setError(errorMessage);
                         setIsProcessingPayment(false);
                       }
                     }}
                     onError={(err) => {
-                      setError(err?.message || 'Payment failed');
+                      const message = getApiErrorMessage(err, "Payment failed");
+                      setError(message);
                       setIsProcessingPayment(false);
                     }}
                   />
@@ -393,11 +446,12 @@ const PurchaseBooking = () => {
 
                 <div className="bg-dark-50 border border-dark-200 rounded-lg p-4">
                   <p className="text-sm text-dark-600 text-center">
-                    Payment must be completed to finalize your purchase. You can complete it later from your dashboard.
+                    Payment must be completed to finalize your purchase. You can
+                    complete it later from your dashboard.
                   </p>
                   <button
                     type="button"
-                    onClick={() => navigate('/dashboard')}
+                    onClick={() => navigate("/dashboard")}
                     className="w-full mt-3 px-4 py-2 border border-dark-300 text-dark-700 text-sm font-medium rounded-lg hover:bg-dark-100 transition"
                   >
                     Complete Payment Later (From Dashboard)
@@ -413,4 +467,3 @@ const PurchaseBooking = () => {
 };
 
 export default PurchaseBooking;
-

@@ -1,9 +1,13 @@
-import { useState } from 'react';
-import { X } from 'lucide-react';
-import Select from 'react-select';
-import { useCreateSellerCarMutation, type CreateCarRequest } from '../../services/carApi';
-import ImageUpload from '../admin/ImageUpload';
-import MultiImageUpload from '../admin/MultiImageUpload';
+import { useState } from "react";
+import { X } from "lucide-react";
+import Select from "react-select";
+import {
+  useCreateSellerCarMutation,
+  type CreateCarRequest,
+} from "../../services/carApi";
+import ImageUpload from "../admin/ImageUpload";
+import MultiImageUpload from "../admin/MultiImageUpload";
+import { getApiErrorMessage } from "../../utils/error";
 
 interface AddSellerCarModalProps {
   isOpen: boolean;
@@ -11,24 +15,28 @@ interface AddSellerCarModalProps {
   onSuccess: () => void;
 }
 
-const AddSellerCarModal = ({ isOpen, onClose, onSuccess }: AddSellerCarModalProps) => {
+const AddSellerCarModal = ({
+  isOpen,
+  onClose,
+  onSuccess,
+}: AddSellerCarModalProps) => {
   const [createCar, { isLoading }] = useCreateSellerCarMutation();
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [formData, setFormData] = useState<CreateCarRequest>({
-    brand: '',
-    model: '',
+    brand: "",
+    model: "",
     year: new Date().getFullYear(),
-    color: '',
+    color: "",
     mileage: undefined,
     ownersCount: undefined,
-    transmission: '',
-    fuelType: '',
+    transmission: "",
+    fuelType: "",
     seats: undefined,
     salePrice: 0,
-    description: '',
+    description: "",
     images: [],
-    primaryImage: '',
-    city: '',
+    primaryImage: "",
+    city: "",
   });
 
   const handleChange = (
@@ -38,11 +46,11 @@ const AddSellerCarModal = ({ isOpen, onClose, onSuccess }: AddSellerCarModalProp
     setFormData((prev) => ({
       ...prev,
       [name]:
-        name === 'year' ||
-        name === 'mileage' ||
-        name === 'ownersCount' ||
-        name === 'seats' ||
-        name === 'salePrice'
+        name === "year" ||
+        name === "mileage" ||
+        name === "ownersCount" ||
+        name === "seats" ||
+        name === "salePrice"
           ? value
             ? parseFloat(value)
             : undefined
@@ -51,55 +59,65 @@ const AddSellerCarModal = ({ isOpen, onClose, onSuccess }: AddSellerCarModalProp
   };
 
   const transmissionOptions = [
-    { value: '', label: 'Select' },
-    { value: 'Automatic', label: 'Automatic' },
-    { value: 'Manual', label: 'Manual' },
+    { value: "", label: "Select" },
+    { value: "Automatic", label: "Automatic" },
+    { value: "Manual", label: "Manual" },
   ];
 
   const fuelTypeOptions = [
-    { value: '', label: 'Select' },
-    { value: 'Petrol', label: 'Petrol' },
-    { value: 'Diesel', label: 'Diesel' },
-    { value: 'Electric', label: 'Electric' },
-    { value: 'Hybrid', label: 'Hybrid' },
+    { value: "", label: "Select" },
+    { value: "Petrol", label: "Petrol" },
+    { value: "Diesel", label: "Diesel" },
+    { value: "Electric", label: "Electric" },
+    { value: "Hybrid", label: "Hybrid" },
   ];
 
-  const handleSelectChange = (name: string, selected: any) => {
+  const handleSelectChange = (
+    name: string,
+    selected: { value: string } | null
+  ) => {
     setFormData((prev) => ({
       ...prev,
-      [name]: selected ? selected.value : '',
+      [name]: selected ? selected.value : "",
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     try {
       await createCar(formData).unwrap();
       setFormData({
-        brand: '',
-        model: '',
+        brand: "",
+        model: "",
         year: new Date().getFullYear(),
-        color: '',
+        color: "",
         mileage: undefined,
         ownersCount: undefined,
-        transmission: '',
-        fuelType: '',
+        transmission: "",
+        fuelType: "",
         seats: undefined,
         salePrice: 0,
-        description: '',
+        description: "",
         images: [],
-        primaryImage: '',
-        city: '',
+        primaryImage: "",
+        city: "",
       });
       onSuccess();
-    } catch (error: any) {
-      console.error('Failed to create car:', error);
-      const errorMessage = error?.data?.error || 'Failed to create car listing. Please try again.';
+    } catch (error) {
+      console.error("Failed to create car:", error);
+      const errorMessage = getApiErrorMessage(
+        error,
+        "Failed to create car listing. Please try again."
+      );
       setError(errorMessage);
-      
-      // If it's a subscription limit error, suggest upgrading
-      if (error?.status === 403) {
+
+      const status =
+        error && typeof error === "object" && "status" in error
+          ? (error as { status?: number }).status
+          : undefined;
+
+      if (status === 403) {
         // Error will be displayed below
       }
     }
@@ -112,7 +130,9 @@ const AddSellerCarModal = ({ isOpen, onClose, onSuccess }: AddSellerCarModalProp
       <div className="flex min-h-full items-center justify-center p-4 sm:p-8">
         <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full my-8 max-h-[90vh] overflow-y-auto">
           <div className="sticky top-0 bg-white border-b border-dark-200 px-6 py-4 flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-dark-900">Add Car for Sale</h2>
+            <h2 className="text-2xl font-bold text-dark-900">
+              Add Car for Sale
+            </h2>
             <button
               onClick={onClose}
               className="text-dark-400 hover:text-dark-900 transition"
@@ -125,7 +145,7 @@ const AddSellerCarModal = ({ isOpen, onClose, onSuccess }: AddSellerCarModalProp
             {error && (
               <div className="bg-error-50 border border-error-200 rounded-lg p-4 mb-4">
                 <p className="text-error-900 text-sm">{error}</p>
-                {error.includes('listing limit') && (
+                {error.includes("listing limit") && (
                   <button
                     type="button"
                     onClick={() => {
@@ -193,7 +213,7 @@ const AddSellerCarModal = ({ isOpen, onClose, onSuccess }: AddSellerCarModalProp
                 <input
                   type="number"
                   name="salePrice"
-                  value={formData.salePrice || ''}
+                  value={formData.salePrice || ""}
                   onChange={handleChange}
                   required
                   min="0"
@@ -227,7 +247,7 @@ const AddSellerCarModal = ({ isOpen, onClose, onSuccess }: AddSellerCarModalProp
                     (opt) => opt.value === formData.transmission
                   )}
                   onChange={(selected) =>
-                    handleSelectChange('transmission', selected)
+                    handleSelectChange("transmission", selected)
                   }
                   className="react-select-container"
                   classNamePrefix="react-select"
@@ -244,7 +264,7 @@ const AddSellerCarModal = ({ isOpen, onClose, onSuccess }: AddSellerCarModalProp
                     (opt) => opt.value === formData.fuelType
                   )}
                   onChange={(selected) =>
-                    handleSelectChange('fuelType', selected)
+                    handleSelectChange("fuelType", selected)
                   }
                   className="react-select-container"
                   classNamePrefix="react-select"
@@ -261,7 +281,7 @@ const AddSellerCarModal = ({ isOpen, onClose, onSuccess }: AddSellerCarModalProp
                 <input
                   type="number"
                   name="mileage"
-                  value={formData.mileage || ''}
+                  value={formData.mileage || ""}
                   onChange={handleChange}
                   min="0"
                   className="w-full px-4 py-2 rounded-lg border border-dark-300 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none"
@@ -275,7 +295,7 @@ const AddSellerCarModal = ({ isOpen, onClose, onSuccess }: AddSellerCarModalProp
                 <input
                   type="number"
                   name="seats"
-                  value={formData.seats || ''}
+                  value={formData.seats || ""}
                   onChange={handleChange}
                   min="2"
                   max="10"
@@ -290,7 +310,7 @@ const AddSellerCarModal = ({ isOpen, onClose, onSuccess }: AddSellerCarModalProp
                 <input
                   type="number"
                   name="ownersCount"
-                  value={formData.ownersCount ?? ''}
+                  value={formData.ownersCount ?? ""}
                   onChange={handleChange}
                   min="1"
                   className="w-full px-4 py-2 rounded-lg border border-dark-300 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none"
@@ -327,7 +347,8 @@ const AddSellerCarModal = ({ isOpen, onClose, onSuccess }: AddSellerCarModalProp
                     return {
                       ...prev,
                       primaryImage: url,
-                      images: newImages.length > 0 ? newImages : url ? [url] : [],
+                      images:
+                        newImages.length > 0 ? newImages : url ? [url] : [],
                     };
                   });
                 }}
@@ -343,7 +364,7 @@ const AddSellerCarModal = ({ isOpen, onClose, onSuccess }: AddSellerCarModalProp
                   setFormData((prev) => ({
                     ...prev,
                     images: urls,
-                    primaryImage: prev.primaryImage || urls[0] || '',
+                    primaryImage: prev.primaryImage || urls[0] || "",
                   }));
                 }}
                 label="Additional Images"
@@ -378,7 +399,7 @@ const AddSellerCarModal = ({ isOpen, onClose, onSuccess }: AddSellerCarModalProp
                 disabled={isLoading}
                 className="flex-1 bg-gradient-primary hover:bg-gradient-primary-dark text-white px-6 py-3 rounded-lg font-semibold transition shadow-lg hover:shadow-xl disabled:opacity-50"
               >
-                {isLoading ? 'Adding...' : 'Add Car Listing'}
+                {isLoading ? "Adding..." : "Add Car Listing"}
               </button>
             </div>
           </form>
@@ -389,4 +410,3 @@ const AddSellerCarModal = ({ isOpen, onClose, onSuccess }: AddSellerCarModalProp
 };
 
 export default AddSellerCarModal;
-

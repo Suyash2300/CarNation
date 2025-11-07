@@ -1,23 +1,26 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAppSelector } from '../hooks/redux';
-import Navbar from '../components/layout/Navbar';
-import { Shield, Upload, CheckCircle, AlertCircle } from 'lucide-react';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAppSelector } from "../hooks/redux";
+import Navbar from "../components/layout/Navbar";
+import { Shield, Upload, CheckCircle, AlertCircle } from "lucide-react";
 
 const VerifyAadhaar = () => {
   const { user } = useAppSelector((state) => state.auth);
   const navigate = useNavigate();
   const [frontImage, setFrontImage] = useState<File | null>(null);
   const [backImage, setBackImage] = useState<File | null>(null);
-  const [aadhaarNumber, setAadhaarNumber] = useState('');
+  const [aadhaarNumber, setAadhaarNumber] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'front' | 'back') => {
+  const handleImageUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: "front" | "back"
+  ) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (type === 'front') {
+      if (type === "front") {
         setFrontImage(file);
       } else {
         setBackImage(file);
@@ -27,16 +30,16 @@ const VerifyAadhaar = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setSuccess(false);
 
     if (!aadhaarNumber || aadhaarNumber.length !== 12) {
-      setError('Please enter a valid 12-digit Aadhaar number');
+      setError("Please enter a valid 12-digit Aadhaar number");
       return;
     }
 
     if (!frontImage || !backImage) {
-      setError('Please upload both front and back images of your Aadhaar card');
+      setError("Please upload both front and back images of your Aadhaar card");
       return;
     }
 
@@ -44,15 +47,16 @@ const VerifyAadhaar = () => {
 
     try {
       const formData = new FormData();
-      formData.append('aadhaarNumber', aadhaarNumber);
-      formData.append('aadhaarFrontImage', frontImage);
-      formData.append('aadhaarBackImage', backImage);
+      formData.append("aadhaarNumber", aadhaarNumber);
+      formData.append("aadhaarFrontImage", frontImage);
+      formData.append("aadhaarBackImage", backImage);
 
-      const token = localStorage.getItem('token');
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+      const token = localStorage.getItem("token");
+      const API_URL =
+        import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
       const response = await fetch(`${API_URL}/auth/upload-aadhaar`, {
-        method: 'POST',
+        method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -62,15 +66,19 @@ const VerifyAadhaar = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to upload Aadhaar documents');
+        throw new Error(data.error || "Failed to upload Aadhaar documents");
       }
 
       setSuccess(true);
       setTimeout(() => {
-        navigate('/dashboard');
+        navigate("/dashboard");
       }, 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to upload Aadhaar documents');
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to upload Aadhaar documents"
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -83,12 +91,14 @@ const VerifyAadhaar = () => {
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="glass rounded-xl p-6 sm:p-8 text-center">
             <CheckCircle className="w-16 h-16 text-success-600 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-dark-900 mb-2">Aadhaar Already Verified</h1>
+            <h1 className="text-2xl font-bold text-dark-900 mb-2">
+              Aadhaar Already Verified
+            </h1>
             <p className="text-dark-600 mb-6">
               Your Aadhaar has already been verified. You can now rent cars!
             </p>
             <button
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate("/dashboard")}
               className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-semibold transition"
             >
               Go to Dashboard
@@ -105,9 +115,12 @@ const VerifyAadhaar = () => {
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8 text-center">
           <Shield className="w-16 h-16 text-primary-600 mx-auto mb-4" />
-          <h1 className="text-3xl font-bold text-dark-900 mb-2">Verify Your Aadhaar</h1>
+          <h1 className="text-3xl font-bold text-dark-900 mb-2">
+            Verify Your Aadhaar
+          </h1>
           <p className="text-dark-600">
-            Upload your Aadhaar card documents for verification. This is required to rent cars.
+            Upload your Aadhaar card documents for verification. This is
+            required to rent cars.
           </p>
         </div>
 
@@ -116,7 +129,8 @@ const VerifyAadhaar = () => {
             <div className="mb-6 p-4 bg-success-100 border border-success-300 rounded-lg flex items-center gap-3">
               <CheckCircle className="w-5 h-5 text-success-600" />
               <p className="text-success-700">
-                Aadhaar documents uploaded successfully! Admin will verify them shortly.
+                Aadhaar documents uploaded successfully! Admin will verify them
+                shortly.
               </p>
             </div>
           )}
@@ -137,7 +151,11 @@ const VerifyAadhaar = () => {
               <input
                 type="text"
                 value={aadhaarNumber}
-                onChange={(e) => setAadhaarNumber(e.target.value.replace(/\D/g, '').slice(0, 12))}
+                onChange={(e) =>
+                  setAadhaarNumber(
+                    e.target.value.replace(/\D/g, "").slice(0, 12)
+                  )
+                }
                 placeholder="Enter 12-digit Aadhaar number"
                 maxLength={12}
                 className="w-full px-4 py-3 border border-dark-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -154,7 +172,7 @@ const VerifyAadhaar = () => {
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => handleImageUpload(e, 'front')}
+                  onChange={(e) => handleImageUpload(e, "front")}
                   className="hidden"
                   id="front-image"
                   required
@@ -191,7 +209,7 @@ const VerifyAadhaar = () => {
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => handleImageUpload(e, 'back')}
+                  onChange={(e) => handleImageUpload(e, "back")}
                   className="hidden"
                   id="back-image"
                   required
@@ -224,14 +242,15 @@ const VerifyAadhaar = () => {
               disabled={isSubmitting || success}
               className="w-full bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Uploading...' : 'Submit for Verification'}
+              {isSubmitting ? "Uploading..." : "Submit for Verification"}
             </button>
           </form>
 
           <div className="mt-6 p-4 bg-info-100 border border-info-300 rounded-lg">
             <p className="text-sm text-info-700">
-              <strong>Note:</strong> Your documents will be reviewed by an admin. You'll be notified
-              once verification is complete. This process usually takes 24-48 hours.
+              <strong>Note:</strong> Your documents will be reviewed by an
+              admin. You'll be notified once verification is complete. This
+              process usually takes 24-48 hours.
             </p>
           </div>
         </div>
@@ -241,4 +260,3 @@ const VerifyAadhaar = () => {
 };
 
 export default VerifyAadhaar;
-

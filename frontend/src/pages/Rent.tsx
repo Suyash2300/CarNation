@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
+import type { SingleValue } from "react-select";
 import { useLazyGetRentalCarsQuery, type Car } from "../services/carApi";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
@@ -47,26 +48,29 @@ const Rent = () => {
   const debouncedBrand = useDebounce(selectedBrand, 300);
 
   // Memoize fetchPage function
-  const fetchPage = useCallback(async (nextPage: number, replace = false) => {
-    const { data } = await trigger({
-      city: debouncedCity || undefined,
-      brand: debouncedBrand || undefined,
-      sortBy,
-      sortOrder,
-      includeUnavailable: true,
-      page: nextPage,
-      limit,
-    });
-    if (!data) return;
-    setHasMore(nextPage < data.pagination.totalPages);
-    if (replace && data.filters) {
-      setFilters({
-        cities: data.filters.cities || [],
-        brands: data.filters.brands || [],
+  const fetchPage = useCallback(
+    async (nextPage: number, replace = false) => {
+      const { data } = await trigger({
+        city: debouncedCity || undefined,
+        brand: debouncedBrand || undefined,
+        sortBy,
+        sortOrder,
+        includeUnavailable: true,
+        page: nextPage,
+        limit,
       });
-    }
-    setCars((prev) => (replace ? data.cars : [...prev, ...data.cars]));
-  }, [debouncedCity, debouncedBrand, sortBy, sortOrder, trigger, limit]);
+      if (!data) return;
+      setHasMore(nextPage < data.pagination.totalPages);
+      if (replace && data.filters) {
+        setFilters({
+          cities: data.filters.cities || [],
+          brands: data.filters.brands || [],
+        });
+      }
+      setCars((prev) => (replace ? data.cars : [...prev, ...data.cars]));
+    },
+    [debouncedCity, debouncedBrand, sortBy, sortOrder, trigger, limit]
+  );
 
   // Reset when filters/sort change (using debounced values)
   useEffect(() => {
@@ -80,7 +84,7 @@ const Rent = () => {
   useEffect(() => {
     const el = loadMoreRef.current;
     if (!el || !hasMore || isFetching) return;
-    
+
     const obs = new IntersectionObserver(
       (entries) => {
         const first = entries[0];
@@ -128,7 +132,9 @@ const Rent = () => {
     []
   );
 
-  const handleSortChange = useCallback((selected: any) => {
+  type SortOption = { value: string; label: string };
+
+  const handleSortChange = useCallback((selected: SingleValue<SortOption>) => {
     if (selected?.value.includes("-desc")) {
       setSortBy(selected.value.split("-")[0]);
       setSortOrder("desc");
@@ -143,8 +149,7 @@ const Rent = () => {
     if (showUnavailable) return cars;
     return cars.filter((car) => {
       const status =
-        car.availability?.status ||
-        (car.status as string | undefined);
+        car.availability?.status || (car.status as string | undefined);
       if (status === "RENTED") return false;
       if (status === "BOOKED_UNTIL") {
         const next = car.availability?.nextAvailableDate
@@ -161,6 +166,39 @@ const Rent = () => {
     });
   }, [cars, showUnavailable]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+
+    const setParam = (key: string, value: string | null) => {
+      if (value) {
+        params.set(key, value);
+      } else {
+        params.delete(key);
+      }
+    };
+
+    setParam("city", selectedCity || null);
+    setParam("brand", selectedBrand || null);
+    setParam("sortBy", sortBy);
+    setParam("sortOrder", sortOrder);
+    setParam("page", String(page));
+
+    const currentSerialized = searchParams.toString();
+    const nextSerialized = params.toString();
+
+    if (currentSerialized !== nextSerialized) {
+      setSearchParams(params, { replace: true });
+    }
+  }, [
+    page,
+    searchParams,
+    selectedBrand,
+    selectedCity,
+    setSearchParams,
+    sortBy,
+    sortOrder,
+  ]);
+
   return (
     <div className="min-h-screen bg-light-subtle">
       <Navbar />
@@ -176,7 +214,7 @@ const Rent = () => {
         </div>
 
         {/* Filters and Sorting */}
-        <div className="glass rounded-2xl p-5 sm:p-6 lg:p-8 space-component relative z-20">
+        <div className="glass rounded-2xl p-5 sm:p-6 lg:p-8 space-component relative z-30">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-2">
               <Filter className="w-5 h-5 text-primary-600" />
@@ -274,7 +312,10 @@ const Rent = () => {
               />
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:col-span-2 xl:col-span-1">
+            <div className="min-w-0">
+              <label className="block text-sm font-medium text-dark-900 mb-2 opacity-0">
+                Reset
+              </label>
               <button
                 onClick={() => {
                   setSelectedCity("");
@@ -282,19 +323,23 @@ const Rent = () => {
                   setSortBy("price");
                   setSortOrder("asc");
                 }}
-                className="w-full sm:w-auto px-4 py-2 bg-gradient-primary hover:bg-gradient-primary-dark text-white rounded-lg font-semibold transition shadow-md hover:shadow-lg"
+                className="w-full px-5 bg-gradient-primary hover:bg-gradient-primary-dark text-white rounded-lg font-semibold transition shadow-md hover:shadow-lg h-12 flex items-center justify-center"
               >
                 Reset Filters
               </button>
-              <label className="flex items-center gap-2 text-sm text-dark-700 cursor-pointer select-none justify-between sm:justify-end">
-                <input
-                  type="checkbox"
-                  checked={showUnavailable}
-                  onChange={(e) => setShowUnavailable(e.target.checked)}
-                />
-                Show unavailable cars
-              </label>
             </div>
+          </div>
+
+          <div className="mt-3 flex justify-start">
+            <label className="inline-flex items-center gap-2 text-sm text-dark-700 cursor-pointer select-none px-3 py-2 rounded-lg border border-dark-200 bg-white">
+              <input
+                type="checkbox"
+                checked={showUnavailable}
+                onChange={(e) => setShowUnavailable(e.target.checked)}
+                className="form-checkbox h-4 w-4 text-primary-600"
+              />
+              Show unavailable cars
+            </label>
           </div>
         </div>
 
@@ -327,7 +372,10 @@ const Rent = () => {
             ))}
             {/* Sentinel for infinite scroll */}
             {hasMore && (
-              <div ref={loadMoreRef} className="h-10 flex items-center justify-center">
+              <div
+                ref={loadMoreRef}
+                className="h-10 flex items-center justify-center"
+              >
                 {isFetching && (
                   <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
                 )}

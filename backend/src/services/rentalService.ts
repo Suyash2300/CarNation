@@ -132,6 +132,12 @@ export const calculateRentalPrice = (dailyPrice: number, totalDays: number): num
 export const createRentalBooking = async (data: CreateRentalData) => {
   const { carId, buyerId, startDate, endDate } = data;
 
+  const normalizedStart = new Date(startDate);
+  normalizedStart.setHours(0, 0, 0, 0);
+
+  const normalizedEnd = new Date(endDate);
+  normalizedEnd.setHours(23, 59, 59, 999);
+
   // Validate dates
   const dateValidation = validateRentalDates(startDate, endDate);
   if (!dateValidation.isValid) {
@@ -139,7 +145,7 @@ export const createRentalBooking = async (data: CreateRentalData) => {
   }
 
   // Check car availability
-  const availability = await checkCarAvailability(carId, startDate, endDate);
+  const availability = await checkCarAvailability(carId, normalizedStart, normalizedEnd);
   if (!availability.isAvailable) {
     throw new Error(availability.error);
   }
@@ -156,17 +162,20 @@ export const createRentalBooking = async (data: CreateRentalData) => {
   // Calculate total amount
   const totalAmount = calculateRentalPrice(car.rentalPrice, dateValidation.totalDays!);
 
+  const now = new Date();
+  const rentalStatus = normalizedStart <= now && normalizedEnd >= now ? 'ACTIVE' : 'PENDING';
+
   // Create rental booking
   const rental = await prisma.rental.create({
     data: {
       carId,
       buyerId,
-      startDate: new Date(startDate),
-      endDate: new Date(endDate),
+      startDate: normalizedStart,
+      endDate: normalizedEnd,
       totalDays: dateValidation.totalDays!,
       dailyPrice: car.rentalPrice,
       totalAmount,
-      status: 'PENDING',
+      status: rentalStatus,
       paymentStatus: 'PENDING',
     },
     include: {
@@ -192,6 +201,21 @@ export const createRentalBooking = async (data: CreateRentalData) => {
     },
   });
 
+  if (rentalStatus === 'ACTIVE') {
+    await prisma.car.update({
+      where: { id: carId },
+      data: { status: 'RENTED' },
+    });
+  }
+
+  return rental;
+};
+
+export const updateRentalStatus = async (rentalId: string, status: string) => {
+  const rental = await prisma.rental.update({
+    where: { id: rentalId },
+    data: { status },
+  });
   return rental;
 };
 

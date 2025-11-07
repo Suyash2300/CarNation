@@ -18,6 +18,10 @@ import {
   Crown,
   Handshake,
   MessageCircle,
+  ShieldAlert,
+  Calendar,
+  MapPin,
+  Clock,
 } from "lucide-react";
 import StatCard from "../components/common/StatCard";
 import { useToast } from "../components/common/ToastContainer";
@@ -29,13 +33,44 @@ import AddSellerCarModal from "../components/seller/AddSellerCarModal";
 import EditSellerCarModal from "../components/seller/EditSellerCarModal";
 import DealStatusBadge from "../components/deals/DealStatusBadge";
 import { useGetDealsQuery } from "../services/dealsApi";
+import { useGetRentalsQuery } from "../services/rentalApi";
+import { useGetShopsByCityQuery } from "../services/shopApi";
+
+const PickupAddress: React.FC<{ city?: string }> = ({ city }) => {
+  const { data } = useGetShopsByCityQuery(
+    { city: city || undefined },
+    { skip: !city }
+  );
+  if (!city) return null;
+  const shop = data?.shops?.[0];
+  const address = shop?.addressLine
+    ? `${shop.addressLine}${shop.landmark ? ", " + shop.landmark : ""}${
+        shop.pincode ? " - " + shop.pincode : ""
+      }`
+    : city;
+  return (
+    <span className="font-medium text-dark-900 break-words">
+      {address}
+      {(shop?.phone || shop?.hoursStart || shop?.hoursEnd) && (
+        <span className="block text-xs text-dark-500 mt-1 space-y-1">
+          {shop?.phone && <span className="block">Contact: {shop.phone}</span>}
+          {(shop?.hoursStart || shop?.hoursEnd) && (
+            <span className="block">
+              Hours: {shop?.hoursStart ?? "--"} – {shop?.hoursEnd ?? "--"}
+            </span>
+          )}
+        </span>
+      )}
+    </span>
+  );
+};
 
 const SellerDashboard = () => {
   const { user } = useAppSelector((state) => state.auth);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingCar, setEditingCar] = useState<Car | null>(null);
   const [activeTab, setActiveTab] = useState<
-    "listings" | "subscription" | "deals"
+    "listings" | "subscription" | "deals" | "rentals"
   >("listings");
 
   const { data, isLoading } = useGetSellerCarsQuery(undefined, {
@@ -54,13 +89,17 @@ const SellerDashboard = () => {
       refetchOnReconnect: false,
     }
   );
+  const { data: rentalsData, isFetching: isRentalsLoading } =
+    useGetRentalsQuery(undefined);
   const [deleteCar] = useDeleteSellerCarMutation();
 
   const cars = data?.cars || [];
   const stats = statsData?.stats;
   const deals = dealsData?.deals || [];
+  const rentals = rentalsData?.rentals || [];
   const { showSuccess, showError, showInfo } = useToast();
   const confirm = useConfirm();
+  const isSellerVerified = Boolean(user?.isAadhaarVerified);
 
   const handleDeleteClick = async (car: Car) => {
     const confirmed = await confirm({
@@ -109,6 +148,31 @@ const SellerDashboard = () => {
             Manage your pre-owned car listings.
           </p>
         </div>
+
+        {!isSellerVerified && (
+          <div className="mb-8 rounded-2xl border border-warning-300 bg-warning-50 p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="mt-1 rounded-full bg-warning-200 p-2 text-warning-700">
+                <ShieldAlert className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-dark-900">
+                  Verify your Aadhaar to start listing cars
+                </h2>
+                <p className="text-sm text-dark-700 mt-1">
+                  For compliance and buyer safety, seller accounts must complete
+                  Aadhaar verification before creating or editing listings.
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/verify-aadhaar"
+              className="w-full sm:w-auto inline-flex items-center justify-center rounded-lg bg-warning-600 px-5 py-2 font-semibold text-white transition hover:bg-warning-700"
+            >
+              Verify Aadhaar
+            </Link>
+          </div>
+        )}
 
         {/* Stats Cards */}
         {stats && (
@@ -175,6 +239,17 @@ const SellerDashboard = () => {
           >
             <Handshake className="w-4 h-4 inline mr-2" />
             My Deals
+          </button>
+          <button
+            onClick={() => setActiveTab("rentals")}
+            className={`px-4 py-2 font-semibold transition border-b-2 ${
+              activeTab === "rentals"
+                ? "border-primary-600 text-primary-600"
+                : "border-transparent text-dark-600 hover:text-dark-900"
+            }`}
+          >
+            <Calendar className="w-4 h-4 inline mr-2" />
+            My Rentals
           </button>
           <Link
             to="/chat"
@@ -282,6 +357,114 @@ const SellerDashboard = () => {
           </div>
         )}
 
+        {/* Rentals Tab */}
+        {activeTab === "rentals" && (
+          <div>
+            <h2 className="text-2xl font-bold text-dark-900 mb-6">
+              My Rental Bookings
+            </h2>
+            {isRentalsLoading ? (
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+                <p className="mt-4 text-dark-600">Loading your rentals...</p>
+              </div>
+            ) : rentals.length === 0 ? (
+              <div className="text-center py-12 glass rounded-xl">
+                <Calendar className="w-16 h-16 text-dark-300 mx-auto mb-4" />
+                <p className="text-xl text-dark-600 mb-2">No rentals yet</p>
+                <p className="text-dark-500">
+                  Rent a vehicle from the catalogue to see bookings here.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {rentals.map((rental) => {
+                  const start = new Date(rental.startDate);
+                  const end = new Date(rental.endDate);
+                  return (
+                    <div key={rental.id} className="glass rounded-xl p-6">
+                      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div className="flex items-start gap-4">
+                          {rental.car.primaryImage && (
+                            <img
+                              src={rental.car.primaryImage}
+                              alt={`${rental.car.brand} ${rental.car.model}`}
+                              className="w-20 h-20 rounded-lg object-cover"
+                            />
+                          )}
+                          <div>
+                            <h3 className="font-bold text-dark-900 text-lg">
+                              {rental.car.brand} {rental.car.model} (
+                              {rental.car.year})
+                            </h3>
+                            <div className="flex items-center gap-2 text-sm text-dark-600 mt-2">
+                              <Calendar className="w-4 h-4" />
+                              <span>
+                                {start.toLocaleDateString()} -{" "}
+                                {end.toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-dark-600 mt-1">
+                              <Clock className="w-4 h-4" />
+                              <span>
+                                {rental.totalDays}{" "}
+                                {rental.totalDays === 1 ? "day" : "days"}
+                              </span>
+                            </div>
+                            {rental.car.city && (
+                              <div className="flex items-center gap-2 text-sm text-dark-600 mt-1">
+                                <MapPin className="w-4 h-4 text-primary-600" />
+                                <span>
+                                  Pickup Location:{" "}
+                                  <PickupAddress city={rental.car.city} />
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right space-y-2">
+                          <div>
+                            <p className="text-sm text-dark-600">
+                              Total Amount
+                            </p>
+                            <p className="text-2xl font-bold text-primary-600">
+                              ₹{rental.totalAmount.toLocaleString()}
+                            </p>
+                          </div>
+                          <span
+                            className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                              rental.status === "COMPLETED"
+                                ? "bg-success-100 text-success-700"
+                                : rental.status === "ACTIVE"
+                                ? "bg-primary-100 text-primary-700"
+                                : rental.status === "PENDING"
+                                ? "bg-warning-100 text-warning-700"
+                                : "bg-error-100 text-error-700"
+                            }`}
+                          >
+                            {rental.status}
+                          </span>
+                          <span
+                            className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                              rental.paymentStatus === "PAID"
+                                ? "bg-success-100 text-success-700"
+                                : rental.paymentStatus === "PENDING"
+                                ? "bg-warning-100 text-warning-700"
+                                : "bg-error-100 text-error-700"
+                            }`}
+                          >
+                            {rental.paymentStatus}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Listings Tab */}
         {activeTab === "listings" && (
           <>
@@ -297,7 +480,17 @@ const SellerDashboard = () => {
               </div>
               <button
                 onClick={() => setIsAddModalOpen(true)}
-                className="w-full sm:w-auto bg-gradient-primary hover:bg-gradient-primary-dark text-white px-6 py-3 rounded-lg font-semibold transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                disabled={!isSellerVerified}
+                className={`w-full sm:w-auto px-6 py-3 rounded-lg font-semibold transition shadow-lg flex items-center justify-center gap-2 ${
+                  isSellerVerified
+                    ? "bg-gradient-primary hover:bg-gradient-primary-dark text-white"
+                    : "bg-dark-300 text-dark-500 cursor-not-allowed"
+                }`}
+                title={
+                  isSellerVerified
+                    ? "Add a new car listing"
+                    : "Complete Aadhaar verification to add listings"
+                }
               >
                 <Plus className="w-5 h-5" />
                 Add New Car

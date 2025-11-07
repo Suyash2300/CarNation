@@ -13,7 +13,6 @@ import TransactionReport from "../../components/admin/TransactionReport";
 import {
   LayoutDashboard,
   Car,
-  Calendar,
   Users,
   Shield,
   TrendingUp,
@@ -26,7 +25,15 @@ import { Link } from "react-router-dom";
 const AdminDashboard = () => {
   const { user } = useAppSelector((state) => state.auth);
   const [activeSection, setActiveSection] = useState<
-    "overview" | "cars" | "rentals" | "verification" | "users" | "platform" | "transactions"
+    | "overview"
+    | "cars"
+    | "rentals"
+    | "verification"
+    | "users"
+    | "platform"
+    | "transactions"
+    | "support"
+    | "shops"
   >("overview");
 
   if (user?.role !== "ADMIN") {
@@ -55,7 +62,11 @@ const AdminDashboard = () => {
     },
     { id: "users" as const, label: "User Management", icon: Users },
     { id: "platform" as const, label: "Platform Settings", icon: DollarSign },
-    { id: "transactions" as const, label: "Transaction Report", icon: TrendingUp },
+    {
+      id: "transactions" as const,
+      label: "Transaction Report",
+      icon: TrendingUp,
+    },
   ];
 
   return (

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useLazyGetUsedCarsQuery, type Car } from "../services/carApi";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
@@ -9,6 +9,7 @@ import EmptyState from "../components/common/EmptyState";
 import FilterChip from "../components/common/FilterChip";
 import { useDebounce } from "../hooks/useDebounce";
 import LazySelect from "../components/common/LazySelect";
+import type { SingleValue } from "react-select";
 
 const UsedCars = () => {
   // Filter states
@@ -18,7 +19,7 @@ const UsedCars = () => {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   // Infinite scroll state
-  const [page, setPage] = useState(1);
+  const pageRef = useRef(1);
   const [cars, setCars] = useState<Car[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [filters, setFilters] = useState<{
@@ -35,31 +36,32 @@ const UsedCars = () => {
   const debouncedBrand = useDebounce(selectedBrand, 300);
 
   // Memoize fetchPage function
-  const fetchPage = useCallback(async (nextPage: number, replace = false) => {
-    const { data } = await trigger({
-      city: debouncedCity || undefined,
-      brand: debouncedBrand || undefined,
-      sortBy,
-      sortOrder,
-      page: nextPage,
-      limit,
-    });
-    if (!data) return;
-    setHasMore(nextPage < data.pagination.totalPages);
-    if (replace && (data as any).filters) {
-      // older backends may omit filters
-      // @ts-expect-error dynamic
-      setFilters({
-        cities: (data as any).filters?.cities || [],
-        brands: (data as any).filters?.brands || [],
+  const fetchPage = useCallback(
+    async (nextPage: number, replace = false) => {
+      const { data } = await trigger({
+        city: debouncedCity || undefined,
+        brand: debouncedBrand || undefined,
+        sortBy,
+        sortOrder,
+        page: nextPage,
+        limit,
       });
-    }
-    setCars((prev) => (replace ? data.cars : [...prev, ...data.cars]));
-  }, [debouncedCity, debouncedBrand, sortBy, sortOrder, trigger, limit]);
+      if (!data) return;
+      setHasMore(nextPage < data.pagination.totalPages);
+      if (replace && data.filters) {
+        setFilters({
+          cities: data.filters.cities || [],
+          brands: data.filters.brands || [],
+        });
+      }
+      setCars((prev) => (replace ? data.cars : [...prev, ...data.cars]));
+    },
+    [debouncedCity, debouncedBrand, sortBy, sortOrder, trigger, limit]
+  );
 
   // Reset when filters/sort change (using debounced values)
   useEffect(() => {
-    setPage(1);
+    pageRef.current = 1;
     setCars([]);
     setHasMore(true);
     fetchPage(1, true);
@@ -69,17 +71,14 @@ const UsedCars = () => {
   useEffect(() => {
     const el = loadMoreRef.current;
     if (!el || !hasMore || isFetching) return;
-    
+
     const obs = new IntersectionObserver(
       (entries) => {
         const first = entries[0];
         if (first.isIntersecting && hasMore && !isFetching) {
-          setPage((prevPage) => {
-            const nextPage = prevPage + 1;
-            // Fetch the next page
-            fetchPage(nextPage).catch(console.error);
-            return nextPage;
-          });
+          const nextPage = pageRef.current + 1;
+          pageRef.current = nextPage;
+          fetchPage(nextPage).catch(console.error);
         }
       },
       { rootMargin: "200px" }
@@ -107,7 +106,9 @@ const UsedCars = () => {
     { value: "brand-desc", label: "Brand (Z-A)" },
   ];
 
-  const handleSortChange = (selected: any) => {
+  type SortOption = { value: string; label: string };
+
+  const handleSortChange = (selected: SingleValue<SortOption>) => {
     if (selected?.value.includes("-desc")) {
       setSortBy(selected.value.split("-")[0]);
       setSortOrder("desc");
@@ -278,7 +279,10 @@ const UsedCars = () => {
             ))}
             {/* Sentinel for infinite scroll */}
             {hasMore && (
-              <div ref={loadMoreRef} className="h-10 flex items-center justify-center">
+              <div
+                ref={loadMoreRef}
+                className="h-10 flex items-center justify-center"
+              >
                 {isFetching && (
                   <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
                 )}

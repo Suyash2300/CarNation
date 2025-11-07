@@ -28,8 +28,10 @@ export const getSocket = (): Socket | null => {
   }
 
   // Create new socket connection with explicit path
-  console.log('[Socket] Connecting to:', SOCKET_URL);
-  console.log('[Socket] Token exists:', !!token);
+  if (import.meta.env.DEV) {
+    console.log('[Socket] Connecting to:', SOCKET_URL);
+    console.log('[Socket] Token exists:', !!token);
+  }
   
   socket = io(SOCKET_URL, {
     path: '/socket.io/', // Explicitly set the Socket.io path
@@ -45,11 +47,15 @@ export const getSocket = (): Socket | null => {
   });
 
   socket.on('connect', () => {
-    console.log('Socket connected:', socket?.id);
+    if (import.meta.env.DEV) {
+      console.log('Socket connected:', socket?.id);
+    }
   });
 
   socket.on('disconnect', (reason) => {
-    console.log('Socket disconnected:', reason);
+    if (import.meta.env.DEV) {
+      console.log('Socket disconnected:', reason);
+    }
   });
 
   socket.on('connect_error', (error) => {
@@ -66,15 +72,21 @@ export const getSocket = (): Socket | null => {
   });
 
   socket.on('reconnect', (attemptNumber) => {
-    console.log('Socket reconnected after', attemptNumber, 'attempts');
+    if (import.meta.env.DEV) {
+      console.log('Socket reconnected after', attemptNumber, 'attempts');
+    }
   });
 
   socket.on('reconnect_error', (error) => {
-    console.error('Socket reconnection error:', error);
+    if (import.meta.env.DEV) {
+      console.error('Socket reconnection error:', error);
+    }
   });
 
   socket.on('reconnect_failed', () => {
-    console.error('Socket reconnection failed');
+    if (import.meta.env.DEV) {
+      console.error('Socket reconnection failed');
+    }
   });
 
   return socket;

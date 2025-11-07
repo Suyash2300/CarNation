@@ -1,5 +1,5 @@
-import { useState } from "react";
-import Select from "react-select";
+import { useMemo, useState } from "react";
+import Select, { type CSSObjectWithLabel } from "react-select";
 import {
   useGetAdminRentalsQuery,
   useGetAdminEarningsQuery,
@@ -14,6 +14,9 @@ import {
   Mail,
   CreditCard,
   Clock,
+  Search,
+  Layers,
+  Filter as FilterIcon,
 } from "lucide-react";
 
 const RentalManagement = () => {
@@ -21,6 +24,8 @@ const RentalManagement = () => {
   const [earningsPeriod, setEarningsPeriod] = useState<
     "week" | "month" | "year"
   >("month");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [cityFilter, setCityFilter] = useState("");
 
   const { data: rentalsData, isLoading: rentalsLoading } =
     useGetAdminRentalsQuery(statusFilter ? { status: statusFilter } : {}, {
@@ -32,7 +37,10 @@ const RentalManagement = () => {
       period: earningsPeriod,
     });
 
-  const rentals = rentalsData?.rentals || [];
+  const rentals = useMemo(
+    () => rentalsData?.rentals ?? [],
+    [rentalsData?.rentals]
+  );
   const earnings = earningsData || { totalEarnings: 0, earnings: [], count: 0 };
   const isLoading = rentalsLoading || earningsLoading;
 
@@ -41,6 +49,7 @@ const RentalManagement = () => {
     { value: "PENDING", label: "Pending" },
     { value: "ACTIVE", label: "Active" },
     { value: "COMPLETED", label: "Completed" },
+    { value: "CANCELLED", label: "Cancelled" },
   ];
 
   const periodOptions = [
@@ -48,6 +57,58 @@ const RentalManagement = () => {
     { value: "month", label: "Last 30 Days" },
     { value: "year", label: "Last Year" },
   ];
+
+  const cityOptions = useMemo(() => {
+    const uniqueCities = Array.from(
+      new Set(
+        rentals
+          .map((rental) => rental.car.city)
+          .filter((city): city is string => Boolean(city))
+      )
+    ).sort();
+
+    return [
+      { value: "", label: "All Cities" },
+      ...uniqueCities.map((city) => ({ value: city, label: city })),
+    ];
+  }, [rentals]);
+
+  const selectMenuPortal =
+    typeof window !== "undefined" ? window.document.body : undefined;
+
+  const selectStyles = {
+    menuPortal: (base: CSSObjectWithLabel) => ({
+      ...base,
+      zIndex: 50,
+    }),
+  };
+
+  const filteredRentals = useMemo(() => {
+    return rentals.filter((rental) => {
+      const matchesSearch = (() => {
+        if (!searchTerm.trim()) {
+          return true;
+        }
+
+        const query = searchTerm.toLowerCase();
+        return [
+          rental.buyer.name,
+          rental.buyer.email,
+          rental.car.brand,
+          rental.car.model,
+          rental.car.city,
+        ]
+          .filter(Boolean)
+          .some((value) => value!.toLowerCase().includes(query));
+      })();
+
+      const matchesCity = cityFilter
+        ? rental.car.city?.toLowerCase() === cityFilter.toLowerCase()
+        : true;
+
+      return matchesSearch && matchesCity;
+    });
+  }, [rentals, searchTerm, cityFilter]);
 
   return (
     <div>
@@ -57,11 +118,12 @@ const RentalManagement = () => {
 
       {/* Earnings Summary */}
       <div className="mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-dark-900">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <h3 className="text-lg font-semibold text-dark-900 flex items-center gap-2">
+            <DollarSign className="w-5 h-5 text-primary-600" />
             Earnings Report
           </h3>
-          <div className="w-48">
+          <div className="w-full md:w-48">
             <Select
               options={periodOptions}
               value={periodOptions.find((opt) => opt.value === earningsPeriod)}
@@ -70,10 +132,12 @@ const RentalManagement = () => {
               }
               className="react-select-container"
               classNamePrefix="react-select"
+              menuPortalTarget={selectMenuPortal}
+              styles={selectStyles}
             />
           </div>
         </div>
-        <div className="glass rounded-xl p-6">
+        <div className="glass rounded-xl p-6 mt-4">
           <div className="flex items-center gap-4">
             <div className="bg-primary-100 p-4 rounded-lg">
               <DollarSign className="w-8 h-8 text-primary-600" />
@@ -91,30 +155,64 @@ const RentalManagement = () => {
         </div>
       </div>
 
-      {/* Rentals List */}
-      <div className="mb-4">
-        <div className="w-64">
-          <Select
-            options={statusOptions}
-            value={statusOptions.find((opt) => opt.value === statusFilter)}
-            onChange={(selected) => setStatusFilter(selected?.value || "")}
-            className="react-select-container"
-            classNamePrefix="react-select"
-            placeholder="Filter by status"
-          />
+      {/* Rental Filters */}
+      <div className="glass rounded-xl p-4 mb-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div className="flex flex-col gap-2 w-full md:w-96">
+            <label className="text-xs font-semibold text-dark-600 uppercase tracking-wide flex items-center gap-2">
+              <Search className="w-4 h-4" /> Search Rentals
+            </label>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by renter name, email, car model, or city"
+              className="w-full px-3 py-2 rounded-lg border border-dark-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none text-sm"
+            />
+          </div>
+
+          <div className="flex flex-col gap-2 w-full md:w-64">
+            <label className="text-xs font-semibold text-dark-600 uppercase tracking-wide flex items-center gap-2">
+              <Layers className="w-4 h-4" /> Filter by Status
+            </label>
+            <Select
+              options={statusOptions}
+              value={statusOptions.find((opt) => opt.value === statusFilter)}
+              onChange={(selected) => setStatusFilter(selected?.value || "")}
+              className="react-select-container"
+              classNamePrefix="react-select"
+              menuPortalTarget={selectMenuPortal}
+              styles={selectStyles}
+            />
+          </div>
+
+          <div className="flex flex-col gap-2 w-full md:w-64">
+            <label className="text-xs font-semibold text-dark-600 uppercase tracking-wide flex items-center gap-2">
+              <FilterIcon className="w-4 h-4" /> Filter by City
+            </label>
+            <Select
+              options={cityOptions}
+              value={cityOptions.find((opt) => opt.value === cityFilter)}
+              onChange={(selected) => setCityFilter(selected?.value || "")}
+              className="react-select-container"
+              classNamePrefix="react-select"
+              menuPortalTarget={selectMenuPortal}
+              styles={selectStyles}
+            />
+          </div>
         </div>
       </div>
 
       {isLoading ? (
         <div className="text-center py-12">Loading rentals...</div>
-      ) : rentals.length === 0 ? (
+      ) : filteredRentals.length === 0 ? (
         <div className="text-center py-12">
           <CarIcon className="w-16 h-16 text-dark-300 mx-auto mb-4" />
           <p className="text-dark-600">No rentals found</p>
         </div>
       ) : (
         <div className="space-y-4">
-          {rentals.map((rental) => {
+          {filteredRentals.map((rental) => {
             const formatAddress = () => {
               const parts = [];
               if (rental.buyer.address) parts.push(rental.buyer.address);
@@ -203,47 +301,49 @@ const RentalManagement = () => {
                       </p>
                     </div>
                     <div className="flex flex-col gap-2">
+                      <span
+                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold w-fit ${
+                          rental.status === "COMPLETED"
+                            ? "bg-success-100 text-success-700"
+                            : rental.status === "ACTIVE"
+                            ? "bg-primary-100 text-primary-700"
+                            : rental.status === "PENDING"
+                            ? "bg-warning-100 text-warning-700"
+                            : "bg-error-100 text-error-700"
+                        }`}
+                      >
+                        {rental.status}
+                      </span>
                       {(() => {
-                        // Check if rental period has ended
                         const endDate = new Date(rental.endDate);
-                        endDate.setHours(23, 59, 59, 999); // End of the day
+                        endDate.setHours(23, 59, 59, 999);
                         const today = new Date();
                         const isRentalPeriodOver = today > endDate;
 
-                        // Determine display status
-                        let displayStatus = rental.status;
+                        let derivedStatus: "ACTIVE" | "COMPLETED" | null = null;
 
-                        // If rental period has ended, mark as COMPLETED
                         if (
                           isRentalPeriodOver &&
                           rental.status !== "COMPLETED" &&
                           rental.status !== "CANCELLED"
                         ) {
-                          displayStatus = "COMPLETED";
-                        }
-                        // If payment is PAID but status is still PENDING, treat as ACTIVE
-                        else if (
+                          derivedStatus = "COMPLETED";
+                        } else if (
                           rental.paymentStatus === "PAID" &&
                           rental.status === "PENDING"
                         ) {
-                          displayStatus = "ACTIVE";
+                          derivedStatus = "ACTIVE";
                         }
 
-                        const statusClass =
-                          displayStatus === "COMPLETED"
-                            ? "bg-success-100 text-success-700"
-                            : displayStatus === "ACTIVE"
-                            ? "bg-primary-100 text-primary-700"
-                            : displayStatus === "PENDING"
-                            ? "bg-warning-100 text-warning-700"
-                            : "bg-error-100 text-error-700";
-                        return (
-                          <span
-                            className={`inline-block px-3 py-1 rounded-full text-xs font-semibold w-fit ${statusClass}`}
-                          >
-                            {displayStatus}
-                          </span>
-                        );
+                        if (derivedStatus && derivedStatus !== rental.status) {
+                          return (
+                            <span className="inline-block text-[11px] text-dark-500 bg-dark-100 px-2 py-1 rounded-md">
+                              Suggested status: {derivedStatus}
+                            </span>
+                          );
+                        }
+
+                        return null;
                       })()}
                       <span
                         className={`inline-block px-3 py-1 rounded-full text-xs font-semibold w-fit ${

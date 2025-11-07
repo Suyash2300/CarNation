@@ -1,7 +1,15 @@
-import { createContext, useCallback, useContext, useMemo, useRef, useState, ReactNode } from 'react';
-import ConfirmDialog from './ConfirmDialog';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+  ReactNode,
+} from "react";
+import ConfirmDialog from "./ConfirmDialog";
 
-type ConfirmVariant = 'danger' | 'warning' | 'info';
+type ConfirmVariant = "danger" | "warning" | "info";
 
 export interface ConfirmOptions {
   title: string;
@@ -16,12 +24,15 @@ interface ConfirmContextValue {
   confirm: (options: ConfirmOptions) => Promise<boolean>;
 }
 
-const ConfirmContext = createContext<ConfirmContextValue | undefined>(undefined);
+const ConfirmContext = createContext<ConfirmContextValue | undefined>(
+  undefined
+);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useConfirm = () => {
   const context = useContext(ConfirmContext);
   if (!context) {
-    throw new Error('useConfirm must be used within ConfirmProvider');
+    throw new Error("useConfirm must be used within ConfirmProvider");
   }
   return context.confirm;
 };
@@ -86,6 +97,3 @@ export const ConfirmProvider = ({ children }: { children: ReactNode }) => {
     </ConfirmContext.Provider>
   );
 };
-
-
-

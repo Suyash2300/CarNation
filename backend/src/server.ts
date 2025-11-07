@@ -44,9 +44,6 @@ const io = new SocketServer(httpServer, {
   allowEIO3: true, // Allow Engine.IO v3 clients
 });
 
-// Log Socket.io initialization
-console.log('🔌 Socket.io initialized with path: /socket.io/');
-console.log('🔌 CORS origin:', process.env.FRONTEND_URL || 'http://localhost:5173');
 
 // Apply Socket.io authentication middleware
 io.use(socketAuth);
@@ -177,18 +174,15 @@ import { checkSubscriptionExpiry } from './services/subscriptionService';
 
 // Run subscription expiry check daily at 2 AM
 cron.schedule('0 2 * * *', async () => {
-  console.log('🔄 Running subscription expiry check...');
   try {
     await checkSubscriptionExpiry();
-    console.log('✅ Subscription expiry check completed');
   } catch (error) {
-    console.error('❌ Error in subscription expiry check:', error);
+    console.error('Subscription expiry job failed:', error);
   }
 });
 
 // Run rental status update check every hour
 cron.schedule('0 * * * *', async () => {
-  console.log('🔄 Checking for completed rentals...');
   try {
     const now = new Date();
     const completedRentals = await prisma.rental.updateMany({
@@ -200,6 +194,21 @@ cron.schedule('0 * * * *', async () => {
       },
       data: {
         status: 'COMPLETED',
+      },
+    });
+
+    await prisma.rental.updateMany({
+      where: {
+        status: 'PENDING',
+        startDate: {
+          lte: now,
+        },
+        endDate: {
+          gte: now,
+        },
+      },
+      data: {
+        status: 'ACTIVE',
       },
     });
     
@@ -232,20 +241,16 @@ cron.schedule('0 * * * *', async () => {
       }
     }
 
-    if (completedRentals.count > 0) {
-      console.log(`✅ Updated ${completedRentals.count} rental(s) to COMPLETED`);
-    }
   } catch (error) {
-    console.error('❌ Error updating rental statuses:', error);
+    console.error('Rental status update job failed:', error);
   }
 });
 
 // Start server
 httpServer.listen(PORT, () => {
-  console.log(`🚀 Server is running on http://localhost:${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/health`);
-  console.log(`💬 Socket.io is ready for real-time chat`);
-  console.log(`⏰ Scheduled jobs initialized (subscription expiry daily, rental updates hourly)`);
+  if (process.env.NODE_ENV !== 'test') {
+    console.log(`Server listening on http://localhost:${PORT}`);
+  }
 });
 
 export default app;

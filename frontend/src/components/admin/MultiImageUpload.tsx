@@ -1,7 +1,7 @@
-import { useState, useRef } from 'react';
-import { Upload, X, Image as ImageIcon } from 'lucide-react';
-import { uploadImages } from '../../services/uploadService';
-import { useToast } from '../common/ToastContainer';
+import { useState, useRef } from "react";
+import { Upload, X } from "lucide-react";
+import { uploadImages } from "../../services/uploadService";
+import { useToast } from "../common/ToastContainer";
 
 interface MultiImageUploadProps {
   value?: string[];
@@ -14,12 +14,11 @@ interface MultiImageUploadProps {
 const MultiImageUpload = ({
   value = [],
   onChange,
-  label = 'Car Images',
+  label = "Car Images",
   maxImages = 10,
   required = false,
 }: MultiImageUploadProps) => {
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<{ [key: number]: number }>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const images = Array.isArray(value) ? value : [];
   const { showWarning, showError } = useToast();
@@ -30,17 +29,23 @@ const MultiImageUpload = ({
 
     // Check total image count
     if (images.length + files.length > maxImages) {
-      showWarning(`Maximum ${maxImages} images allowed. You can add ${maxImages - images.length} more.`);
+      showWarning(
+        `Maximum ${maxImages} images allowed. You can add ${
+          maxImages - images.length
+        } more.`
+      );
       return;
     }
 
     // Validate files
     const invalidFiles = files.filter(
-      (file) => !file.type.startsWith('image/') || file.size > 5 * 1024 * 1024
+      (file) => !file.type.startsWith("image/") || file.size > 5 * 1024 * 1024
     );
 
     if (invalidFiles.length > 0) {
-      showWarning('Some files are invalid. Only image files under 5MB are allowed.');
+      showWarning(
+        "Some files are invalid. Only image files under 5MB are allowed."
+      );
       return;
     }
 
@@ -51,12 +56,12 @@ const MultiImageUpload = ({
       const newUrls = result.images.map((img) => img.url);
       onChange([...images, ...newUrls]);
     } catch (error) {
-      console.error('Failed to upload images:', error);
-      showError('Failed to upload images. Please try again.');
+      console.error("Failed to upload images:", error);
+      showError("Failed to upload images. Please try again.");
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
     }
   };
@@ -90,7 +95,11 @@ const MultiImageUpload = ({
                 key={index}
                 className="relative group aspect-video rounded-lg border-2 border-dark-200 overflow-hidden"
               >
-                <img src={url} alt={`Image ${index + 1}`} className="w-full h-full object-cover" />
+                <img
+                  src={url}
+                  alt={`Image ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all">
                   <div className="absolute top-2 left-2">
                     {index === 0 && (
@@ -146,7 +155,9 @@ const MultiImageUpload = ({
               {isUploading ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-600"></div>
-                  <span className="text-dark-700 font-medium">Uploading...</span>
+                  <span className="text-dark-700 font-medium">
+                    Uploading...
+                  </span>
                 </>
               ) : (
                 <>
@@ -158,7 +169,8 @@ const MultiImageUpload = ({
               )}
             </button>
             <p className="text-xs text-dark-500 mt-1">
-              Max file size: 5MB each • Supported: JPG, PNG, WebP • First image is primary
+              Max file size: 5MB each • Supported: JPG, PNG, WebP • First image
+              is primary
             </p>
           </div>
         )}
@@ -168,4 +180,3 @@ const MultiImageUpload = ({
 };
 
 export default MultiImageUpload;
-

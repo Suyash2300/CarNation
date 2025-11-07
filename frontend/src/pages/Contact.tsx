@@ -14,14 +14,14 @@ const Contact = () => {
   const getSupportUserId = async (): Promise<string> => {
     // Try optional backend endpoint; fallback to navigate to chat without preselect
     try {
-      const API_URL =
-        (import.meta as any).env?.VITE_API_URL || "http://localhost:3000/api";
-      const res = await fetch(`${API_URL}/support-user?role=ADMIN`, {
+      const apiUrl =
+        import.meta.env.VITE_API_URL ?? "http://localhost:3000/api";
+      const res = await fetch(`${apiUrl}/support-user?role=ADMIN`, {
         credentials: "include",
       });
       if (res.ok) {
-        const data = await res.json();
-        return data.userId as string;
+        const data: { userId?: string } = await res.json();
+        return data.userId ?? "";
       }
     } catch (e) {
       // ignore

@@ -1,5 +1,13 @@
 import { useState, useEffect, useRef } from "react";
-import { Shield, Store, Award, MessageCircle, Zap, CheckCircle2, ArrowRight } from "lucide-react";
+import {
+  Shield,
+  Store,
+  Award,
+  MessageCircle,
+  Zap,
+  CheckCircle2,
+  ArrowRight,
+} from "lucide-react";
 
 interface Feature {
   icon: typeof Shield;
@@ -25,13 +33,14 @@ const FeaturesSection = () => {
       { threshold: 0.1 }
     );
 
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
+    const element = sectionRef.current;
+    if (element) {
+      observer.observe(element);
     }
 
     return () => {
-      if (sectionRef.current) {
-        observer.unobserve(sectionRef.current);
+      if (element) {
+        observer.unobserve(element);
       }
     };
   }, []);
@@ -44,7 +53,8 @@ const FeaturesSection = () => {
         "Drive with complete peace of mind. All rentals and transactions are protected with comprehensive insurance and secure processes.",
       metric: "100% Coverage",
       color: "text-primary-700",
-      bgColor: "bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700",
+      bgColor:
+        "bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700",
       borderColor: "border-primary-200",
     },
     {
@@ -54,7 +64,8 @@ const FeaturesSection = () => {
         "Discover a vast fleet from economy to luxury vehicles, and a diverse marketplace of quality used cars.",
       metric: "500+ Vehicles",
       color: "text-primary-700",
-      bgColor: "bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700",
+      bgColor:
+        "bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700",
       borderColor: "border-primary-200",
     },
     {
@@ -64,7 +75,8 @@ const FeaturesSection = () => {
         "Competitive rates with transparent pricing. No hidden fees, no surprises. Guaranteed best deals.",
       metric: "Price Match",
       color: "text-primary-700",
-      bgColor: "bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700",
+      bgColor:
+        "bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700",
       borderColor: "border-primary-200",
     },
     {
@@ -74,7 +86,8 @@ const FeaturesSection = () => {
         "Our expert support team is always on standby to assist you every step of the way, anytime you need us.",
       metric: "Always Available",
       color: "text-primary-700",
-      bgColor: "bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700",
+      bgColor:
+        "bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700",
       borderColor: "border-primary-200",
     },
     {
@@ -84,7 +97,8 @@ const FeaturesSection = () => {
         "Simple and secure booking process. Get your car in minutes, not hours. Fast, efficient, and hassle-free.",
       metric: "5 Min Setup",
       color: "text-primary-700",
-      bgColor: "bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700",
+      bgColor:
+        "bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700",
       borderColor: "border-primary-200",
     },
   ];
@@ -106,23 +120,29 @@ const FeaturesSection = () => {
           {/* Pipeline Container with connecting line */}
           <div className="relative py-12">
             {/* Horizontal Connecting Line */}
-            <div className={`absolute top-20 left-0 right-0 h-0.5 bg-gradient-to-r from-primary-500 to-primary-600 opacity-50 transition-opacity duration-1000 ${isVisible ? 'opacity-70' : ''}`} />
-            
+            <div
+              className={`absolute top-20 left-0 right-0 h-0.5 bg-gradient-to-r from-primary-500 to-primary-600 opacity-50 transition-opacity duration-1000 ${
+                isVisible ? "opacity-70" : ""
+              }`}
+            />
+
             {/* Nodes Container */}
             <div className="relative flex items-start justify-between px-4">
               {features.map((feature, index) => {
                 const IconComponent = feature.icon;
                 const isLast = index === features.length - 1;
                 const animationDelay = index * 150; // Staggered animation
-                
+
                 return (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className="relative flex-1 flex flex-col items-center group z-10"
                     style={{
                       opacity: isVisible ? 1 : 0,
-                      transform: isVisible ? 'translateY(0)' : 'translateY(30px)',
-                      transition: `opacity 0.6s ease-out ${animationDelay}ms, transform 0.6s ease-out ${animationDelay}ms`
+                      transform: isVisible
+                        ? "translateY(0)"
+                        : "translateY(30px)",
+                      transition: `opacity 0.6s ease-out ${animationDelay}ms, transform 0.6s ease-out ${animationDelay}ms`,
                     }}
                   >
                     {/* Connecting Arrow (except last node) */}
@@ -130,9 +150,7 @@ const FeaturesSection = () => {
                       <div className="absolute top-20 left-[calc(50%+40px)] right-[-40px] h-0.5 pointer-events-none">
                         <div className="relative h-full">
                           {/* Arrow Line - Consistent primary color */}
-                          <div 
-                            className="absolute left-0 right-0 h-full opacity-60 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-primary-500 to-primary-600"
-                          />
+                          <div className="absolute left-0 right-0 h-full opacity-60 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-primary-500 to-primary-600" />
                           {/* Arrow Head */}
                           <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-5 h-5 transition-colors drop-shadow-sm text-primary-500 group-hover:text-primary-700" />
                         </div>
@@ -141,7 +159,9 @@ const FeaturesSection = () => {
 
                     {/* Node Circle */}
                     <div className="relative mb-6">
-                      <div className={`${feature.bgColor} w-20 h-20 rounded-full flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:shadow-2xl transition-all duration-300 border-4 border-white relative z-10`}>
+                      <div
+                        className={`${feature.bgColor} w-20 h-20 rounded-full flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:shadow-2xl transition-all duration-300 border-4 border-white relative z-10`}
+                      >
                         <IconComponent className="w-10 h-10 text-white drop-shadow-sm" />
                       </div>
                       {/* Pulse Animation Ring */}
@@ -181,21 +201,23 @@ const FeaturesSection = () => {
             const IconComponent = feature.icon;
             const isLast = index === features.length - 1;
             const animationDelay = index * 100;
-            
+
             return (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className="relative"
                 style={{
                   opacity: isVisible ? 1 : 0,
-                  transform: isVisible ? 'translateX(0)' : 'translateX(-20px)',
-                  transition: `opacity 0.5s ease-out ${animationDelay}ms, transform 0.5s ease-out ${animationDelay}ms`
+                  transform: isVisible ? "translateX(0)" : "translateX(-20px)",
+                  transition: `opacity 0.5s ease-out ${animationDelay}ms, transform 0.5s ease-out ${animationDelay}ms`,
                 }}
               >
                 <div className="flex items-start gap-4 group">
                   {/* Node Circle */}
                   <div className="relative flex-shrink-0">
-                    <div className={`${feature.bgColor} w-16 h-16 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300 border-4 border-white`}>
+                    <div
+                      className={`${feature.bgColor} w-16 h-16 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300 border-4 border-white`}
+                    >
                       <IconComponent className="w-8 h-8 text-white" />
                     </div>
                     {/* Connecting Line (vertical, except last) */}
@@ -234,19 +256,27 @@ const FeaturesSection = () => {
         <div className="mt-12 pt-8 border-t border-dark-100">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 text-center">
             <div>
-              <div className="text-3xl md:text-4xl font-bold text-primary-600 mb-1">4.9/5</div>
+              <div className="text-3xl md:text-4xl font-bold text-primary-600 mb-1">
+                4.9/5
+              </div>
               <div className="text-sm text-dark-600">Customer Rating</div>
             </div>
             <div>
-              <div className="text-3xl md:text-4xl font-bold text-primary-600 mb-1">2000+</div>
+              <div className="text-3xl md:text-4xl font-bold text-primary-600 mb-1">
+                2000+
+              </div>
               <div className="text-sm text-dark-600">Happy Customers</div>
             </div>
             <div>
-              <div className="text-3xl md:text-4xl font-bold text-primary-600 mb-1">500+</div>
+              <div className="text-3xl md:text-4xl font-bold text-primary-600 mb-1">
+                500+
+              </div>
               <div className="text-sm text-dark-600">Available Cars</div>
             </div>
             <div>
-              <div className="text-3xl md:text-4xl font-bold text-primary-600 mb-1">25+</div>
+              <div className="text-3xl md:text-4xl font-bold text-primary-600 mb-1">
+                25+
+              </div>
               <div className="text-sm text-dark-600">Cities Covered</div>
             </div>
           </div>

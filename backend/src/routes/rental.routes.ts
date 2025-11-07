@@ -34,6 +34,24 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
       });
     }
 
+    const car = await prisma.car.findUnique({
+      where: { id: carId },
+      select: {
+        ownerId: true,
+        sellerId: true,
+      },
+    });
+
+    if (!car) {
+      return res.status(404).json({ error: 'Car not found' });
+    }
+
+    if (car.ownerId === userId || car.sellerId === userId) {
+      return res.status(400).json({
+        error: 'You cannot rent a car that you manage or own',
+      });
+    }
+
     // Validate dates
     const dateValidation = validateRentalDates(new Date(startDate), new Date(endDate));
     if (!dateValidation.isValid) {
@@ -121,7 +139,44 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
       orderBy: { createdAt: 'desc' },
     });
 
-    res.json({ rentals });
+    const now = new Date();
+    const statusUpdates: Promise<unknown>[] = [];
+
+    const rentalsWithDerivedStatus = rentals.map((rental) => {
+      const start = new Date(rental.startDate);
+      const end = new Date(rental.endDate);
+
+      let derivedStatus = rental.status;
+
+      if (start <= now && end >= now && rental.status === 'PENDING') {
+        derivedStatus = 'ACTIVE';
+        statusUpdates.push(
+          prisma.rental.update({
+            where: { id: rental.id },
+            data: { status: 'ACTIVE' },
+          })
+        );
+      } else if (end < now && rental.status === 'ACTIVE') {
+        derivedStatus = 'COMPLETED';
+        statusUpdates.push(
+          prisma.rental.update({
+            where: { id: rental.id },
+            data: { status: 'COMPLETED' },
+          })
+        );
+      }
+
+      return {
+        ...rental,
+        status: derivedStatus,
+      };
+    });
+
+    if (statusUpdates.length > 0) {
+      await prisma.$transaction(statusUpdates);
+    }
+
+    res.json({ rentals: rentalsWithDerivedStatus });
   } catch (error) {
     console.error('Error fetching rentals:', error);
     res.status(500).json({ error: 'Failed to fetch rentals' });

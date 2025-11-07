@@ -1,5 +1,5 @@
-import { AlertTriangle, X } from 'lucide-react';
-import Button from './Button';
+import { AlertTriangle, X } from "lucide-react";
+import Button from "./Button";
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -9,7 +9,7 @@ interface ConfirmDialogProps {
   message: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  variant?: 'danger' | 'warning' | 'info';
+  variant?: "danger" | "warning" | "info";
   isLoading?: boolean;
 }
 
@@ -19,25 +19,19 @@ const ConfirmDialog = ({
   onConfirm,
   title,
   message,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
-  variant = 'warning',
+  confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
+  variant = "warning",
   isLoading = false,
 }: ConfirmDialogProps) => {
   if (!isOpen) return null;
 
-  const variantClasses = {
-    danger: 'border-error-500 bg-error-50',
-    warning: 'border-warning-500 bg-warning-50',
-    info: 'border-primary-500 bg-primary-50',
-  };
-
   const confirmButtonClasses =
-    variant === 'danger'
-      ? 'bg-error-600 hover:bg-error-700 focus:ring-error-500 text-white border border-error-600 shadow-lg hover:shadow-xl'
-      : variant === 'warning'
-      ? 'bg-warning-600 hover:bg-warning-700 focus:ring-warning-500 text-white border border-warning-600 shadow-lg hover:shadow-xl'
-      : 'bg-gradient-primary hover:bg-gradient-primary-dark focus:ring-primary-500 text-white border border-primary-600 shadow-lg hover:shadow-xl';
+    variant === "danger"
+      ? "bg-error-600 hover:bg-error-700 focus:ring-error-500 text-white border border-error-600 shadow-lg hover:shadow-xl"
+      : variant === "warning"
+      ? "bg-warning-600 hover:bg-warning-700 focus:ring-warning-500 text-white border border-warning-600 shadow-lg hover:shadow-xl"
+      : "bg-gradient-primary hover:bg-gradient-primary-dark focus:ring-primary-500 text-white border border-primary-600 shadow-lg hover:shadow-xl";
 
   return (
     <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4">
@@ -52,20 +46,20 @@ const ConfirmDialog = ({
         <div className="flex items-start gap-4 mb-4">
           <div
             className={`p-3 rounded-xl ${
-              variant === 'danger'
-                ? 'bg-error-100'
-                : variant === 'warning'
-                ? 'bg-warning-100'
-                : 'bg-primary-100'
+              variant === "danger"
+                ? "bg-error-100"
+                : variant === "warning"
+                ? "bg-warning-100"
+                : "bg-primary-100"
             }`}
           >
             <AlertTriangle
               className={`w-6 h-6 ${
-                variant === 'danger'
-                  ? 'text-error-600'
-                  : variant === 'warning'
-                  ? 'text-warning-600'
-                  : 'text-primary-600'
+                variant === "danger"
+                  ? "text-error-600"
+                  : variant === "warning"
+                  ? "text-warning-600"
+                  : "text-primary-600"
               }`}
             />
           </div>
@@ -87,7 +81,7 @@ const ConfirmDialog = ({
             {cancelLabel}
           </Button>
           <Button
-            variant={variant === 'danger' ? 'danger' : 'primary'}
+            variant={variant === "danger" ? "danger" : "primary"}
             onClick={onConfirm}
             isLoading={isLoading}
             className={confirmButtonClasses}
@@ -101,4 +95,3 @@ const ConfirmDialog = ({
 };
 
 export default ConfirmDialog;
-

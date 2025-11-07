@@ -1,10 +1,15 @@
-import { useState } from 'react';
-import { useGetAdminCarsQuery, useDeleteCarMutation, type Car } from '../../services/carApi';
-import { Plus, Edit, Trash2, Car as CarIcon } from 'lucide-react';
-import AddCarModal from './AddCarModal';
-import EditCarModal from './EditCarModal';
-import { useToast } from '../common/ToastContainer';
-import { useConfirm } from '../common/ConfirmProvider';
+import { useState } from "react";
+import {
+  useGetAdminCarsQuery,
+  useDeleteCarMutation,
+  type Car,
+} from "../../services/carApi";
+import { Plus, Edit, Trash2, Car as CarIcon } from "lucide-react";
+import AddCarModal from "./AddCarModal";
+import EditCarModal from "./EditCarModal";
+import { useToast } from "../common/ToastContainer";
+import { useConfirm } from "../common/ConfirmProvider";
+import { getApiErrorMessage } from "../../utils/error";
 
 const CarManagement = () => {
   const { data, isLoading } = useGetAdminCarsQuery();
@@ -18,11 +23,11 @@ const CarManagement = () => {
 
   const handleDelete = async (id: string) => {
     const confirmed = await confirm({
-      title: 'Delete Car',
-      message: 'Are you sure you want to delete this car?',
-      confirmLabel: 'Delete',
-      cancelLabel: 'Cancel',
-      variant: 'danger',
+      title: "Delete Car",
+      message: "Are you sure you want to delete this car?",
+      confirmLabel: "Delete",
+      cancelLabel: "Cancel",
+      variant: "danger",
     });
 
     if (!confirmed) {
@@ -31,10 +36,11 @@ const CarManagement = () => {
 
     try {
       await deleteCar(id).unwrap();
-      showSuccess('Car deleted successfully');
-    } catch (error: any) {
-      console.error('Failed to delete car:', error);
-      showError(error?.data?.error || 'Failed to delete car');
+      showSuccess("Car deleted successfully");
+    } catch (error) {
+      console.error("Failed to delete car:", error);
+      const message = getApiErrorMessage(error, "Failed to delete car");
+      showError(message);
     }
   };
 
@@ -80,7 +86,10 @@ const CarManagement = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {cars.map((car) => (
-            <div key={car.id} className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition">
+            <div
+              key={car.id}
+              className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition"
+            >
               {car.primaryImage && (
                 <img
                   src={car.primaryImage}
@@ -92,16 +101,22 @@ const CarManagement = () => {
                 <h3 className="text-xl font-bold text-dark-900 mb-1">
                   {car.brand} {car.model}
                 </h3>
-                <p className="text-dark-600 text-sm mb-3">{car.year} • {car.fuelType}</p>
+                <p className="text-dark-600 text-sm mb-3">
+                  {car.year} • {car.fuelType}
+                </p>
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-2xl font-bold text-primary-600">
                     ₹{car.rentalPrice}/day
                   </span>
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    car.status === 'AVAILABLE' ? 'bg-success-100 text-success-700' :
-                    car.status === 'RENTED' ? 'bg-error-100 text-error-700' :
-                    'bg-warning-100 text-warning-700'
-                  }`}>
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                      car.status === "AVAILABLE"
+                        ? "bg-success-100 text-success-700"
+                        : car.status === "RENTED"
+                        ? "bg-error-100 text-error-700"
+                        : "bg-warning-100 text-warning-700"
+                    }`}
+                  >
                     {car.status}
                   </span>
                 </div>
@@ -148,4 +163,3 @@ const CarManagement = () => {
 };
 
 export default CarManagement;
-

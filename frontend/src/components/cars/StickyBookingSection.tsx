@@ -1,7 +1,7 @@
-import { useNavigate } from 'react-router-dom';
-import { MessageCircle, Calendar, DollarSign } from 'lucide-react';
-import Button from '../common/Button';
-import type { Car } from '../../services/carApi';
+import { useNavigate } from "react-router-dom";
+import { MessageCircle, Calendar, DollarSign } from "lucide-react";
+import Button from "../common/Button";
+import type { Car } from "../../services/carApi";
 
 interface StickyBookingSectionProps {
   car: Car;
@@ -18,7 +18,7 @@ const StickyBookingSection = ({
   const navigate = useNavigate();
 
   const price = car.isForRent ? car.rentalPrice : car.salePrice;
-  const priceUnit = car.isForRent ? 'per day' : '';
+  const priceUnit = car.isForRent ? "per day" : "";
 
   return (
     <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t-2 border-dark-200 shadow-2xl z-40 p-4 animate-slide-up">
@@ -49,7 +49,7 @@ const StickyBookingSection = ({
               Book Now
             </Button>
           )}
-          {(car as any).isForSale && (
+          {car.isForSale && (
             <>
               <Button
                 onClick={() => navigate(`/purchase-booking/${car.id}`)}
@@ -72,7 +72,7 @@ const StickyBookingSection = ({
               </Button>
             </>
           )}
-          {car.isForRent && (car as any).owner && (
+          {car.isForRent && car.owner && (
             <Button
               onClick={onContactSeller}
               disabled={isCreatingConversation}
@@ -91,4 +91,3 @@ const StickyBookingSection = ({
 };
 
 export default StickyBookingSection;
-

@@ -16,7 +16,7 @@ export const authApi = api.injectEndpoints({
         method: 'POST',
         body: credentials,
       }),
-      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+      async onQueryStarted(_arg, { queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
           localStorage.setItem('token', data.token);
@@ -49,7 +49,7 @@ export const authApi = api.injectEndpoints({
         body: data,
       }),
       invalidatesTags: ['User'],
-      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+      async onQueryStarted(_arg, { queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
           // Update user in localStorage
@@ -70,7 +70,7 @@ export const authApi = api.injectEndpoints({
         body: formData,
       }),
       invalidatesTags: ['User'],
-      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+      async onQueryStarted(_arg, { queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
           // Update user in localStorage

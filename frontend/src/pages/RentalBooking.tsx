@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   useGetCarByIdQuery,
@@ -8,6 +8,7 @@ import { useCreateRentalMutation } from "../services/rentalApi";
 import {
   useCreateRentalOrderMutation,
   useVerifyRentalPaymentMutation,
+  type StripePaymentIntentResponse,
 } from "../services/paymentApi";
 import { useAppSelector } from "../hooks/redux";
 import Navbar from "../components/layout/Navbar";
@@ -17,12 +18,12 @@ import {
   AlertCircle,
   CheckCircle,
   ArrowLeft,
-  XCircle,
   CreditCard,
   MapPin,
   Clock,
 } from "lucide-react";
 import { useGetShopsByCityQuery } from "../services/shopApi";
+import { getApiErrorMessage } from "../utils/error";
 
 const RentalBooking = () => {
   const { id } = useParams<{ id: string }>();
@@ -40,11 +41,15 @@ const RentalBooking = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [rentalId, setRentalId] = useState<string | null>(null);
-  const [paymentOrder, setPaymentOrder] = useState<any>(null);
+  const [paymentOrder, setPaymentOrder] =
+    useState<StripePaymentIntentResponse | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   const car = carData?.car;
-  const { data: cityShops } = useGetShopsByCityQuery({ city: car?.city || undefined }, { skip: !car?.city });
+  const { data: cityShops } = useGetShopsByCityQuery(
+    { city: car?.city || undefined },
+    { skip: !car?.city }
+  );
   const allUnavailableDates = unavailableDatesData?.unavailableDates || [];
 
   // Filter out past dates - only show future unavailable dates
@@ -165,15 +170,20 @@ const RentalBooking = () => {
 
         setPaymentOrder(paymentResult);
         setSuccess(true);
-      } catch (orderErr: any) {
-        setError(
-          orderErr?.data?.error ||
-            "Failed to create payment order. Booking created but payment failed."
+      } catch (orderErr) {
+        const message = getApiErrorMessage(
+          orderErr,
+          "Failed to create payment order. Booking created but payment failed."
         );
+        setError(message);
         setSuccess(true); // Booking is still created
       }
-    } catch (err: any) {
-      setError(err?.data?.error || "Failed to create rental booking");
+    } catch (err) {
+      const message = getApiErrorMessage(
+        err,
+        "Failed to create rental booking"
+      );
+      setError(message);
     }
   };
 
@@ -373,7 +383,7 @@ const RentalBooking = () => {
                 />
                 {startDate &&
                   !endDate &&
-                  car?.availability?.bookedDates.length > 0 && (
+                  (car?.availability?.bookedDates?.length ?? 0) > 0 && (
                     <p className="text-xs text-warning-600 mt-1">
                       Please ensure your dates don't overlap with booked periods
                     </p>
@@ -388,12 +398,31 @@ const RentalBooking = () => {
               </h3>
               <div className="text-sm text-dark-700 space-y-1">
                 <p>
-                  Location: <span className="font-medium">{cityShops?.shops?.[0]?.addressLine ? `${cityShops.shops[0].addressLine}${cityShops.shops[0].landmark ? ', ' + cityShops.shops[0].landmark : ''}${cityShops.shops[0].pincode ? ' - ' + cityShops.shops[0].pincode : ''}` : (car.city || 'Pickup address will be shared after confirmation')}</span>
+                  Location:{" "}
+                  <span className="font-medium">
+                    {cityShops?.shops?.[0]?.addressLine
+                      ? `${cityShops.shops[0].addressLine}${
+                          cityShops.shops[0].landmark
+                            ? ", " + cityShops.shops[0].landmark
+                            : ""
+                        }${
+                          cityShops.shops[0].pincode
+                            ? " - " + cityShops.shops[0].pincode
+                            : ""
+                        }`
+                      : car.city ||
+                        "Pickup address will be shared after confirmation"}
+                  </span>
                 </p>
                 <p className="flex items-center gap-1">
-                  <Clock className="w-4 h-4" /> Working hours: {cityShops?.shops?.[0]?.hoursStart || '09:00'} – {cityShops?.shops?.[0]?.hoursEnd || '19:00'}
+                  <Clock className="w-4 h-4" /> Working hours:{" "}
+                  {cityShops?.shops?.[0]?.hoursStart || "09:00"} –{" "}
+                  {cityShops?.shops?.[0]?.hoursEnd || "19:00"}
                 </p>
-                <p>Bring original DL and Aadhaar for verification during handover.</p>
+                <p>
+                  Bring original DL and Aadhaar for verification during
+                  handover.
+                </p>
               </div>
             </div>
 
@@ -411,11 +440,25 @@ const RentalBooking = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-dark-600">Pickup Method:</span>
-                    <span className="font-semibold text-dark-900">Pickup from shop</span>
+                    <span className="font-semibold text-dark-900">
+                      Pickup from shop
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-dark-600">Pickup Location:</span>
-                    <span className="font-semibold text-dark-900">{cityShops?.shops?.[0]?.addressLine ? `${cityShops.shops[0].addressLine}${cityShops.shops[0].landmark ? ', ' + cityShops.shops[0].landmark : ''}${cityShops.shops[0].pincode ? ' - ' + cityShops.shops[0].pincode : ''}` : (car.city || 'Shared post-confirmation')}</span>
+                    <span className="font-semibold text-dark-900">
+                      {cityShops?.shops?.[0]?.addressLine
+                        ? `${cityShops.shops[0].addressLine}${
+                            cityShops.shops[0].landmark
+                              ? ", " + cityShops.shops[0].landmark
+                              : ""
+                          }${
+                            cityShops.shops[0].pincode
+                              ? " - " + cityShops.shops[0].pincode
+                              : ""
+                          }`
+                        : car.city || "Shared post-confirmation"}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-dark-600">Daily Rate:</span>
@@ -508,17 +551,18 @@ const RentalBooking = () => {
                         setTimeout(() => {
                           navigate("/dashboard");
                         }, 1500);
-                      } catch (err: any) {
-                        setError(
-                          err?.data?.error ||
-                            err?.data?.details ||
-                            "Payment verification failed"
+                      } catch (err) {
+                        const message = getApiErrorMessage(
+                          err,
+                          "Payment verification failed"
                         );
+                        setError(message);
                         setIsProcessingPayment(false);
                       }
                     }}
                     onError={(err) => {
-                      setError(err?.message || "Payment failed");
+                      const message = getApiErrorMessage(err, "Payment failed");
+                      setError(message);
                       setIsProcessingPayment(false);
                     }}
                   />

@@ -4,11 +4,21 @@ import HeroSection from "../components/home/HeroSection";
 import Footer from "../components/layout/Footer";
 
 // Lazy load below-the-fold sections
-const StatisticsSection = lazy(() => import("../components/home/StatisticsSection"));
-const FeaturesSection = lazy(() => import("../components/home/FeaturesSection"));
-const PopularCarsSection = lazy(() => import("../components/home/PopularCarsSection"));
-const HowItWorksSection = lazy(() => import("../components/home/HowItWorksSection"));
-const TestimonialsSection = lazy(() => import("../components/home/TestimonialsSection"));
+const StatisticsSection = lazy(
+  () => import("../components/home/StatisticsSection")
+);
+const FeaturesSection = lazy(
+  () => import("../components/home/FeaturesSection")
+);
+const PopularCarsSection = lazy(
+  () => import("../components/home/PopularCarsSection")
+);
+const HowItWorksSection = lazy(
+  () => import("../components/home/HowItWorksSection")
+);
+const TestimonialsSection = lazy(
+  () => import("../components/home/TestimonialsSection")
+);
 const CTASection = lazy(() => import("../components/home/CTASection"));
 
 // Section skeleton loader

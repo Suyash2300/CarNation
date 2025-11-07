@@ -98,7 +98,10 @@ const EditCarModal = ({
     { value: "MAINTENANCE", label: "Maintenance" },
   ];
 
-  const handleSelectChange = (name: string, selected: any) => {
+  const handleSelectChange = (
+    name: string,
+    selected: { value: string } | null
+  ) => {
     setFormData((prev) => ({
       ...prev,
       [name]: selected ? selected.value : "",
@@ -268,7 +271,9 @@ const EditCarModal = ({
                   value={statusOptions.find(
                     (opt) => opt.value === formData.status
                   )}
-                  onChange={(selected) => handleSelectChange("status", selected)}
+                  onChange={(selected) =>
+                    handleSelectChange("status", selected)
+                  }
                   className="react-select-container"
                   classNamePrefix="react-select"
                 />
@@ -332,7 +337,8 @@ const EditCarModal = ({
                     return {
                       ...prev,
                       primaryImage: url,
-                      images: newImages.length > 0 ? newImages : url ? [url] : [],
+                      images:
+                        newImages.length > 0 ? newImages : url ? [url] : [],
                     };
                   });
                 }}

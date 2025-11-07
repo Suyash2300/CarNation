@@ -85,6 +85,14 @@ export interface CreateCarRequest {
   city?: string;
 }
 
+export interface EarningsEntry {
+  date: string;
+  totalEarnings: number;
+  rentals?: number;
+  purchases?: number;
+  [key: string]: number | string | undefined;
+}
+
 // Admin API Services
 export const adminService = {
   // Stats
@@ -120,7 +128,7 @@ export const adminService = {
     return response.data;
   },
 
-  getEarnings: async (params?: { period?: string }): Promise<{ period: string; totalEarnings: number; earnings: any[]; count: number }> => {
+  getEarnings: async (params?: { period?: string }): Promise<{ period: string; totalEarnings: number; earnings: EarningsEntry[]; count: number }> => {
     const response = await axiosInstance.get('/admin/earnings', { params });
     return response.data;
   },

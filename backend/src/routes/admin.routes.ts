@@ -278,6 +278,7 @@ router.get('/rentals', async (req: AuthRequest, res: Response) => {
             model: true,
             year: true,
             primaryImage: true,
+            city: true,
           },
         },
         buyer: {

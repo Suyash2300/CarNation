@@ -1,49 +1,57 @@
-import { useState, useEffect } from 'react';
-import { useAppSelector, useAppDispatch } from '../hooks/redux';
-import { useGetMeQuery, useUpdateProfileMutation, useUploadProfileImageMutation } from '../services/authApi';
-import { updateUser } from '../store/slices/authSlice';
-import Navbar from '../components/layout/Navbar';
-import { User, Camera, Save, X } from 'lucide-react';
-import { useToast } from '../components/common/ToastContainer';
+import { useState, useEffect } from "react";
+import { useAppSelector, useAppDispatch } from "../hooks/redux";
+import {
+  useGetMeQuery,
+  useUpdateProfileMutation,
+  useUploadProfileImageMutation,
+} from "../services/authApi";
+import { updateUser } from "../store/slices/authSlice";
+import Navbar from "../components/layout/Navbar";
+import { User, Camera, Save, X } from "lucide-react";
+import { useToast } from "../components/common/ToastContainer";
+import { getApiErrorMessage } from "../utils/error";
 
 const Profile = () => {
   const { user: authUser } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const { data, refetch } = useGetMeQuery();
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
-  const [uploadImage, { isLoading: isUploading }] = useUploadProfileImageMutation();
+  const [uploadImage, { isLoading: isUploading }] =
+    useUploadProfileImageMutation();
   const { showSuccess, showError, showWarning } = useToast();
 
   const user = data?.user || authUser;
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    name: user?.name || '',
-    phone: user?.phone || '',
-    address: user?.address || '',
-    city: user?.city || '',
-    state: user?.state || '',
-    pincode: user?.pincode || '',
-    country: user?.country || 'India',
-    bio: user?.bio || '',
+    name: user?.name || "",
+    phone: user?.phone || "",
+    address: user?.address || "",
+    city: user?.city || "",
+    state: user?.state || "",
+    pincode: user?.pincode || "",
+    country: user?.country || "India",
+    bio: user?.bio || "",
   });
 
   useEffect(() => {
     if (user) {
       setFormData({
-        name: user.name || '',
-        phone: user.phone || '',
-        address: user.address || '',
-        city: user.city || '',
-        state: user.state || '',
-        pincode: user.pincode || '',
-        country: user.country || 'India',
-        bio: user.bio || '',
+        name: user.name || "",
+        phone: user.phone || "",
+        address: user.address || "",
+        city: user.city || "",
+        state: user.state || "",
+        pincode: user.pincode || "",
+        country: user.country || "India",
+        bio: user.bio || "",
       });
     }
   }, [user]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -57,9 +65,10 @@ const Profile = () => {
       dispatch(updateUser(result.user));
       setIsEditing(false);
       refetch();
-      showSuccess('Profile updated successfully!');
-    } catch (error: any) {
-      showError(error?.data?.error || 'Failed to update profile');
+      showSuccess("Profile updated successfully!");
+    } catch (error) {
+      const message = getApiErrorMessage(error, "Failed to update profile");
+      showError(message);
     }
   };
 
@@ -67,26 +76,30 @@ const Profile = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      showWarning('Please upload an image file');
+    if (!file.type.startsWith("image/")) {
+      showWarning("Please upload an image file");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      showWarning('Image size should be less than 5MB');
+      showWarning("Image size should be less than 5MB");
       return;
     }
 
     const formData = new FormData();
-    formData.append('profileImage', file);
+    formData.append("profileImage", file);
 
     try {
       const result = await uploadImage(formData).unwrap();
       dispatch(updateUser(result.user));
       refetch();
-      showSuccess('Profile image updated successfully!');
-    } catch (error: any) {
-      showError(error?.data?.error || 'Failed to upload profile image');
+      showSuccess("Profile image updated successfully!");
+    } catch (error) {
+      const message = getApiErrorMessage(
+        error,
+        "Failed to upload profile image"
+      );
+      showError(message);
     }
   };
 
@@ -107,8 +120,12 @@ const Profile = () => {
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-dark-900 mb-2">My Profile</h1>
-          <p className="text-dark-600">Manage your profile information and settings</p>
+          <h1 className="text-3xl sm:text-4xl font-bold text-dark-900 mb-2">
+            My Profile
+          </h1>
+          <p className="text-dark-600">
+            Manage your profile information and settings
+          </p>
         </div>
 
         <div className="glass rounded-xl p-6 md:p-8">
@@ -148,9 +165,13 @@ const Profile = () => {
             </div>
 
             <div className="flex-1">
-              <h2 className="text-2xl font-bold text-dark-900 mb-2">{user.name}</h2>
+              <h2 className="text-2xl font-bold text-dark-900 mb-2">
+                {user.name}
+              </h2>
               <p className="text-dark-600 mb-1">{user.email}</p>
-              <p className="text-sm text-dark-500 capitalize">{user.role.toLowerCase()}</p>
+              <p className="text-sm text-dark-500 capitalize">
+                {user.role.toLowerCase()}
+              </p>
               {user.isAadhaarVerified && (
                 <span className="inline-block mt-2 px-3 py-1 bg-success-100 text-success-700 rounded-full text-xs font-semibold">
                   ✓ Aadhaar Verified
@@ -162,14 +183,14 @@ const Profile = () => {
               onClick={() => {
                 if (isEditing) {
                   setFormData({
-                    name: user.name || '',
-                    phone: user.phone || '',
-                    address: user.address || '',
-                    city: user.city || '',
-                    state: user.state || '',
-                    pincode: user.pincode || '',
-                    country: user.country || 'India',
-                    bio: user.bio || '',
+                    name: user.name || "",
+                    phone: user.phone || "",
+                    address: user.address || "",
+                    city: user.city || "",
+                    state: user.state || "",
+                    pincode: user.pincode || "",
+                    country: user.country || "India",
+                    bio: user.bio || "",
                   });
                 }
                 setIsEditing(!isEditing);
@@ -323,14 +344,14 @@ const Profile = () => {
                   type="button"
                   onClick={() => {
                     setFormData({
-                      name: user.name || '',
-                      phone: user.phone || '',
-                      address: user.address || '',
-                      city: user.city || '',
-                      state: user.state || '',
-                      pincode: user.pincode || '',
-                      country: user.country || 'India',
-                      bio: user.bio || '',
+                      name: user.name || "",
+                      phone: user.phone || "",
+                      address: user.address || "",
+                      city: user.city || "",
+                      state: user.state || "",
+                      pincode: user.pincode || "",
+                      country: user.country || "India",
+                      bio: user.bio || "",
                     });
                     setIsEditing(false);
                   }}
@@ -344,7 +365,7 @@ const Profile = () => {
                   className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Save className="w-4 h-4" />
-                  {isUpdating ? 'Saving...' : 'Save Changes'}
+                  {isUpdating ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             )}
@@ -356,4 +377,3 @@ const Profile = () => {
 };
 
 export default Profile;
-

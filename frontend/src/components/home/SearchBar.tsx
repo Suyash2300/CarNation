@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPin, Calendar, Search } from "lucide-react";
-import Input from "../common/Input";
 import Button from "../common/Button";
 
 interface SearchBarProps {

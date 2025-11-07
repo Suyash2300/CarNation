@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
-import Select from 'react-select';
-import { useUpdateSellerCarMutation, type Car } from '../../services/carApi';
-import ImageUpload from '../admin/ImageUpload';
-import MultiImageUpload from '../admin/MultiImageUpload';
-import { useToast } from '../common/ToastContainer';
+import { useState, useEffect } from "react";
+import { X } from "lucide-react";
+import Select from "react-select";
+import { useUpdateSellerCarMutation, type Car } from "../../services/carApi";
+import ImageUpload from "../admin/ImageUpload";
+import MultiImageUpload from "../admin/MultiImageUpload";
+import { useToast } from "../common/ToastContainer";
 
 interface EditSellerCarModalProps {
   isOpen: boolean;
@@ -25,17 +25,17 @@ const EditSellerCarModal = ({
     brand: car.brand,
     model: car.model,
     year: car.year,
-    color: car.color || '',
+    color: car.color || "",
     mileage: car.mileage || undefined,
     ownersCount: car.ownersCount || undefined,
-    transmission: car.transmission || '',
-    fuelType: car.fuelType || '',
+    transmission: car.transmission || "",
+    fuelType: car.fuelType || "",
     seats: car.seats || undefined,
     salePrice: car.salePrice || 0,
-    description: car.description || '',
-    primaryImage: car.primaryImage || '',
+    description: car.description || "",
+    primaryImage: car.primaryImage || "",
     images: car.images ? [...car.images] : [], // Create a new array copy
-    city: car.city || '',
+    city: car.city || "",
     status: car.status,
   });
 
@@ -45,17 +45,17 @@ const EditSellerCarModal = ({
         brand: car.brand,
         model: car.model,
         year: car.year,
-        color: car.color || '',
+        color: car.color || "",
         mileage: car.mileage || undefined,
         ownersCount: car.ownersCount || undefined,
-        transmission: car.transmission || '',
-        fuelType: car.fuelType || '',
+        transmission: car.transmission || "",
+        fuelType: car.fuelType || "",
         seats: car.seats || undefined,
         salePrice: car.salePrice || 0,
-        description: car.description || '',
-        primaryImage: car.primaryImage || '',
+        description: car.description || "",
+        primaryImage: car.primaryImage || "",
         images: car.images ? [...car.images] : [], // Create a new array copy
-        city: car.city || '',
+        city: car.city || "",
         status: car.status,
       });
     }
@@ -68,11 +68,11 @@ const EditSellerCarModal = ({
     setFormData((prev) => ({
       ...prev,
       [name]:
-        name === 'year' ||
-        name === 'mileage' ||
-      name === 'ownersCount' ||
-        name === 'seats' ||
-        name === 'salePrice'
+        name === "year" ||
+        name === "mileage" ||
+        name === "ownersCount" ||
+        name === "seats" ||
+        name === "salePrice"
           ? value
             ? parseFloat(value)
             : undefined
@@ -81,29 +81,32 @@ const EditSellerCarModal = ({
   };
 
   const transmissionOptions = [
-    { value: '', label: 'Select' },
-    { value: 'Automatic', label: 'Automatic' },
-    { value: 'Manual', label: 'Manual' },
+    { value: "", label: "Select" },
+    { value: "Automatic", label: "Automatic" },
+    { value: "Manual", label: "Manual" },
   ];
 
   const fuelTypeOptions = [
-    { value: '', label: 'Select' },
-    { value: 'Petrol', label: 'Petrol' },
-    { value: 'Diesel', label: 'Diesel' },
-    { value: 'Electric', label: 'Electric' },
-    { value: 'Hybrid', label: 'Hybrid' },
+    { value: "", label: "Select" },
+    { value: "Petrol", label: "Petrol" },
+    { value: "Diesel", label: "Diesel" },
+    { value: "Electric", label: "Electric" },
+    { value: "Hybrid", label: "Hybrid" },
   ];
 
   const statusOptions = [
-    { value: 'AVAILABLE', label: 'Available' },
-    { value: 'SOLD', label: 'Sold' },
-    { value: 'PENDING', label: 'Pending' },
+    { value: "AVAILABLE", label: "Available" },
+    { value: "SOLD", label: "Sold" },
+    { value: "PENDING", label: "Pending" },
   ];
 
-  const handleSelectChange = (name: string, selected: any) => {
+  const handleSelectChange = (
+    name: string,
+    selected: { value: string } | null
+  ) => {
     setFormData((prev) => ({
       ...prev,
-      [name]: selected ? selected.value : '',
+      [name]: selected ? selected.value : "",
     }));
   };
 
@@ -112,10 +115,10 @@ const EditSellerCarModal = ({
     try {
       await updateCar({ id: car.id, data: formData }).unwrap();
       onSuccess();
-      showSuccess('Car listing updated successfully!');
+      showSuccess("Car listing updated successfully!");
     } catch (error) {
-      console.error('Failed to update car:', error);
-      showError('Failed to update car listing. Please try again.');
+      console.error("Failed to update car:", error);
+      showError("Failed to update car listing. Please try again.");
     }
   };
 
@@ -126,7 +129,9 @@ const EditSellerCarModal = ({
       <div className="flex min-h-full items-center justify-center p-4 sm:p-8">
         <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full my-8 max-h-[90vh] overflow-y-auto">
           <div className="sticky top-0 bg-white border-b border-dark-200 px-6 py-4 flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-dark-900">Edit Car Listing</h2>
+            <h2 className="text-2xl font-bold text-dark-900">
+              Edit Car Listing
+            </h2>
             <button
               onClick={onClose}
               className="text-dark-400 hover:text-dark-900 transition"
@@ -186,7 +191,7 @@ const EditSellerCarModal = ({
                 <input
                   type="number"
                   name="salePrice"
-                  value={formData.salePrice || ''}
+                  value={formData.salePrice || ""}
                   onChange={handleChange}
                   required
                   min="0"
@@ -202,7 +207,9 @@ const EditSellerCarModal = ({
                   value={statusOptions.find(
                     (opt) => opt.value === formData.status
                   )}
-                  onChange={(selected) => handleSelectChange('status', selected)}
+                  onChange={(selected) =>
+                    handleSelectChange("status", selected)
+                  }
                   className="react-select-container"
                   classNamePrefix="react-select"
                 />
@@ -220,7 +227,7 @@ const EditSellerCarModal = ({
                     (opt) => opt.value === formData.transmission
                   )}
                   onChange={(selected) =>
-                    handleSelectChange('transmission', selected)
+                    handleSelectChange("transmission", selected)
                   }
                   className="react-select-container"
                   classNamePrefix="react-select"
@@ -236,7 +243,7 @@ const EditSellerCarModal = ({
                     (opt) => opt.value === formData.fuelType
                   )}
                   onChange={(selected) =>
-                    handleSelectChange('fuelType', selected)
+                    handleSelectChange("fuelType", selected)
                   }
                   className="react-select-container"
                   classNamePrefix="react-select"
@@ -252,7 +259,7 @@ const EditSellerCarModal = ({
                 <input
                   type="number"
                   name="mileage"
-                  value={formData.mileage || ''}
+                  value={formData.mileage || ""}
                   onChange={handleChange}
                   min="0"
                   className="w-full px-4 py-2 rounded-lg border border-dark-300 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none"
@@ -265,7 +272,7 @@ const EditSellerCarModal = ({
                 <input
                   type="number"
                   name="seats"
-                  value={formData.seats || ''}
+                  value={formData.seats || ""}
                   onChange={handleChange}
                   min="2"
                   max="10"
@@ -279,7 +286,7 @@ const EditSellerCarModal = ({
                 <input
                   type="number"
                   name="ownersCount"
-                  value={formData.ownersCount ?? ''}
+                  value={formData.ownersCount ?? ""}
                   onChange={handleChange}
                   min="1"
                   className="w-full px-4 py-2 rounded-lg border border-dark-300 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none"
@@ -328,7 +335,8 @@ const EditSellerCarModal = ({
                     return {
                       ...prev,
                       primaryImage: url,
-                      images: newImages.length > 0 ? newImages : url ? [url] : [],
+                      images:
+                        newImages.length > 0 ? newImages : url ? [url] : [],
                     };
                   });
                 }}
@@ -343,7 +351,7 @@ const EditSellerCarModal = ({
                   setFormData((prev) => ({
                     ...prev,
                     images: urls,
-                    primaryImage: prev.primaryImage || urls[0] || '',
+                    primaryImage: prev.primaryImage || urls[0] || "",
                   }));
                 }}
                 label="Additional Images"
@@ -377,7 +385,7 @@ const EditSellerCarModal = ({
                 disabled={isLoading}
                 className="flex-1 bg-gradient-primary hover:bg-gradient-primary-dark text-white px-6 py-3 rounded-lg font-semibold transition shadow-lg hover:shadow-xl disabled:opacity-50"
               >
-                {isLoading ? 'Updating...' : 'Update Listing'}
+                {isLoading ? "Updating..." : "Update Listing"}
               </button>
             </div>
           </form>
@@ -388,4 +396,3 @@ const EditSellerCarModal = ({
 };
 
 export default EditSellerCarModal;
-

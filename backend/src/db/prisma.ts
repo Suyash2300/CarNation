@@ -34,15 +34,8 @@ export const prisma =
   });
 
 // Optimize connection pool for production
-if (process.env.NODE_ENV === 'production') {
-  // Prisma automatically manages connection pooling
-  // Ensure DATABASE_URL includes connection pool parameters:
-  // For PostgreSQL (Neon, Supabase, etc.):
-  // postgresql://user:password@host:port/database?connection_limit=10&pool_timeout=10
-  // For better performance, set appropriate pool size based on your database provider
-  console.log('🔧 Prisma connection pool configured for production');
-  console.log(`📊 Connection pool size: ${connectionPoolConfig.connectionLimit}`);
-}
+// Optional: Attach connection pool metadata for observability without logging to stdout
+export const prismaPoolConfig = connectionPoolConfig;
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 

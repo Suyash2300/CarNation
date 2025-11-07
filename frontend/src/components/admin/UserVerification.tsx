@@ -1,16 +1,18 @@
-import { useState } from 'react';
+import { useState } from "react";
 import {
   useGetPendingVerificationsQuery,
   useVerifyAadhaarMutation,
   type User,
-} from '../../services/carApi';
-import { Shield, CheckCircle, XCircle, Eye } from 'lucide-react';
-import { useToast } from '../common/ToastContainer';
-import { useConfirm } from '../common/ConfirmProvider';
+} from "../../services/carApi";
+import { Shield, CheckCircle, XCircle, Eye } from "lucide-react";
+import { useToast } from "../common/ToastContainer";
+import { useConfirm } from "../common/ConfirmProvider";
+import { getApiErrorMessage } from "../../utils/error";
 
 const UserVerification = () => {
   const { data, isLoading, refetch } = useGetPendingVerificationsQuery();
-  const [verifyAadhaar, { isLoading: isVerifying }] = useVerifyAadhaarMutation();
+  const [verifyAadhaar, { isLoading: isVerifying }] =
+    useVerifyAadhaarMutation();
   const [viewingUser, setViewingUser] = useState<User | null>(null);
   const { showSuccess, showError } = useToast();
   const confirm = useConfirm();
@@ -19,11 +21,11 @@ const UserVerification = () => {
 
   const handleVerify = async (userId: string) => {
     const confirmed = await confirm({
-      title: 'Verify Aadhaar',
+      title: "Verify Aadhaar",
       message: "Are you sure you want to verify this user's Aadhaar?",
-      confirmLabel: 'Verify',
-      cancelLabel: 'Cancel',
-      variant: 'warning',
+      confirmLabel: "Verify",
+      cancelLabel: "Cancel",
+      variant: "warning",
     });
 
     if (!confirmed) {
@@ -32,28 +34,35 @@ const UserVerification = () => {
 
     try {
       await verifyAadhaar(userId).unwrap();
-      showSuccess('User verified successfully');
+      showSuccess("User verified successfully");
       await refetch();
       if (viewingUser?.id === userId) {
         setViewingUser(null);
       }
       return true;
-    } catch (error: any) {
-      console.error('Failed to verify Aadhaar:', error);
-      showError(error?.data?.error || 'Failed to verify Aadhaar');
+    } catch (error) {
+      console.error("Failed to verify Aadhaar:", error);
+      const message = getApiErrorMessage(error, "Failed to verify Aadhaar");
+      showError(message);
       return false;
     }
   };
 
   if (isLoading) {
-    return <div className="text-center py-12">Loading pending verifications...</div>;
+    return (
+      <div className="text-center py-12">Loading pending verifications...</div>
+    );
   }
 
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-dark-900">Aadhaar Verification</h2>
-        <p className="text-dark-600 mt-1">Review and verify user Aadhaar documents</p>
+        <h2 className="text-2xl font-bold text-dark-900">
+          Aadhaar Verification
+        </h2>
+        <p className="text-dark-600 mt-1">
+          Review and verify user Aadhaar documents
+        </p>
       </div>
 
       {users.length === 0 ? (
@@ -68,20 +77,28 @@ const UserVerification = () => {
             <div key={user.id} className="glass rounded-xl p-6">
               <div className="flex flex-col md:flex-row md:items-center gap-4">
                 <div className="flex-1">
-                  <h3 className="text-xl font-bold text-dark-900 mb-2">{user.name}</h3>
+                  <h3 className="text-xl font-bold text-dark-900 mb-2">
+                    {user.name}
+                  </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                     <div>
                       <p className="text-dark-600">Email</p>
-                      <p className="font-semibold text-dark-900">{user.email}</p>
+                      <p className="font-semibold text-dark-900">
+                        {user.email}
+                      </p>
                     </div>
                     <div>
                       <p className="text-dark-600">Phone</p>
-                      <p className="font-semibold text-dark-900">{user.phone || 'Not provided'}</p>
+                      <p className="font-semibold text-dark-900">
+                        {user.phone || "Not provided"}
+                      </p>
                     </div>
                     <div>
                       <p className="text-dark-600">Aadhaar Number</p>
                       <p className="font-semibold text-dark-900">
-                        {user.aadhaarNumber ? `****${user.aadhaarNumber.slice(-4)}` : 'Not provided'}
+                        {user.aadhaarNumber
+                          ? `****${user.aadhaarNumber.slice(-4)}`
+                          : "Not provided"}
                       </p>
                     </div>
                     <div>
@@ -138,7 +155,9 @@ const UserVerification = () => {
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
               {viewingUser.aadhaarFrontImage && (
                 <div>
-                  <h3 className="font-semibold text-dark-900 mb-2">Front Side</h3>
+                  <h3 className="font-semibold text-dark-900 mb-2">
+                    Front Side
+                  </h3>
                   <img
                     src={viewingUser.aadhaarFrontImage}
                     alt="Aadhaar Front"
@@ -148,7 +167,9 @@ const UserVerification = () => {
               )}
               {viewingUser.aadhaarBackImage && (
                 <div>
-                  <h3 className="font-semibold text-dark-900 mb-2">Back Side</h3>
+                  <h3 className="font-semibold text-dark-900 mb-2">
+                    Back Side
+                  </h3>
                   <img
                     src={viewingUser.aadhaarBackImage}
                     alt="Aadhaar Back"
@@ -184,4 +205,3 @@ const UserVerification = () => {
 };
 
 export default UserVerification;
-

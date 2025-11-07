@@ -66,7 +66,10 @@ const AddCarModal = ({ isOpen, onClose, onSuccess }: AddCarModalProps) => {
     { value: "Hybrid", label: "Hybrid" },
   ];
 
-  const handleSelectChange = (name: string, selected: any) => {
+  const handleSelectChange = (
+    name: string,
+    selected: { value: string } | null
+  ) => {
     setFormData((prev) => ({
       ...prev,
       [name]: selected ? selected.value : "",
@@ -311,7 +314,8 @@ const AddCarModal = ({ isOpen, onClose, onSuccess }: AddCarModalProps) => {
                     return {
                       ...prev,
                       primaryImage: url,
-                      images: newImages.length > 0 ? newImages : url ? [url] : [],
+                      images:
+                        newImages.length > 0 ? newImages : url ? [url] : [],
                     };
                   });
                 }}

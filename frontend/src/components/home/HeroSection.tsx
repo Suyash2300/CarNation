@@ -30,12 +30,18 @@ const HeroSection = () => {
               <br />
               Starts Here
             </h1>
-            <p className="text-lg md:text-xl text-white/95 max-w-2xl mx-auto drop-shadow-lg animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+            <p
+              className="text-lg md:text-xl text-white/95 max-w-2xl mx-auto drop-shadow-lg animate-fade-in-up"
+              style={{ animationDelay: "0.2s" }}
+            >
               Rent the perfect ride or find your next dream car with ease
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:flex-wrap justify-center gap-3 sm:gap-4 pt-4 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+          <div
+            className="flex flex-col sm:flex-row sm:flex-wrap justify-center gap-3 sm:gap-4 pt-4 animate-fade-in-up"
+            style={{ animationDelay: "0.4s" }}
+          >
             <Button
               variant="primary"
               size="lg"
@@ -55,7 +61,10 @@ const HeroSection = () => {
           </div>
 
           {/* Functional Search Bar */}
-          <div className="animate-fade-in-up mt-6" style={{ animationDelay: '0.6s' }}>
+          <div
+            className="animate-fade-in-up mt-6"
+            style={{ animationDelay: "0.6s" }}
+          >
             <SearchBar />
           </div>
         </div>

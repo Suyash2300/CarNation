@@ -1,8 +1,8 @@
-import { memo, useMemo, useState } from 'react';
-import { Conversation } from '../../services/chatApi';
-import { useAppSelector } from '../../hooks/redux';
-import { MessageCircle, Search, X } from 'lucide-react';
-import LazyImage from '../common/LazyImage';
+import { memo, useMemo, useState, useCallback } from "react";
+import { Conversation } from "../../services/chatApi";
+import { useAppSelector } from "../../hooks/redux";
+import { MessageCircle, Search, X } from "lucide-react";
+import LazyImage from "../common/LazyImage";
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -16,29 +16,35 @@ const ConversationList = ({
   onSelectConversation,
 }: ConversationListProps) => {
   const { user } = useAppSelector((state) => state.auth);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const getOtherParticipant = (conversation: Conversation) => {
-    return conversation.participant1Id === user?.id
-      ? conversation.participant2
-      : conversation.participant1;
-  };
+  const getOtherParticipant = useCallback(
+    (conversation: Conversation) => {
+      return conversation.participant1Id === user?.id
+        ? conversation.participant2
+        : conversation.participant1;
+    },
+    [user?.id]
+  );
 
   const formatTime = (dateString?: string) => {
-    if (!dateString) return '';
+    if (!dateString) return "";
     const date = new Date(dateString);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
     if (days === 0) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
     } else if (days === 1) {
-      return 'Yesterday';
+      return "Yesterday";
     } else if (days < 7) {
       return `${days}d ago`;
     } else {
-      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      return date.toLocaleDateString([], { month: "short", day: "numeric" });
     }
   };
 
@@ -54,7 +60,7 @@ const ConversationList = ({
         : false;
       return nameMatch || messageMatch || carMatch;
     });
-  }, [conversations, searchQuery, user?.id]);
+  }, [conversations, getOtherParticipant, searchQuery]);
 
   const sortedConversations = useMemo(() => {
     return [...filteredConversations].sort((a, b) => {
@@ -79,7 +85,7 @@ const ConversationList = ({
           />
           {searchQuery && (
             <button
-              onClick={() => setSearchQuery('')}
+              onClick={() => setSearchQuery("")}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-dark-400 hover:text-dark-600"
             >
               <X className="w-4 h-4" />
@@ -94,10 +100,12 @@ const ConversationList = ({
           <div className="flex flex-col items-center justify-center h-full text-center p-8">
             <MessageCircle className="w-16 h-16 text-dark-300 dark:text-dark-600 mb-4" />
             <p className="text-dark-600 dark:text-dark-400 font-medium">
-              {searchQuery ? 'No conversations found' : 'No conversations yet'}
+              {searchQuery ? "No conversations found" : "No conversations yet"}
             </p>
             <p className="text-sm text-dark-500 dark:text-dark-500 mt-2">
-              {searchQuery ? 'Try a different search term' : 'Start a conversation from a car listing'}
+              {searchQuery
+                ? "Try a different search term"
+                : "Start a conversation from a car listing"}
             </p>
           </div>
         ) : (
@@ -112,9 +120,9 @@ const ConversationList = ({
                   key={conversation.id}
                   onClick={() => onSelectConversation(conversation)}
                   className={`w-full p-3 hover:bg-dark-50 dark:hover:bg-dark-800 transition text-left ${
-                    isSelected 
-                      ? 'bg-gradient-to-r from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20 border-l-4 border-primary-600' 
-                      : ''
+                    isSelected
+                      ? "bg-gradient-to-r from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20 border-l-4 border-primary-600"
+                      : ""
                   }`}
                 >
                   <div className="flex items-start gap-3">
@@ -134,7 +142,9 @@ const ConversationList = ({
                       )}
                       {unreadCount > 0 && (
                         <div className="absolute -top-1 -right-1 w-5 h-5 bg-error rounded-full flex items-center justify-center border-2 border-white dark:border-dark-800">
-                          <span className="text-white text-xs font-bold">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                          <span className="text-white text-xs font-bold">
+                            {unreadCount > 9 ? "9+" : unreadCount}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -151,11 +161,18 @@ const ConversationList = ({
                       </div>
                       {conversation.car && (
                         <p className="text-xs text-primary-600 dark:text-primary-400 mb-1 break-words font-medium">
-                          {conversation.car.brand} {conversation.car.model} ({conversation.car.year})
+                          {conversation.car.brand} {conversation.car.model} (
+                          {conversation.car.year})
                         </p>
                       )}
-                      <p className={`text-xs sm:text-sm break-words line-clamp-2 ${unreadCount > 0 ? 'text-dark-900 dark:text-white font-medium' : 'text-dark-600 dark:text-dark-400'}`}>
-                        {conversation.lastMessage || 'No messages yet'}
+                      <p
+                        className={`text-xs sm:text-sm break-words line-clamp-2 ${
+                          unreadCount > 0
+                            ? "text-dark-900 dark:text-white font-medium"
+                            : "text-dark-600 dark:text-dark-400"
+                        }`}
+                      >
+                        {conversation.lastMessage || "No messages yet"}
                       </p>
                     </div>
                   </div>
@@ -170,4 +187,3 @@ const ConversationList = ({
 };
 
 export default memo(ConversationList);
-

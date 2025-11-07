@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { Conversation } from '../../services/chatApi';
-import { useCreateDealMutation } from '../../services/dealsApi';
-import { useAppSelector } from '../../hooks/redux';
-import { Handshake } from 'lucide-react';
-import { useToast } from '../common/ToastContainer';
+import { useState } from "react";
+import { Conversation } from "../../services/chatApi";
+import { useCreateDealMutation } from "../../services/dealsApi";
+import { useAppSelector } from "../../hooks/redux";
+import { Handshake } from "lucide-react";
+import { useToast } from "../common/ToastContainer";
+import { getApiErrorMessage } from "../../utils/error";
 
 interface DealButtonProps {
   conversation: Conversation;
@@ -14,8 +15,8 @@ const DealButton = ({ conversation, onDealCreated }: DealButtonProps) => {
   const { user } = useAppSelector((state) => state.auth);
   const [createDeal, { isLoading }] = useCreateDealMutation();
   const [showDealModal, setShowDealModal] = useState(false);
-  const [agreedPrice, setAgreedPrice] = useState('');
-  const [dealType, setDealType] = useState<'PURCHASE' | 'RENTAL'>('PURCHASE');
+  const [agreedPrice, setAgreedPrice] = useState("");
+  const [dealType, setDealType] = useState<"PURCHASE" | "RENTAL">("PURCHASE");
   const { showWarning, showSuccess, showError } = useToast();
 
   if (!conversation.car) {
@@ -23,13 +24,14 @@ const DealButton = ({ conversation, onDealCreated }: DealButtonProps) => {
   }
 
   const car = conversation.car;
-  const otherParticipant = conversation.participant1Id === user?.id
-    ? conversation.participant2
-    : conversation.participant1;
+  const otherParticipant =
+    conversation.participant1Id === user?.id
+      ? conversation.participant2
+      : conversation.participant1;
 
   const handleCreateDeal = async () => {
     if (!agreedPrice || parseFloat(agreedPrice) <= 0) {
-      showWarning('Please enter a valid agreed price');
+      showWarning("Please enter a valid agreed price");
       return;
     }
 
@@ -41,12 +43,13 @@ const DealButton = ({ conversation, onDealCreated }: DealButtonProps) => {
         dealType,
       }).unwrap();
 
-      showSuccess('Deal created successfully!');
+      showSuccess("Deal created successfully!");
       setShowDealModal(false);
-      setAgreedPrice('');
+      setAgreedPrice("");
       onDealCreated?.();
-    } catch (error: any) {
-      showError(error?.data?.error || 'Failed to create deal');
+    } catch (error) {
+      const message = getApiErrorMessage(error, "Failed to create deal");
+      showError(message);
     }
   };
 
@@ -77,7 +80,9 @@ const DealButton = ({ conversation, onDealCreated }: DealButtonProps) => {
 
               <div>
                 <p className="text-sm text-dark-600 mb-2">With</p>
-                <p className="font-semibold text-dark-900">{otherParticipant.name}</p>
+                <p className="font-semibold text-dark-900">
+                  {otherParticipant.name}
+                </p>
               </div>
 
               <div>
@@ -86,7 +91,9 @@ const DealButton = ({ conversation, onDealCreated }: DealButtonProps) => {
                 </label>
                 <select
                   value={dealType}
-                  onChange={(e) => setDealType(e.target.value as 'PURCHASE' | 'RENTAL')}
+                  onChange={(e) =>
+                    setDealType(e.target.value as "PURCHASE" | "RENTAL")
+                  }
                   className="w-full px-4 py-2 border border-dark-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   <option value="PURCHASE">Purchase</option>
@@ -102,9 +109,10 @@ const DealButton = ({ conversation, onDealCreated }: DealButtonProps) => {
                   type="number"
                   value={agreedPrice}
                   onChange={(e) => setAgreedPrice(e.target.value)}
-                  placeholder={dealType === 'PURCHASE' 
-                    ? car.salePrice?.toString() || 'Enter price'
-                    : 'Enter rental amount'
+                  placeholder={
+                    dealType === "PURCHASE"
+                      ? car.salePrice?.toString() || "Enter price"
+                      : "Enter rental amount"
                   }
                   min="0"
                   step="0.01"
@@ -124,7 +132,7 @@ const DealButton = ({ conversation, onDealCreated }: DealButtonProps) => {
                   disabled={isLoading || !agreedPrice}
                   className="flex-1 bg-gradient-primary hover:bg-gradient-primary-dark text-white px-4 py-2 rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLoading ? 'Creating...' : 'Create Deal'}
+                  {isLoading ? "Creating..." : "Create Deal"}
                 </button>
               </div>
             </div>
@@ -136,4 +144,3 @@ const DealButton = ({ conversation, onDealCreated }: DealButtonProps) => {
 };
 
 export default DealButton;
-

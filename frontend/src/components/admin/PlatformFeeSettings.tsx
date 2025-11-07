@@ -1,11 +1,15 @@
-import { useState } from 'react';
-import { useGetCurrentFeeQuery, useGetFeeHistoryQuery, useUpdateFeeMutation } from '../../services/platformFeesApi';
-import { Settings, DollarSign, TrendingUp } from 'lucide-react';
-import { useToast } from '../common/ToastContainer';
-import { useConfirm } from '../common/ConfirmProvider';
+import { useState } from "react";
+import {
+  useGetCurrentFeeQuery,
+  useGetFeeHistoryQuery,
+  useUpdateFeeMutation,
+} from "../../services/platformFeesApi";
+import { Settings, DollarSign, TrendingUp } from "lucide-react";
+import { useToast } from "../common/ToastContainer";
+import { useConfirm } from "../common/ConfirmProvider";
 
 const PlatformFeeSettings = () => {
-  const [newFeePercentage, setNewFeePercentage] = useState('');
+  const [newFeePercentage, setNewFeePercentage] = useState("");
   const { data: currentFeeData } = useGetCurrentFeeQuery();
   const { data: historyData } = useGetFeeHistoryQuery();
   const [updateFee, { isLoading }] = useUpdateFeeMutation();
@@ -18,18 +22,18 @@ const PlatformFeeSettings = () => {
   const handleUpdateFee = async (e: React.FormEvent) => {
     e.preventDefault();
     const fee = parseFloat(newFeePercentage);
-    
+
     if (isNaN(fee) || fee < 0 || fee > 100) {
-      showWarning('Please enter a valid fee percentage between 0 and 100');
+      showWarning("Please enter a valid fee percentage between 0 and 100");
       return;
     }
 
     const confirmed = await confirm({
-      title: 'Update Platform Fee',
+      title: "Update Platform Fee",
       message: `Are you sure you want to update the platform fee to ${fee}%?`,
-      confirmLabel: 'Update Fee',
-      cancelLabel: 'Cancel',
-      variant: 'warning',
+      confirmLabel: "Update Fee",
+      cancelLabel: "Cancel",
+      variant: "warning",
     });
 
     if (!confirmed) {
@@ -38,18 +42,25 @@ const PlatformFeeSettings = () => {
 
     try {
       await updateFee({ feePercentage: fee }).unwrap();
-      showSuccess('Platform fee updated successfully!');
-      setNewFeePercentage('');
-    } catch (error: any) {
-      showError(error?.data?.error || 'Failed to update platform fee');
+      showSuccess("Platform fee updated successfully!");
+      setNewFeePercentage("");
+    } catch (error) {
+      const message =
+        (error as { data?: { error?: string } })?.data?.error ||
+        "Failed to update platform fee";
+      showError(message);
     }
   };
 
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-dark-900">Platform Fee Settings</h2>
-        <p className="text-dark-600 mt-1">Configure the commission percentage charged on sales</p>
+        <h2 className="text-2xl font-bold text-dark-900">
+          Platform Fee Settings
+        </h2>
+        <p className="text-dark-600 mt-1">
+          Configure the commission percentage charged on sales
+        </p>
       </div>
 
       {/* Current Fee */}
@@ -59,7 +70,9 @@ const PlatformFeeSettings = () => {
             <DollarSign className="w-8 h-8 text-primary-600" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-dark-900">Current Platform Fee</h3>
+            <h3 className="text-lg font-semibold text-dark-900">
+              Current Platform Fee
+            </h3>
             <p className="text-3xl font-bold text-primary-600">{currentFee}%</p>
             <p className="text-sm text-dark-600 mt-1">
               This percentage is deducted from each successful sale
@@ -98,7 +111,7 @@ const PlatformFeeSettings = () => {
             disabled={isLoading || !newFeePercentage}
             className="bg-gradient-primary hover:bg-gradient-primary-dark text-white px-6 py-3 rounded-lg font-semibold transition shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Updating...' : 'Update Fee'}
+            {isLoading ? "Updating..." : "Update Fee"}
           </button>
         </form>
       </div>
@@ -115,16 +128,22 @@ const PlatformFeeSettings = () => {
               <div
                 key={fee.id}
                 className={`flex items-center justify-between p-3 rounded-lg ${
-                  fee.isActive ? 'bg-primary-50 border border-primary-200' : 'bg-dark-50'
+                  fee.isActive
+                    ? "bg-primary-50 border border-primary-200"
+                    : "bg-dark-50"
                 }`}
               >
                 <div>
-                  <p className="font-semibold text-dark-900">{fee.feePercentage}%</p>
+                  <p className="font-semibold text-dark-900">
+                    {fee.feePercentage}%
+                  </p>
                   <p className="text-sm text-dark-600">
-                    {new Date(fee.createdAt).toLocaleDateString()} -{' '}
+                    {new Date(fee.createdAt).toLocaleDateString()} -{" "}
                     {fee.updatedAt !== fee.createdAt
-                      ? `Updated: ${new Date(fee.updatedAt).toLocaleDateString()}`
-                      : 'Created'}
+                      ? `Updated: ${new Date(
+                          fee.updatedAt
+                        ).toLocaleDateString()}`
+                      : "Created"}
                   </p>
                 </div>
                 {fee.isActive && (
@@ -142,4 +161,3 @@ const PlatformFeeSettings = () => {
 };
 
 export default PlatformFeeSettings;
-

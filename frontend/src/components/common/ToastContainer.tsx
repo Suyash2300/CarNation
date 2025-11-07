@@ -1,5 +1,11 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import ToastComponent, { Toast, ToastType } from './Toast';
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  ReactNode,
+} from "react";
+import ToastComponent, { Toast, ToastType } from "./Toast";
 
 interface ToastContextType {
   showToast: (message: string, type?: ToastType, duration?: number) => void;
@@ -11,10 +17,11 @@ interface ToastContextType {
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useToast = () => {
   const context = useContext(ToastContext);
   if (!context) {
-    throw new Error('useToast must be used within ToastProvider');
+    throw new Error("useToast must be used within ToastProvider");
   }
   return context;
 };
@@ -27,7 +34,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const showToast = useCallback(
-    (message: string, type: ToastType = 'info', duration = 5000) => {
+    (message: string, type: ToastType = "info", duration = 5000) => {
       const id = Math.random().toString(36).substring(2, 9);
       const newToast: Toast = { id, message, type, duration };
       setToasts((prev) => [...prev, newToast]);
@@ -36,22 +43,26 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const showSuccess = useCallback(
-    (message: string, duration?: number) => showToast(message, 'success', duration),
+    (message: string, duration?: number) =>
+      showToast(message, "success", duration),
     [showToast]
   );
 
   const showError = useCallback(
-    (message: string, duration?: number) => showToast(message, 'error', duration),
+    (message: string, duration?: number) =>
+      showToast(message, "error", duration),
     [showToast]
   );
 
   const showWarning = useCallback(
-    (message: string, duration?: number) => showToast(message, 'warning', duration),
+    (message: string, duration?: number) =>
+      showToast(message, "warning", duration),
     [showToast]
   );
 
   const showInfo = useCallback(
-    (message: string, duration?: number) => showToast(message, 'info', duration),
+    (message: string, duration?: number) =>
+      showToast(message, "info", duration),
     [showToast]
   );
 
@@ -70,4 +81,3 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
     </ToastContext.Provider>
   );
 };
-

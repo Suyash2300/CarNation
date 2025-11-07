@@ -9,6 +9,16 @@ const router = Router();
 router.get('/cars', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const sellerId = req.user!.userId;
+    const seller = await prisma.user.findUnique({
+      where: { id: sellerId },
+      select: { isAadhaarVerified: true, role: true },
+    });
+
+    if (seller?.role !== 'ADMIN' && !seller?.isAadhaarVerified) {
+      return res.status(403).json({
+        error: 'Aadhaar verification is required before listing cars for sale',
+      });
+    }
 
     const cars = await prisma.car.findMany({
       where: {
@@ -31,6 +41,16 @@ router.get('/cars', authenticate, async (req: AuthRequest, res: Response) => {
 router.post('/cars', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const sellerId = req.user!.userId;
+    const seller = await prisma.user.findUnique({
+      where: { id: sellerId },
+      select: { isAadhaarVerified: true, role: true },
+    });
+
+    if (seller?.role !== 'ADMIN' && !seller?.isAadhaarVerified) {
+      return res.status(403).json({
+        error: 'Aadhaar verification is required before modifying car listings',
+      });
+    }
     
     // Check subscription limits
     const canListCheck = await checkSellerCanListCar(sellerId);
