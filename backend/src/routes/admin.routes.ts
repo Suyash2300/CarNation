@@ -1,7 +1,8 @@
 import { Router, Response } from 'express';
-import prisma from '../db/prisma';
-import { generateToken } from '../utils/jwt';
-import { authenticate, AuthRequest } from '../middleware/auth';
+import { UserRole } from '@prisma/client';
+import prisma from '../db/prisma.js';
+import { generateToken } from '../utils/jwt.js';
+import { authenticate, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -455,7 +456,10 @@ export const supportRouter = Router();
 // Public endpoint to pick a support user (ADMIN preferred, fallback SELLER)
 supportRouter.get('/support-user', async (req, res) => {
   try {
-    const role = (req.query.role as string) || 'ADMIN';
+    const roleParam = (req.query.role as string) || 'ADMIN';
+    const allowedRoles: UserRole[] = ['ADMIN', 'SELLER', 'BUYER'];
+    const normalizedRole = roleParam.toUpperCase() as UserRole;
+    const role = allowedRoles.includes(normalizedRole) ? normalizedRole : 'ADMIN';
     const user = await prisma.user.findFirst({ where: { role }, select: { id: true } });
     if (!user) return res.status(404).json({ error: 'No support user available' });
     res.json({ userId: user.id });

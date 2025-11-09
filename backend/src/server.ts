@@ -4,11 +4,11 @@ import { Server as SocketServer } from 'socket.io';
 import cors from 'cors';
 import compression from 'compression';
 import dotenv from 'dotenv';
-import prisma from './db/prisma';
-import authRoutes from './routes/auth.routes';
-import adminRoutes, { supportRouter } from './routes/admin.routes';
-import { socketAuth } from './middleware/socketAuth';
-import { setupChatHandler } from './socket/chatHandler';
+import prisma from './db/prisma.js';
+import authRoutes from './routes/auth.routes.js';
+import adminRoutes, { supportRouter } from './routes/admin.routes.js';
+import { socketAuth } from './middleware/socketAuth.js';
+import { setupChatHandler } from './socket/chatHandler.js';
 
 // Load environment variables
 dotenv.config();
@@ -64,7 +64,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Apply general rate limiting to all API routes
-import { apiLimiter } from './middleware/rateLimit';
+import { apiLimiter } from './middleware/rateLimit.js';
 app.use('/api', apiLimiter);
 
 // Health check endpoint
@@ -120,57 +120,57 @@ app.use('/api/admin', adminRoutes);
 app.use('/api', supportRouter);
 
 // Public car routes
-import carsRoutes from './routes/cars.routes';
+import carsRoutes from './routes/cars.routes.js';
 app.use('/api/cars', carsRoutes);
 
 // Car detail route (must be after /cars routes to avoid conflicts)
-import carDetailRoutes from './routes/carDetail.routes';
+import carDetailRoutes from './routes/carDetail.routes.js';
 app.use('/api/cars', carDetailRoutes);
 
 // Seller routes (requires authentication)
-import sellerRoutes from './routes/seller.routes';
+import sellerRoutes from './routes/seller.routes.js';
 app.use('/api/seller', sellerRoutes);
 
 // Upload routes (requires authentication)
-import uploadRoutes from './routes/upload.routes';
+import uploadRoutes from './routes/upload.routes.js';
 app.use('/api/upload', uploadRoutes);
 
 // Chat routes (requires authentication)
-import chatRoutes from './routes/chat.routes';
+import chatRoutes from './routes/chat.routes.js';
 app.use('/api/chat', chatRoutes);
 
 // Rental routes (requires authentication)
-import rentalRoutes from './routes/rental.routes';
+import rentalRoutes from './routes/rental.routes.js';
 app.use('/api/rentals', rentalRoutes);
 
 // Purchase routes (requires authentication)
-import purchaseRoutes from './routes/purchase.routes';
+import purchaseRoutes from './routes/purchase.routes.js';
 app.use('/api/purchases', purchaseRoutes);
 
 // Platform fees routes
-import platformFeesRoutes from './routes/platformFees.routes';
+import platformFeesRoutes from './routes/platformFees.routes.js';
 app.use('/api/platform-fees', platformFeesRoutes);
 
 // Deals routes (requires authentication)
-import dealsRoutes from './routes/deals.routes';
+import dealsRoutes from './routes/deals.routes.js';
 app.use('/api/deals', dealsRoutes);
 
 // Subscription routes (requires authentication for most)
-import subscriptionRoutes from './routes/subscription.routes';
+import subscriptionRoutes from './routes/subscription.routes.js';
 app.use('/api/subscriptions', subscriptionRoutes);
 
 // Payment routes (requires authentication)
-import paymentRoutes from './routes/payment.routes';
+import paymentRoutes from './routes/payment.routes.js';
 app.use('/api/payments', paymentRoutes);
 
 // Shops routes (public + admin)
-import shopsRoutes from './routes/shops.routes';
+import shopsRoutes from './routes/shops.routes.js';
 app.use('/api/shops', shopsRoutes);
 
 
 // Scheduled jobs
 import cron from 'node-cron';
-import { checkSubscriptionExpiry } from './services/subscriptionService';
+import { checkSubscriptionExpiry } from './services/subscriptionService.js';
 
 // Run subscription expiry check daily at 2 AM
 cron.schedule('0 2 * * *', async () => {

@@ -1,12 +1,13 @@
 import { Router, Response } from 'express';
-import prisma from '../db/prisma';
-import { authenticate, authorize, AuthRequest } from '../middleware/auth';
+import { Prisma, $Enums } from '@prisma/client';
+import prisma from '../db/prisma.js';
+import { authenticate, authorize, AuthRequest } from '../middleware/auth.js';
 import {
   createRentalBooking,
   validateRentalDates,
   checkCarAvailability,
   calculateRentalPrice,
-} from '../services/rentalService';
+} from '../services/rentalService.js';
 
 const router = Router();
 
@@ -140,28 +141,28 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
     });
 
     const now = new Date();
-    const statusUpdates: Promise<unknown>[] = [];
+    const statusUpdates: Prisma.PrismaPromise<unknown>[] = [];
 
     const rentalsWithDerivedStatus = rentals.map((rental) => {
       const start = new Date(rental.startDate);
       const end = new Date(rental.endDate);
 
-      let derivedStatus = rental.status;
+      let derivedStatus: $Enums.RentalStatus = rental.status;
 
       if (start <= now && end >= now && rental.status === 'PENDING') {
-        derivedStatus = 'ACTIVE';
+        derivedStatus = $Enums.RentalStatus.ACTIVE;
         statusUpdates.push(
           prisma.rental.update({
             where: { id: rental.id },
-            data: { status: 'ACTIVE' },
+            data: { status: $Enums.RentalStatus.ACTIVE },
           })
         );
       } else if (end < now && rental.status === 'ACTIVE') {
-        derivedStatus = 'COMPLETED';
+        derivedStatus = $Enums.RentalStatus.COMPLETED;
         statusUpdates.push(
           prisma.rental.update({
             where: { id: rental.id },
-            data: { status: 'COMPLETED' },
+            data: { status: $Enums.RentalStatus.COMPLETED },
           })
         );
       }

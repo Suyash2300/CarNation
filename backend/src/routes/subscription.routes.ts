@@ -1,8 +1,11 @@
 import { Router, Response, Request } from 'express';
-import prisma from '../db/prisma';
-import { authenticate, AuthRequest } from '../middleware/auth';
-import { SUBSCRIPTION_TIERS, checkSellerCanListCar, activateSubscription } from '../services/subscriptionService';
-import { createPaymentIntent, retrievePaymentIntent, isTestMode, getPublishableKey } from '../services/stripeService';
+import prisma from '../db/prisma.js';
+import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { SUBSCRIPTION_TIERS, checkSellerCanListCar, activateSubscription } from '../services/subscriptionService.js';
+import { createPaymentIntent, retrievePaymentIntent, isTestMode, getPublishableKey } from '../services/stripeService.js';
+
+type SubscriptionTierKey = keyof typeof SUBSCRIPTION_TIERS;
+const PAID_TIERS: SubscriptionTierKey[] = ['BASIC', 'PREMIUM'];
 
 const router = Router();
 
@@ -38,18 +41,27 @@ router.get('/status', authenticate, async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const tier = SUBSCRIPTION_TIERS[user.subscriptionTier];
+    const tierKey = (user.subscriptionTier ?? 'FREE') as SubscriptionTierKey;
+    const tier = SUBSCRIPTION_TIERS[tierKey];
     const canListCheck = await checkSellerCanListCar(userId);
 
+    const {
+      canList,
+      reason,
+      currentListings,
+      maxListings,
+    } = canListCheck;
+
     res.json({
-      tier: user.subscriptionTier,
+      tier: tierKey,
       status: user.subscriptionStatus,
       startDate: user.subscriptionStartDate,
       endDate: user.subscriptionEndDate,
       tierInfo: tier,
-      currentListings: user.carsForSale.length,
-      canListMore: canListCheck.canList,
-      ...canListCheck,
+      currentListings,
+      maxListings,
+      canListMore: canList,
+      restrictionReason: reason,
     });
   } catch (error) {
     console.error('Error fetching subscription status:', error);
@@ -61,9 +73,9 @@ router.get('/status', authenticate, async (req: AuthRequest, res: Response) => {
 router.post('/create-order', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
-    const { tier } = req.body;
+    const { tier } = req.body as { tier?: SubscriptionTierKey };
 
-    if (!tier || !['BASIC', 'PREMIUM'].includes(tier)) {
+    if (!tier || !PAID_TIERS.includes(tier)) {
       return res.status(400).json({ error: 'Invalid tier. Must be BASIC or PREMIUM' });
     }
 
@@ -138,9 +150,12 @@ router.post('/activate-free', authenticate, async (req: AuthRequest, res: Respon
 router.post('/verify-payment', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
-    const { paymentIntentId, tier } = req.body;
+    const { paymentIntentId, tier } = req.body as {
+      paymentIntentId?: string;
+      tier?: SubscriptionTierKey;
+    };
 
-    if (!paymentIntentId || !tier) {
+    if (!paymentIntentId || !tier || !PAID_TIERS.includes(tier)) {
       return res.status(400).json({ error: 'Missing required payment fields' });
     }
 

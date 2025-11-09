@@ -1,11 +1,11 @@
 import { Router, Request, Response } from 'express';
-import prisma from '../db/prisma';
-import { authenticate, authorize, AuthRequest } from '../middleware/auth';
+import prisma from '../db/prisma.js';
+import { authenticate, authorize, AuthRequest } from '../middleware/auth.js';
 import {
   getActivePlatformFee,
   updatePlatformFee,
   calculatePlatformFee,
-} from '../services/platformFeeService';
+} from '../services/platformFeeService.js';
 
 const router = Router();
 
@@ -25,9 +25,6 @@ router.get('/history', authenticate, authorize('ADMIN'), async (req: AuthRequest
   try {
     const fees = await prisma.platformFee.findMany({
       orderBy: { createdAt: 'desc' },
-      include: {
-        // Note: We'd need to add a relation to User if we want to show who updated it
-      },
     });
 
     res.json({ fees });

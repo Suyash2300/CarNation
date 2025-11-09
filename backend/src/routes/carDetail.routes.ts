@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
-import prisma from '../db/prisma';
-import { getCarAvailability, getUnavailableDates } from '../services/availabilityService';
+import prisma from '../db/prisma.js';
+import { getCarAvailability, getUnavailableDates } from '../services/availabilityService.js';
 
 const router = Router();
 
@@ -52,7 +52,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     }
 
     // Calculate availability using already-fetched rentals (no extra query!)
-    let carWithAvailability = car;
+    let carWithAvailability: any = { ...car };
     if (car.isForRent) {
       const rentals = car.rentals || [];
       const now = new Date();
@@ -60,7 +60,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 
       if (rentals.length === 0) {
         carWithAvailability = {
-          ...car,
+          ...carWithAvailability,
           availability: {
             status: 'AVAILABLE' as const,
             isCurrentlyRented: false,
@@ -107,7 +107,7 @@ router.get('/:id', async (req: Request, res: Response) => {
         }
 
         carWithAvailability = {
-          ...car,
+          ...carWithAvailability,
           availability: {
             status,
             isCurrentlyRented,

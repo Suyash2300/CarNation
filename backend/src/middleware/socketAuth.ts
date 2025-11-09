@@ -1,5 +1,5 @@
 import { Socket } from 'socket.io';
-import { verifyToken } from '../utils/jwt';
+import { verifyToken } from '../utils/jwt.js';
 import { ExtendedError } from 'socket.io/dist/namespace';
 
 export interface AuthenticatedSocket extends Socket {

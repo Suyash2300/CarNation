@@ -1,4 +1,4 @@
-import prisma from '../db/prisma';
+import prisma from '../db/prisma.js';
 
 export const getActivePlatformFee = async (): Promise<number> => {
   // Get the active platform fee configuration

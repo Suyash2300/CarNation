@@ -1,6 +1,6 @@
 import { Server as SocketServer } from 'socket.io';
-import { AuthenticatedSocket } from '../middleware/socketAuth';
-import prisma from '../db/prisma';
+import { AuthenticatedSocket } from '../middleware/socketAuth.js';
+import prisma from '../db/prisma.js';
 
 export const setupChatHandler = (io: SocketServer) => {
   // Store online users: userId -> socketId

@@ -1,9 +1,9 @@
 import { Router, Response } from 'express';
-import prisma from '../db/prisma';
-import { authenticate, AuthRequest } from '../middleware/auth';
-import { createPaymentIntent, retrievePaymentIntent, isTestMode, getPublishableKey } from '../services/stripeService';
-import { calculatePlatformFee } from '../services/platformFeeService';
-import { paymentLimiter } from '../middleware/rateLimit';
+import prisma from '../db/prisma.js';
+import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { createPaymentIntent, retrievePaymentIntent, isTestMode, getPublishableKey } from '../services/stripeService.js';
+import { calculatePlatformFee } from '../services/platformFeeService.js';
+import { paymentLimiter } from '../middleware/rateLimit.js';
 
 const router = Router();
 

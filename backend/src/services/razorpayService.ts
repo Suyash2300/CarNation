@@ -137,7 +137,7 @@ export const capturePayment = async (paymentId: string, amount: number) => {
     throw new Error('Razorpay is not configured');
   }
 
-  const payment = await razorpay.payments.capture(paymentId, amount);
+  const payment = await razorpay.payments.capture(paymentId, amount, 'INR');
   
   if (HAS_TEST_KEYS) {
     console.log('🔧 Razorpay TEST API: Payment captured:', paymentId);

@@ -1,13 +1,13 @@
 import { Router, Request, Response } from 'express';
-import prisma from '../db/prisma';
-import { hashPassword, comparePassword } from '../utils/password';
-import { generateToken } from '../utils/jwt';
-import { authenticate, AuthRequest } from '../middleware/auth';
-import { generateResetToken, hashResetToken } from '../utils/resetToken';
-import { sendPasswordResetEmail } from '../utils/email';
-import { authLimiter } from '../middleware/rateLimit';
+import prisma from '../db/prisma.js';
+import { hashPassword, comparePassword } from '../utils/password.js';
+import { generateToken } from '../utils/jwt.js';
+import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { generateResetToken, hashResetToken } from '../utils/resetToken.js';
+import { sendPasswordResetEmail } from '../utils/email.js';
+import { authLimiter } from '../middleware/rateLimit.js';
 import multer from 'multer';
-import { uploadToCloudinary } from '../utils/cloudinary';
+import { uploadToCloudinary } from '../utils/cloudinary.js';
 
 const router = Router();
 

@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
-import prisma from '../db/prisma';
-import { authenticate, AuthRequest } from '../middleware/auth';
-import { checkSellerCanListCar } from '../services/subscriptionService';
+import prisma from '../db/prisma.js';
+import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { checkSellerCanListCar } from '../services/subscriptionService.js';
 
 const router = Router();
 

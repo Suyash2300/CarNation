@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
-import prisma from '../db/prisma';
-import { authenticate, AuthRequest } from '../middleware/auth';
-import { applyPlatformFeeToPurchase } from '../services/platformFeeService';
+import prisma from '../db/prisma.js';
+import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { applyPlatformFeeToPurchase } from '../services/platformFeeService.js';
 
 const router = Router();
 

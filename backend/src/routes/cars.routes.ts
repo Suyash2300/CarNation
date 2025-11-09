@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
-import prisma from '../db/prisma';
-import { getCarAvailability, getUnavailableDates } from '../services/availabilityService';
-import { dynamicCache, staticCache } from '../middleware/cache';
+import prisma from '../db/prisma.js';
+import { getCarAvailability, getUnavailableDates } from '../services/availabilityService.js';
+import { dynamicCache, staticCache } from '../middleware/cache.js';
 
 const router = Router();
 

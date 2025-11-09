@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
-import { authenticate, AuthRequest } from '../middleware/auth';
-import { uploadToCloudinary } from '../utils/cloudinary';
+import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { uploadToCloudinary } from '../utils/cloudinary.js';
 
 const router = Router();
 

@@ -1,13 +1,61 @@
 import { Router, Response } from 'express';
-import prisma from '../db/prisma';
-import { authenticate, AuthRequest } from '../middleware/auth';
+import prisma from '../db/prisma.js';
+import { authenticate, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
+
+const conversationInclude = {
+  participant1: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      profileImage: true,
+      role: true,
+    },
+  },
+  participant2: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      profileImage: true,
+      role: true,
+    },
+  },
+  car: {
+    select: {
+      id: true,
+      brand: true,
+      model: true,
+      year: true,
+      primaryImage: true,
+      salePrice: true,
+      rentalPrice: true,
+      isForRent: true,
+      isForSale: true,
+    },
+  },
+} as const;
 
 // Get all conversations for the authenticated user
 router.get('/conversations', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
+
+    const includeWithUnread = {
+      ...conversationInclude,
+      _count: {
+        select: {
+          messages: {
+            where: {
+              isRead: false,
+              senderId: { not: userId },
+            },
+          },
+        },
+      },
+    };
 
     const conversations = await prisma.conversation.findMany({
       where: {
@@ -16,49 +64,7 @@ router.get('/conversations', authenticate, async (req: AuthRequest, res: Respons
           { participant2Id: userId },
         ],
       },
-      include: {
-        participant1: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            profileImage: true,
-            role: true,
-          },
-        },
-        participant2: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            profileImage: true,
-            role: true,
-          },
-        },
-        car: {
-          select: {
-            id: true,
-            brand: true,
-            model: true,
-            year: true,
-            primaryImage: true,
-            salePrice: true,
-            rentalPrice: true,
-            isForRent: true,
-            isForSale: true,
-          },
-        },
-        _count: {
-          select: {
-            messages: {
-              where: {
-                isRead: false,
-                senderId: { not: userId },
-              },
-            },
-          },
-        },
-      },
+      include: includeWithUnread,
       orderBy: {
         lastMessageAt: 'desc',
       },
@@ -76,6 +82,20 @@ router.post('/conversations', authenticate, async (req: AuthRequest, res: Respon
   try {
     const userId = req.user!.userId;
     const { otherUserId, carId } = req.body;
+
+    const includeWithUnread = {
+      ...conversationInclude,
+      _count: {
+        select: {
+          messages: {
+            where: {
+              isRead: false,
+              senderId: { not: userId },
+            },
+          },
+        },
+      },
+    };
 
     if (!otherUserId) {
       return res.status(400).json({ error: 'otherUserId is required' });
@@ -117,39 +137,7 @@ router.post('/conversations', authenticate, async (req: AuthRequest, res: Respon
 
     let conversation = await prisma.conversation.findFirst({
       where: whereClause,
-      include: {
-        participant1: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            profileImage: true,
-            role: true,
-          },
-        },
-        participant2: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            profileImage: true,
-            role: true,
-          },
-        },
-        car: {
-          select: {
-            id: true,
-            brand: true,
-            model: true,
-            year: true,
-            primaryImage: true,
-            salePrice: true,
-            rentalPrice: true,
-            isForRent: true,
-            isForSale: true,
-          },
-        },
-      },
+      include: includeWithUnread,
     });
 
     // Create new conversation if it doesn't exist
@@ -160,6 +148,7 @@ router.post('/conversations', authenticate, async (req: AuthRequest, res: Respon
           // Double-check inside transaction to prevent duplicate creation
           const existing = await tx.conversation.findFirst({
             where: whereClause,
+            include: includeWithUnread,
           });
           
           if (existing) {
@@ -174,39 +163,7 @@ router.post('/conversations', authenticate, async (req: AuthRequest, res: Respon
               participant2Id,
               carId: carId || null,
             },
-            include: {
-              participant1: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                  profileImage: true,
-                  role: true,
-                },
-              },
-              participant2: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                  profileImage: true,
-                  role: true,
-                },
-              },
-              car: {
-                select: {
-                  id: true,
-                  brand: true,
-                  model: true,
-                  year: true,
-                  primaryImage: true,
-                  salePrice: true,
-                  rentalPrice: true,
-                  isForRent: true,
-                  isForSale: true,
-                },
-              },
-            },
+            include: includeWithUnread,
           });
         });
         
@@ -214,39 +171,7 @@ router.post('/conversations', authenticate, async (req: AuthRequest, res: Respon
         if (conversation && !conversation.participant1) {
           conversation = await prisma.conversation.findUnique({
             where: { id: conversation.id },
-            include: {
-              participant1: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                  profileImage: true,
-                  role: true,
-                },
-              },
-              participant2: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                  profileImage: true,
-                  role: true,
-                },
-              },
-              car: {
-                select: {
-                  id: true,
-                  brand: true,
-                  model: true,
-                  year: true,
-                  primaryImage: true,
-                  salePrice: true,
-                  rentalPrice: true,
-                  isForRent: true,
-                  isForSale: true,
-                },
-              },
-            },
+            include: includeWithUnread,
           });
         }
       } catch (createError: any) {
@@ -255,39 +180,7 @@ router.post('/conversations', authenticate, async (req: AuthRequest, res: Respon
           // Conversation was created by another request, fetch it
           conversation = await prisma.conversation.findFirst({
             where: whereClause,
-            include: {
-              participant1: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                  profileImage: true,
-                  role: true,
-                },
-              },
-              participant2: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                  profileImage: true,
-                  role: true,
-                },
-              },
-              car: {
-                select: {
-                  id: true,
-                  brand: true,
-                  model: true,
-                  year: true,
-                  primaryImage: true,
-                  salePrice: true,
-                  rentalPrice: true,
-                  isForRent: true,
-                  isForSale: true,
-                },
-              },
-            },
+            include: includeWithUnread,
           });
         } else {
           throw createError;

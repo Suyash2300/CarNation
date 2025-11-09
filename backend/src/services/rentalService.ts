@@ -1,4 +1,5 @@
-import prisma from '../db/prisma';
+import { $Enums } from '@prisma/client';
+import prisma from '../db/prisma.js';
 
 export interface CreateRentalData {
   carId: string;
@@ -211,7 +212,7 @@ export const createRentalBooking = async (data: CreateRentalData) => {
   return rental;
 };
 
-export const updateRentalStatus = async (rentalId: string, status: string) => {
+export const updateRentalStatus = async (rentalId: string, status: $Enums.RentalStatus) => {
   const rental = await prisma.rental.update({
     where: { id: rentalId },
     data: { status },

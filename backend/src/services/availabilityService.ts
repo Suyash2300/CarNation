@@ -1,4 +1,4 @@
-import prisma from '../db/prisma';
+import prisma from '../db/prisma.js';
 
 export interface AvailabilityInfo {
   status: 'AVAILABLE' | 'RENTED' | 'BOOKED_UNTIL';
