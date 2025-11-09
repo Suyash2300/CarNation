@@ -22,12 +22,23 @@ export const getServerBaseUrl = (): string => {
 };
 
 export const getApiBaseUrl = (): string => {
+  // Explicitly check for VITE_API_URL first (set in Vercel)
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
 
+  // Fallback to computed URL
   const baseUrl = resolveServerBaseUrl();
-  return `${baseUrl.replace(/\/$/, '')}/api`;
+  const apiUrl = `${baseUrl.replace(/\/$/, '')}/api`;
+  
+  // Always log in production to help debug (will be removed by minification if needed)
+  if (typeof window !== 'undefined') {
+    console.log('[API Config] VITE_API_URL:', import.meta.env.VITE_API_URL || 'not set');
+    console.log('[API Config] Using API URL:', apiUrl);
+    console.log('[API Config] PROD mode:', import.meta.env.PROD);
+  }
+  
+  return apiUrl;
 };
 
 export const getSocketBaseUrl = (): string => {
