@@ -27,19 +27,38 @@ export const getServerBaseUrl = (): string => {
 };
 
 export const getApiBaseUrl = (): string => {
+  // Safety check: Never use localhost in production
+  const isProduction = typeof window !== 'undefined' && 
+    (window.location.hostname.includes('vercel.app') || 
+     window.location.hostname.includes('netlify.app') ||
+     !window.location.hostname.includes('localhost'));
+  
   // Explicitly check for VITE_API_URL first (set in Vercel)
-  if (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL !== 'http://localhost:3000/api') {
-    return import.meta.env.VITE_API_URL;
+  if (import.meta.env.VITE_API_URL) {
+    // Reject localhost URLs in production
+    if (isProduction && import.meta.env.VITE_API_URL.includes('localhost')) {
+      console.warn('[API Config] Rejected localhost URL in production, using fallback');
+    } else {
+      return import.meta.env.VITE_API_URL;
+    }
   }
 
   // Fallback to computed URL
   const baseUrl = resolveServerBaseUrl();
   const apiUrl = `${baseUrl.replace(/\/$/, '')}/api`;
   
+  // Safety check: Never return localhost in production
+  if (isProduction && apiUrl.includes('localhost')) {
+    console.error('[API Config] ERROR: Attempted to use localhost in production!');
+    console.error('[API Config] Falling back to production backend');
+    return `${PROD_SERVER_BASE}/api`;
+  }
+  
   // Always log in production to help debug
   if (typeof window !== 'undefined') {
     console.log('[API Config] VITE_API_URL:', import.meta.env.VITE_API_URL || 'not set');
     console.log('[API Config] Hostname:', window.location.hostname);
+    console.log('[API Config] Is Production:', isProduction);
     console.log('[API Config] Using API URL:', apiUrl);
     console.log('[API Config] PROD mode:', import.meta.env.PROD);
   }
