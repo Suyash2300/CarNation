@@ -22,6 +22,31 @@ const FRONTEND_ORIGIN =
     ? 'https://car-nation-teal.vercel.app'
     : 'http://localhost:5173');
 
+// CORS origin checker - allows production URL and all Vercel preview URLs
+const corsOrigin = (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+  // Allow requests with no origin (like mobile apps or curl requests)
+  if (!origin) return callback(null, true);
+  
+  const allowedOrigins = [
+    FRONTEND_ORIGIN,
+    'https://car-nation-teal.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000',
+  ];
+  
+  // Allow any Vercel preview URL (*.vercel.app)
+  if (origin.endsWith('.vercel.app')) {
+    return callback(null, true);
+  }
+  
+  // Check against allowed origins
+  if (allowedOrigins.includes(origin)) {
+    return callback(null, true);
+  }
+  
+  callback(new Error('Not allowed by CORS'));
+};
+
 // Compression middleware (gzip/brotli) - should be early in middleware chain
 app.use(compression({
   filter: (req: Request, res: Response) => {
@@ -40,7 +65,7 @@ app.use(compression({
 const io = new SocketServer(httpServer, {
   path: '/socket.io/', // Explicit Socket.io path
   cors: {
-    origin: FRONTEND_ORIGIN,
+    origin: corsOrigin,
     credentials: true,
     methods: ['GET', 'POST'],
     allowedHeaders: ['Authorization'],
@@ -58,7 +83,7 @@ setupChatHandler(io);
 
 // Middleware - CORS configuration
 app.use(cors({
-  origin: FRONTEND_ORIGIN,
+  origin: corsOrigin,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
