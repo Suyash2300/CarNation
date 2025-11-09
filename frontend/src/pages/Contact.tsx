@@ -4,6 +4,7 @@ import { Mail, Phone, MapPin, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAppSelector } from "../hooks/redux";
 import { useCreateConversationMutation } from "../services/chatApi";
+import { getApiBaseUrl } from "../utils/env";
 
 const Contact = () => {
   const navigate = useNavigate();
@@ -14,8 +15,7 @@ const Contact = () => {
   const getSupportUserId = async (): Promise<string> => {
     // Try optional backend endpoint; fallback to navigate to chat without preselect
     try {
-      const apiUrl =
-        import.meta.env.VITE_API_URL ?? "http://localhost:3000/api";
+      const apiUrl = getApiBaseUrl();
       const res = await fetch(`${apiUrl}/support-user?role=ADMIN`, {
         credentials: "include",
       });

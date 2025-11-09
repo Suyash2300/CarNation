@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Mail } from "lucide-react";
+import { getApiBaseUrl } from "../utils/env";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -14,8 +15,7 @@ const ForgotPassword = () => {
     setIsLoading(true);
 
     try {
-      const API_URL =
-        import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+      const API_URL = getApiBaseUrl();
 
       const response = await fetch(`${API_URL}/auth/forgot-password`, {
         method: "POST",

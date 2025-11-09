@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAppSelector } from "../hooks/redux";
 import Navbar from "../components/layout/Navbar";
 import { Shield, Upload, CheckCircle, AlertCircle } from "lucide-react";
+import { getApiBaseUrl } from "../utils/env";
 
 const VerifyAadhaar = () => {
   const { user } = useAppSelector((state) => state.auth);
@@ -52,8 +53,7 @@ const VerifyAadhaar = () => {
       formData.append("aadhaarBackImage", backImage);
 
       const token = localStorage.getItem("token");
-      const API_URL =
-        import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+      const API_URL = getApiBaseUrl();
 
       const response = await fetch(`${API_URL}/auth/upload-aadhaar`, {
         method: "POST",

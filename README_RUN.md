@@ -122,7 +122,6 @@ SMTP_USER="your-email@example.com"
 SMTP_PASS="your-smtp-password"
 BREVO_API_KEY="your-brevo-api-key"
 ```
-
 ### Frontend (.env - optional, defaults work)
 ```
 VITE_API_BASE_URL=http://localhost:3000/api

@@ -11,6 +11,7 @@ import {
   type Conversation,
 } from "../services/chatApi";
 import { getSocketWithToken } from "../services/socket";
+import { getApiBaseUrl } from "../utils/env";
 
 const SupportChat = () => {
   const { user } = useAppSelector((s) => s.auth);
@@ -62,7 +63,7 @@ const SupportChat = () => {
   const startPreview = async () => {
     if (!selectedConversation) return;
     // Call backend to mint short-lived token for the other participant
-    const apiUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3000/api";
+    const apiUrl = getApiBaseUrl();
     const res = await fetch(
       `${apiUrl}/admin/conversations/${selectedConversation.id}/impersonate`,
       {

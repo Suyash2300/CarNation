@@ -1,10 +1,9 @@
 import { io, Socket } from 'socket.io-client';
+import { getServerBaseUrl } from '../utils/env';
 
 // Socket.io connects to the base server URL (not /api)
-// Extract base URL from API_URL if it includes /api
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-// Remove /api suffix if present since Socket.io connects to the base server
-const SOCKET_URL = API_BASE_URL.replace(/\/api\/?$/, '');
+const SERVER_BASE_URL = getServerBaseUrl();
+const SOCKET_URL = SERVER_BASE_URL.replace(/\/$/, '');
 
 type SocketError = Error & {
   description?: string;
@@ -99,8 +98,7 @@ export const getSocket = (): Socket | null => {
 };
 
 export const getSocketWithToken = (overrideToken: string): Socket => {
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-  const URL = API_BASE.replace(/\/api\/?$/, '');
+  const URL = SOCKET_URL;
   if (previewSocket && previewSocket.connected) return previewSocket;
   if (previewSocket && !previewSocket.connected) {
     previewSocket.disconnect();

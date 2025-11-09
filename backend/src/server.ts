@@ -16,6 +16,11 @@ dotenv.config();
 const app: Express = express();
 const httpServer = createServer(app);
 const PORT = process.env.PORT || 3000;
+const FRONTEND_ORIGIN =
+  process.env.FRONTEND_URL ||
+  (process.env.NODE_ENV === 'production'
+    ? 'https://car-nation-teal.vercel.app'
+    : 'http://localhost:5173');
 
 // Compression middleware (gzip/brotli) - should be early in middleware chain
 app.use(compression({
@@ -35,7 +40,7 @@ app.use(compression({
 const io = new SocketServer(httpServer, {
   path: '/socket.io/', // Explicit Socket.io path
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: FRONTEND_ORIGIN,
     credentials: true,
     methods: ['GET', 'POST'],
     allowedHeaders: ['Authorization'],
@@ -53,7 +58,7 @@ setupChatHandler(io);
 
 // Middleware - CORS configuration
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: FRONTEND_ORIGIN,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Eye, EyeOff, ArrowLeft, CheckCircle } from "lucide-react";
+import { getApiBaseUrl } from "../utils/env";
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
@@ -49,8 +50,7 @@ const ResetPassword = () => {
     setIsLoading(true);
 
     try {
-      const API_URL =
-        import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+      const API_URL = getApiBaseUrl();
       const response = await fetch(`${API_URL}/auth/reset-password`, {
         method: "POST",
         headers: {
