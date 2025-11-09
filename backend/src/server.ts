@@ -19,7 +19,7 @@ const PORT = process.env.PORT || 3000;
 const FRONTEND_ORIGIN =
   process.env.FRONTEND_URL ||
   (process.env.NODE_ENV === 'production'
-    ? 'https://car-nation-teal.vercel.app'
+    ? 'https://car-nation-ten.vercel.app'
     : 'http://localhost:5173');
 
 // CORS origin checker - allows production URL and all Vercel preview URLs
@@ -29,7 +29,8 @@ const corsOrigin = (origin: string | undefined, callback: (err: Error | null, al
   
   const allowedOrigins = [
     FRONTEND_ORIGIN,
-    'https://car-nation-teal.vercel.app',
+    'https://car-nation-ten.vercel.app',
+    'https://car-nation-teal.vercel.app', // Keep old URL for backward compatibility
     'http://localhost:5173',
     'http://localhost:3000',
   ];
