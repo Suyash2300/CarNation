@@ -21,21 +21,29 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        // Manual chunk splitting for better caching
-        // Note: React must load before other chunks, so we keep it in main bundle or ensure proper order
-        manualChunks: (id) => {
-          // Vendor chunks
+        // Manual chunk splitting - ensure React loads first
+        manualChunks: (id: string) => {
           if (id.includes('node_modules')) {
-            // Split large libraries into separate chunks
-            // React will be in main bundle or react-vendor (loaded first via dependency)
+            // CRITICAL: React must be in a chunk that loads FIRST
+            // Check for React core libraries first
+            if (id.includes('react/') || id.includes('react-dom/') || id.includes('scheduler/')) {
+              return 'react-vendor';
+            }
+            // React Router depends on React, so it can be separate
+            if (id.includes('react-router')) {
+              return 'react-router';
+            }
+            // Redux depends on React - must load after react-vendor
             if (id.includes('@reduxjs/toolkit') || id.includes('react-redux')) {
               return 'redux-vendor';
             }
-            if (id.includes('lucide-react')) {
-              return 'ui-vendor';
-            }
+            // Other React-dependent libraries
             if (id.includes('react-select')) {
               return 'select-vendor';
+            }
+            // Non-React libraries can be in vendor
+            if (id.includes('lucide-react')) {
+              return 'ui-vendor';
             }
             if (id.includes('@stripe')) {
               return 'payment-vendor';
@@ -43,12 +51,10 @@ export default defineConfig({
             if (id.includes('socket.io-client')) {
               return 'socket-vendor';
             }
-            // React and React-DOM - keep together, will load first due to dependencies
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
-              return 'react-vendor';
+            // Everything else - but NOT React core
+            if (!id.includes('react')) {
+              return 'vendor';
             }
-            // Other vendor libraries
-            return 'vendor';
           }
         },
         // Optimize chunk file names
