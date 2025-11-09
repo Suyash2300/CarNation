@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Select from "react-select";
+import Select, { type CSSObjectWithLabel } from "react-select";
 import { useGetAdminUsersQuery } from "../../services/carApi";
 import { Users, Shield, ShieldOff, Mail, Phone } from "lucide-react";
 
@@ -27,6 +27,16 @@ const UserManagement = () => {
     { value: "false", label: "Not Verified" },
   ];
 
+  const selectMenuPortal =
+    typeof window !== "undefined" ? window.document.body : undefined;
+
+  const selectStyles = {
+    menuPortal: (base: CSSObjectWithLabel) => ({
+      ...base,
+      zIndex: 40,
+    }),
+  };
+
   if (isLoading) {
     return <div className="text-center py-12">Loading users...</div>;
   }
@@ -39,8 +49,8 @@ const UserManagement = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 mb-6">
-        <div className="w-64">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+        <div className="w-full">
           <Select
             options={roleOptions}
             value={roleOptions.find((opt) => opt.value === roleFilter)}
@@ -48,9 +58,11 @@ const UserManagement = () => {
             className="react-select-container"
             classNamePrefix="react-select"
             placeholder="Filter by role"
+            menuPortalTarget={selectMenuPortal}
+            styles={selectStyles}
           />
         </div>
-        <div className="w-64">
+        <div className="w-full">
           <Select
             options={verifiedOptions}
             value={verifiedOptions.find((opt) => opt.value === verifiedFilter)}
@@ -58,6 +70,8 @@ const UserManagement = () => {
             className="react-select-container"
             classNamePrefix="react-select"
             placeholder="Filter by verification"
+            menuPortalTarget={selectMenuPortal}
+            styles={selectStyles}
           />
         </div>
       </div>

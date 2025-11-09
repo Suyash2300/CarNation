@@ -73,18 +73,18 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-light-subtle">
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Header */}
-        <div className="mb-8 flex justify-between items-start">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-dark-900 mb-2">
+            <h1 className="text-3xl sm:text-4xl font-bold text-dark-900">
               Admin Dashboard
             </h1>
-            <p className="text-dark-700">Welcome back, {user?.name}</p>
+            <p className="text-dark-700 mt-1">Welcome back, {user?.name}</p>
           </div>
           <Link
             to="/chat"
-            className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold transition shadow-lg hover:shadow-xl"
+            className="flex w-full md:w-auto items-center justify-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold transition shadow-lg hover:shadow-xl"
           >
             <MessageCircle className="w-5 h-5" />
             Messages
@@ -117,7 +117,7 @@ const AdminDashboard = () => {
 
           {/* Main Content */}
           <main className="flex-1 min-w-0">
-            <div className="glass rounded-xl p-6 lg:p-8 overflow-hidden">
+            <div className="glass rounded-xl p-5 sm:p-6 lg:p-8 overflow-hidden">
               {activeSection === "overview" && <AdminOverview />}
               {activeSection === "cars" && <CarManagement />}
               {activeSection === "rentals" && <RentalManagement />}

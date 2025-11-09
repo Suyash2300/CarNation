@@ -58,14 +58,18 @@ const CarManagement = () => {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-dark-900">Car Management</h2>
-          <p className="text-dark-600 mt-1">Manage your rental fleet</p>
+          <h2 className="text-2xl md:text-3xl font-bold text-dark-900">
+            Car Management
+          </h2>
+          <p className="text-dark-600 mt-1 text-sm md:text-base">
+            Manage your rental fleet
+          </p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="w-full sm:w-auto bg-gradient-primary hover:bg-gradient-primary-dark text-white px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition shadow-lg hover:shadow-xl"
+          className="w-full md:w-auto bg-gradient-primary hover:bg-gradient-primary-dark text-white px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition shadow-lg hover:shadow-xl"
         >
           <Plus className="w-5 h-5" />
           Add New Car
@@ -84,7 +88,7 @@ const CarManagement = () => {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 lg:gap-6">
           {cars.map((car) => (
             <div
               key={car.id}
@@ -97,14 +101,16 @@ const CarManagement = () => {
                   className="w-full h-48 object-cover"
                 />
               )}
-              <div className="p-5">
-                <h3 className="text-xl font-bold text-dark-900 mb-1">
+              <div className="p-5 space-y-3">
+                <h3 className="text-xl font-bold text-dark-900">
                   {car.brand} {car.model}
                 </h3>
-                <p className="text-dark-600 text-sm mb-3">
-                  {car.year} • {car.fuelType}
+                <p className="text-dark-600 text-sm flex flex-wrap items-center gap-2">
+                  <span>{car.year}</span>
+                  <span className="hidden sm:inline">•</span>
+                  <span>{car.fuelType}</span>
                 </p>
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <span className="text-2xl font-bold text-primary-600">
                     ₹{car.rentalPrice}/day
                   </span>
@@ -120,7 +126,7 @@ const CarManagement = () => {
                     {car.status}
                   </span>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <button
                     onClick={() => setEditingCar(car)}
                     className="flex-1 bg-primary-100 text-primary-700 px-4 py-2 rounded-lg font-semibold hover:bg-primary-200 transition flex items-center justify-center gap-2"

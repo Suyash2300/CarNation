@@ -65,16 +65,16 @@ const PlatformFeeSettings = () => {
 
       {/* Current Fee */}
       <div className="glass rounded-xl p-6 mb-6">
-        <div className="flex items-center gap-4 mb-4">
-          <div className="bg-primary-100 p-4 rounded-lg">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6 mb-4 text-center sm:text-left">
+          <div className="bg-primary-100 p-4 rounded-lg mx-auto sm:mx-0">
             <DollarSign className="w-8 h-8 text-primary-600" />
           </div>
-          <div>
+          <div className="space-y-1">
             <h3 className="text-lg font-semibold text-dark-900">
               Current Platform Fee
             </h3>
             <p className="text-3xl font-bold text-primary-600">{currentFee}%</p>
-            <p className="text-sm text-dark-600 mt-1">
+            <p className="text-sm text-dark-600">
               This percentage is deducted from each successful sale
             </p>
           </div>
@@ -127,7 +127,7 @@ const PlatformFeeSettings = () => {
             {history.map((fee) => (
               <div
                 key={fee.id}
-                className={`flex items-center justify-between p-3 rounded-lg ${
+                className={`flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 rounded-lg ${
                   fee.isActive
                     ? "bg-primary-50 border border-primary-200"
                     : "bg-dark-50"
@@ -147,7 +147,7 @@ const PlatformFeeSettings = () => {
                   </p>
                 </div>
                 {fee.isActive && (
-                  <span className="px-3 py-1 bg-primary-600 text-white rounded-full text-xs font-semibold">
+                  <span className="self-start sm:self-auto px-3 py-1 bg-primary-600 text-white rounded-full text-xs font-semibold">
                     Active
                   </span>
                 )}

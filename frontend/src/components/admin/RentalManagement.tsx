@@ -19,6 +19,12 @@ import {
   Filter as FilterIcon,
 } from "lucide-react";
 
+const periodLabels: Record<"week" | "month" | "year", string> = {
+  week: "the last 7 days",
+  month: "the last 30 days",
+  year: "the last year",
+};
+
 const RentalManagement = () => {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [earningsPeriod, setEarningsPeriod] = useState<
@@ -110,6 +116,46 @@ const RentalManagement = () => {
     });
   }, [rentals, searchTerm, cityFilter]);
 
+  const rentalSummary = useMemo(() => {
+    if (!rentals.length) {
+      return {
+        active: 0,
+        pending: 0,
+        completed: 0,
+        topCity: null as { city: string; count: number } | null,
+      };
+    }
+
+    let active = 0;
+    let pending = 0;
+    let completed = 0;
+    const cityCount = new Map<string, number>();
+
+    rentals.forEach((rental) => {
+      if (rental.status === "ACTIVE") active += 1;
+      if (rental.status === "PENDING") pending += 1;
+      if (rental.status === "COMPLETED") completed += 1;
+
+      if (rental.car.city) {
+        const current = cityCount.get(rental.car.city) ?? 0;
+        cityCount.set(rental.car.city, current + 1);
+      }
+    });
+
+    let topCity: { city: string; count: number } | null = null;
+    cityCount.forEach((count, city) => {
+      if (!topCity || count > topCity.count) {
+        topCity = { city, count };
+      }
+    });
+
+    return { active, pending, completed, topCity };
+  }, [rentals]);
+
+  const averageBookingValue = useMemo(() => {
+    return earnings.count ? earnings.totalEarnings / earnings.count : 0;
+  }, [earnings.count, earnings.totalEarnings]);
+
   return (
     <div>
       <h2 className="text-2xl font-bold text-dark-900 mb-6">
@@ -118,12 +164,12 @@ const RentalManagement = () => {
 
       {/* Earnings Summary */}
       <div className="mb-8">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <h3 className="text-lg font-semibold text-dark-900 flex items-center gap-2">
+        <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:justify-between">
+          <h3 className="text-lg font-semibold text-dark-900 flex items-center gap-2 leading-snug">
             <DollarSign className="w-5 h-5 text-primary-600" />
             Earnings Report
           </h3>
-          <div className="w-full md:w-48">
+          <div className="w-full max-w-xs md:max-w-none md:w-52">
             <Select
               options={periodOptions}
               value={periodOptions.find((opt) => opt.value === earningsPeriod)}
@@ -138,17 +184,71 @@ const RentalManagement = () => {
           </div>
         </div>
         <div className="glass rounded-xl p-6 mt-4">
-          <div className="flex items-center gap-4">
-            <div className="bg-primary-100 p-4 rounded-lg">
+          <div className="grid grid-cols-1 sm:grid-cols-[auto,1fr] items-center gap-4 sm:gap-6">
+            <div className="bg-primary-100 p-4 rounded-lg w-max mx-auto sm:mx-0">
               <DollarSign className="w-8 h-8 text-primary-600" />
             </div>
-            <div>
+            <div className="space-y-1 min-w-0 text-center sm:text-left">
               <p className="text-sm text-dark-600 mb-1">Total Earnings</p>
               <p className="text-3xl font-bold text-dark-900">
                 ₹{earnings.totalEarnings.toLocaleString()}
               </p>
               <p className="text-sm text-dark-600 mt-1">
-                {earnings.count} rental(s)
+                {earnings.count} rental(s) in {periodLabels[earningsPeriod]}
+              </p>
+            </div>
+          </div>
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-lg border border-dark-100 bg-white/70 p-4">
+              <p className="text-xs font-semibold uppercase text-dark-500 tracking-wide">
+                Average Booking Value
+              </p>
+              <p className="mt-2 text-xl font-semibold text-dark-900">
+                ₹{averageBookingValue.toLocaleString(undefined, {
+                  maximumFractionDigits: 0,
+                })}
+              </p>
+              <p className="mt-1 text-xs text-dark-500">
+                Based on total earnings and completed bookings
+              </p>
+            </div>
+            <div className="rounded-lg border border-dark-100 bg-white/70 p-4">
+              <p className="text-xs font-semibold uppercase text-dark-500 tracking-wide">
+                Active Rentals
+              </p>
+              <p className="mt-2 text-xl font-semibold text-dark-900">
+                {rentalSummary.active}
+              </p>
+              <p className="mt-1 text-xs text-dark-500">
+                Currently running bookings
+              </p>
+            </div>
+            <div className="rounded-lg border border-dark-100 bg-white/70 p-4">
+              <p className="text-xs font-semibold uppercase text-dark-500 tracking-wide">
+                Pending Approvals
+              </p>
+              <p className="mt-2 text-xl font-semibold text-dark-900">
+                {rentalSummary.pending}
+              </p>
+              <p className="mt-1 text-xs text-dark-500">
+                Awaiting activation or start date
+              </p>
+            </div>
+            <div className="rounded-lg border border-dark-100 bg-white/70 p-4">
+              <p className="text-xs font-semibold uppercase text-dark-500 tracking-wide">
+                Top City
+              </p>
+              <p className="mt-2 text-xl font-semibold text-dark-900">
+                {rentalSummary.topCity
+                  ? rentalSummary.topCity.city
+                  : "No data"}
+              </p>
+              <p className="mt-1 text-xs text-dark-500">
+                {rentalSummary.topCity
+                  ? `${rentalSummary.topCity.count} booking${
+                      rentalSummary.topCity.count === 1 ? "" : "s"
+                    }`
+                  : "Bookings are evenly spread"}
               </p>
             </div>
           </div>
@@ -157,8 +257,8 @@ const RentalManagement = () => {
 
       {/* Rental Filters */}
       <div className="glass rounded-xl p-4 mb-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div className="flex flex-col gap-2 w-full md:w-96">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 md:items-end">
+          <div className="flex flex-col gap-2 md:col-span-2 xl:col-span-1">
             <label className="text-xs font-semibold text-dark-600 uppercase tracking-wide flex items-center gap-2">
               <Search className="w-4 h-4" /> Search Rentals
             </label>
@@ -171,7 +271,7 @@ const RentalManagement = () => {
             />
           </div>
 
-          <div className="flex flex-col gap-2 w-full md:w-64">
+          <div className="flex flex-col gap-2">
             <label className="text-xs font-semibold text-dark-600 uppercase tracking-wide flex items-center gap-2">
               <Layers className="w-4 h-4" /> Filter by Status
             </label>
@@ -186,7 +286,7 @@ const RentalManagement = () => {
             />
           </div>
 
-          <div className="flex flex-col gap-2 w-full md:w-64">
+          <div className="flex flex-col gap-2">
             <label className="text-xs font-semibold text-dark-600 uppercase tracking-wide flex items-center gap-2">
               <FilterIcon className="w-4 h-4" /> Filter by City
             </label>
@@ -230,28 +330,28 @@ const RentalManagement = () => {
                 key={rental.id}
                 className="glass rounded-xl p-6 hover:shadow-xl transition"
               >
-                <div className="flex flex-col lg:flex-row gap-6">
+                <div className="flex flex-col xl:flex-row gap-6">
                   {/* Left Section - Car Image and Basic Info */}
-                  <div className="flex items-start gap-4 flex-1">
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-4 flex-1 min-w-0">
                     {rental.car.primaryImage && (
                       <img
                         src={rental.car.primaryImage}
                         alt={`${rental.car.brand} ${rental.car.model}`}
-                        className="w-32 h-24 object-cover rounded-lg flex-shrink-0"
+                        className="w-full max-w-[180px] h-auto sm:h-24 sm:w-32 object-cover rounded-lg flex-shrink-0 mx-auto sm:mx-0"
                       />
                     )}
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 text-center sm:text-left">
                       <h3 className="text-xl font-bold text-dark-900 mb-3">
                         {rental.car.brand} {rental.car.model} ({rental.car.year}
                         )
                       </h3>
                       <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-dark-600">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm text-dark-600">
                           <User className="w-4 h-4" />
                           <span className="font-medium">Renter:</span>
                           <span>{rental.buyer.name}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-dark-600">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm text-dark-600">
                           <Calendar className="w-4 h-4" />
                           <span>
                             {new Date(rental.startDate).toLocaleDateString(
@@ -273,7 +373,7 @@ const RentalManagement = () => {
                             )}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-dark-600">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm text-dark-600">
                           <Clock className="w-4 h-4" />
                           <span>
                             {rental.totalDays}{" "}
@@ -281,11 +381,12 @@ const RentalManagement = () => {
                           </span>
                         </div>
                         {rental.car.city && (
-                          <div className="flex items-center gap-2 text-sm text-dark-600">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm text-dark-600">
                             <MapPin className="w-4 h-4 text-primary-600" />
                             <span className="font-medium">
-                              Pickup Location: {rental.car.city}
+                              Pickup Location:
                             </span>
+                            <span>{rental.car.city}</span>
                           </div>
                         )}
                       </div>
@@ -293,14 +394,14 @@ const RentalManagement = () => {
                   </div>
 
                   {/* Right Section - Amount and Status */}
-                  <div className="flex flex-col items-start lg:items-end gap-3 lg:w-48">
-                    <div className="text-left lg:text-right">
+                  <div className="flex flex-col items-center xl:items-end gap-3 xl:w-56">
+                    <div className="text-center xl:text-right">
                       <p className="text-sm text-dark-600 mb-1">Total Amount</p>
                       <p className="text-2xl font-bold text-primary-600">
                         ₹{rental.totalAmount.toLocaleString()}
                       </p>
                     </div>
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2 items-center xl:items-end">
                       <span
                         className={`inline-block px-3 py-1 rounded-full text-xs font-semibold w-fit ${
                           rental.status === "COMPLETED"
