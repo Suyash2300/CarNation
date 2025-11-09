@@ -21,27 +21,25 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        // Manual chunk splitting - ensure React loads first
+        // Simplified chunking - keep React in main bundle to avoid loading order issues
         manualChunks: (id: string) => {
           if (id.includes('node_modules')) {
-            // CRITICAL: React must be in a chunk that loads FIRST
-            // Check for React core libraries first
-            if (id.includes('react/') || id.includes('react-dom/') || id.includes('scheduler/')) {
-              return 'react-vendor';
+            // Keep React and React-DOM in main bundle (don't split them)
+            // This ensures React is always available before other chunks load
+            if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
+              return; // Keep in main bundle
             }
-            // React Router depends on React, so it can be separate
-            if (id.includes('react-router')) {
-              return 'react-router';
-            }
-            // Redux depends on React - must load after react-vendor
+            
+            // Split other large libraries
             if (id.includes('@reduxjs/toolkit') || id.includes('react-redux')) {
               return 'redux-vendor';
             }
-            // Other React-dependent libraries
+            if (id.includes('react-router')) {
+              return 'react-router';
+            }
             if (id.includes('react-select')) {
               return 'select-vendor';
             }
-            // Non-React libraries can be in vendor
             if (id.includes('lucide-react')) {
               return 'ui-vendor';
             }
@@ -51,10 +49,8 @@ export default defineConfig({
             if (id.includes('socket.io-client')) {
               return 'socket-vendor';
             }
-            // Everything else - but NOT React core
-            if (!id.includes('react')) {
-              return 'vendor';
-            }
+            // Other vendor libraries
+            return 'vendor';
           }
         },
         // Optimize chunk file names
