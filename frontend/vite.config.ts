@@ -22,12 +22,12 @@ export default defineConfig({
     rollupOptions: {
       output: {
         // Manual chunk splitting for better caching
+        // Note: React must load before other chunks, so we keep it in main bundle or ensure proper order
         manualChunks: (id) => {
           // Vendor chunks
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
-              return 'react-vendor';
-            }
+            // Split large libraries into separate chunks
+            // React will be in main bundle or react-vendor (loaded first via dependency)
             if (id.includes('@reduxjs/toolkit') || id.includes('react-redux')) {
               return 'redux-vendor';
             }
@@ -42,6 +42,10 @@ export default defineConfig({
             }
             if (id.includes('socket.io-client')) {
               return 'socket-vendor';
+            }
+            // React and React-DOM - keep together, will load first due to dependencies
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+              return 'react-vendor';
             }
             // Other vendor libraries
             return 'vendor';
