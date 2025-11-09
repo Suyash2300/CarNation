@@ -273,7 +273,9 @@ const SubscriptionManagement = () => {
         {Object.entries(tiers).map(([tierKey, tier]) => {
           const tierKeyTyped = tierKey as "FREE" | "BASIC" | "PREMIUM";
           const isCurrent = isCurrentTier(tierKey);
-          const canUpgrade = tierKey !== "FREE" && !isCurrent;
+          const isPaidTier =
+            tierKeyTyped === "BASIC" || tierKeyTyped === "PREMIUM";
+          const canUpgrade = isPaidTier && !isCurrent;
 
           return (
             <div

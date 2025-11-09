@@ -6,6 +6,12 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 // Remove /api suffix if present since Socket.io connects to the base server
 const SOCKET_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 
+type SocketError = Error & {
+  description?: string;
+  context?: unknown;
+  type?: string;
+};
+
 let socket: Socket | null = null;
 let previewSocket: Socket | null = null;
 
@@ -58,7 +64,7 @@ export const getSocket = (): Socket | null => {
     }
   });
 
-  socket.on('connect_error', (error) => {
+  socket.on('connect_error', (error: SocketError) => {
     console.error('Socket connection error:', error.message);
     // Log more details in development
     if (import.meta.env.DEV) {
