@@ -150,7 +150,7 @@ const SellerDashboard = () => {
           : "Rejecting will notify the buyer and close this deal. Are you sure?",
       confirmLabel: actionLabel,
       cancelLabel: "Cancel",
-      variant: status === "ACCEPTED" ? "success" : "danger",
+      variant: status === "ACCEPTED" ? "info" : "danger",
     });
 
     if (!userConfirmed) {

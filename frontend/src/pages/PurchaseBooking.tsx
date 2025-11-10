@@ -74,15 +74,6 @@ const PurchaseBooking = () => {
     () => relevantDeals.find((deal) => deal.status === "PENDING"),
     [relevantDeals]
   );
-  const rejectedDeal = useMemo(
-    () => relevantDeals.find((deal) => deal.status === "REJECTED"),
-    [relevantDeals]
-  );
-  const completedDeal = useMemo(
-    () => relevantDeals.find((deal) => deal.status === "COMPLETED"),
-    [relevantDeals]
-  );
-
   const existingPurchaseId =
     acceptedDeal?.purchase && acceptedDeal.purchase.paymentStatus !== "PAID"
       ? acceptedDeal.purchase.id
