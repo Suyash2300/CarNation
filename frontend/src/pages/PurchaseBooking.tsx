@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useId } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useGetCarByIdQuery } from "../services/carApi";
 import { useCreatePurchaseMutation } from "../services/purchaseApi";
@@ -7,6 +7,7 @@ import {
   useVerifyPurchasePaymentMutation,
 } from "../services/paymentApi";
 import type { StripePaymentIntentResponse } from "../services/paymentApi";
+import { useGetDealsQuery } from "../services/dealsApi";
 import Navbar from "../components/layout/Navbar";
 import StripePayment from "../components/payment/StripePayment";
 import {
@@ -15,6 +16,8 @@ import {
   ArrowLeft,
   CreditCard,
   Calculator,
+  AlertTriangle,
+  Handshake,
 } from "lucide-react";
 import { useConfirm } from "../components/common/ConfirmProvider";
 import { getApiErrorMessage } from "../utils/error";
@@ -29,6 +32,14 @@ const PurchaseBooking = () => {
     useCreatePurchaseOrderMutation();
   const [verifyPayment] = useVerifyPurchasePaymentMutation();
   const confirm = useConfirm();
+  const { data: dealsData } = useGetDealsQuery(
+    undefined,
+    {
+      skip: !id,
+      refetchOnFocus: true,
+      refetchOnReconnect: true,
+    }
+  );
 
   const [salePrice, setSalePrice] = useState("");
   const [error, setError] = useState("");
@@ -42,30 +53,116 @@ const PurchaseBooking = () => {
     sellerEarnings: number;
     totalAmount: number;
   } | null>(null);
+  const [priceConfirmed, setPriceConfirmed] = useState(false);
+  const priceConfirmationId = useId();
 
   const car = carData?.car;
+  const relevantDeals = useMemo(() => {
+    if (!dealsData?.deals || !id) {
+      return [];
+    }
+    return dealsData.deals.filter(
+      (deal) => deal.carId === id && deal.dealType === "PURCHASE"
+    );
+  }, [dealsData?.deals, id]);
 
-  const handlePriceChange = async (price: string) => {
-    setSalePrice(price);
-    setError("");
+  const acceptedDeal = useMemo(
+    () => relevantDeals.find((deal) => deal.status === "ACCEPTED"),
+    [relevantDeals]
+  );
+  const pendingDeal = useMemo(
+    () => relevantDeals.find((deal) => deal.status === "PENDING"),
+    [relevantDeals]
+  );
+  const rejectedDeal = useMemo(
+    () => relevantDeals.find((deal) => deal.status === "REJECTED"),
+    [relevantDeals]
+  );
+  const completedDeal = useMemo(
+    () => relevantDeals.find((deal) => deal.status === "COMPLETED"),
+    [relevantDeals]
+  );
 
-    const priceNum = parseFloat(price);
-    if (isNaN(priceNum) || priceNum <= 0) {
+  const existingPurchaseId =
+    acceptedDeal?.purchase && acceptedDeal.purchase.paymentStatus !== "PAID"
+      ? acceptedDeal.purchase.id
+      : null;
+  const isDealPaymentCompleted =
+    acceptedDeal?.purchase?.paymentStatus === "PAID";
+
+  const updateFeesForPrice = useCallback((priceNum: number) => {
+    if (!Number.isFinite(priceNum) || priceNum <= 0) {
       setCalculatedFees(null);
       return;
     }
 
-    // Calculate platform fee (default 5%)
-    const platformFeePercentage = 5; // This should ideally come from API
-    const platformFee = (priceNum * platformFeePercentage) / 100;
-    const sellerEarnings = priceNum - platformFee;
-    const totalAmount = priceNum;
+    const normalizedPrice = Math.round(priceNum * 100) / 100;
+    const platformFeePercentage = 5; // TODO: fetch from platform fee API when available
+    const rawFee = (normalizedPrice * platformFeePercentage) / 100;
+    const platformFee = Math.round(rawFee * 100) / 100;
+    const sellerEarnings =
+      Math.round((normalizedPrice - platformFee) * 100) / 100;
 
     setCalculatedFees({
       platformFee,
       sellerEarnings,
-      totalAmount,
+      totalAmount: normalizedPrice,
     });
+  }, []);
+
+  useEffect(() => {
+    if (existingPurchaseId && purchaseId !== existingPurchaseId) {
+      setPurchaseId(existingPurchaseId);
+    }
+  }, [existingPurchaseId, purchaseId]);
+
+  useEffect(() => {
+    setPriceConfirmed(false);
+  }, [acceptedDeal?.id]);
+
+  useEffect(() => {
+    if (acceptedDeal) {
+      const priceString = acceptedDeal.agreedPrice.toString();
+      if (salePrice !== priceString) {
+        setSalePrice(priceString);
+      }
+
+      if (
+        typeof acceptedDeal.purchase?.platformFee === "number" &&
+        typeof acceptedDeal.purchase?.sellerEarnings === "number"
+      ) {
+        setCalculatedFees({
+          platformFee: acceptedDeal.purchase.platformFee,
+          sellerEarnings: acceptedDeal.purchase.sellerEarnings!,
+          totalAmount: acceptedDeal.agreedPrice,
+        });
+      } else {
+        updateFeesForPrice(acceptedDeal.agreedPrice);
+      }
+
+      setError("");
+      return;
+    }
+
+    if (pendingDeal && !salePrice) {
+      const pendingPrice = pendingDeal.agreedPrice.toString();
+      setSalePrice(pendingPrice);
+      updateFeesForPrice(pendingDeal.agreedPrice);
+    }
+  }, [acceptedDeal, pendingDeal, salePrice, updateFeesForPrice]);
+
+  const handlePriceChange = (price: string) => {
+    setSalePrice(price);
+    setError("");
+    setPriceConfirmed(false);
+
+    const priceNum = parseFloat(price);
+    if (!Number.isFinite(priceNum) || priceNum <= 0) {
+      setCalculatedFees(null);
+      return;
+    }
+
+    updateFeesForPrice(priceNum);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -73,52 +170,87 @@ const PurchaseBooking = () => {
     setError("");
     setSuccess(false);
 
-    if (!salePrice || parseFloat(salePrice) <= 0) {
-      setError("Please enter a valid sale price");
+    if (!acceptedDeal) {
+      setError(
+        "You need a seller-confirmed deal before proceeding to payment. Please confirm the price with the seller in chat."
+      );
       return;
     }
 
-    if (!car?.salePrice) {
-      setError("Car sale price not available");
+    if (!priceConfirmed) {
+      setError("Please confirm the agreed deal price before continuing to payment.");
       return;
     }
 
-    const priceNum = parseFloat(salePrice);
-    if (priceNum < car.salePrice * 0.5 || priceNum > car.salePrice * 1.5) {
-      const proceed = await confirm({
-        title: "Confirm Price Difference",
-        message: `The entered price (₹${priceNum.toLocaleString()}) is significantly different from the listed price (₹${car.salePrice.toLocaleString()}). Continue?`,
-        confirmLabel: "Continue",
-        cancelLabel: "Review Price",
-        variant: "warning",
-      });
-
-      if (!proceed) {
-        return;
-      }
+    if (isDealPaymentCompleted) {
+      setError(
+        "This deal has already been paid for. You can review it from your dashboard."
+      );
+      return;
     }
+
+    let activePurchaseId = purchaseId ?? existingPurchaseId;
+    const confirmedPrice = acceptedDeal.agreedPrice;
 
     try {
-      const result = await createPurchase({
-        carId: id!,
-        salePrice: priceNum,
-      }).unwrap();
+      if (!activePurchaseId) {
+        if (
+          car?.salePrice &&
+          (confirmedPrice < car.salePrice * 0.5 ||
+            confirmedPrice > car.salePrice * 1.5)
+        ) {
+          const proceed = await confirm({
+            title: "Confirm Price Difference",
+            message: `The confirmed deal price is ₹${confirmedPrice.toLocaleString()} which is significantly different from the listed price of ₹${car.salePrice.toLocaleString()}. Continue to payment?`,
+            confirmLabel: "Continue",
+            cancelLabel: "Review Deal",
+            variant: "warning",
+          });
 
-      setPurchaseId(result.purchase.id);
+          if (!proceed) {
+            return;
+          }
+        }
 
-      // Use calculated fees from purchase response
-      if (result.purchase.platformFee && result.purchase.sellerEarnings) {
-        setCalculatedFees({
-          platformFee: result.purchase.platformFee,
-          sellerEarnings: result.purchase.sellerEarnings,
-          totalAmount: result.purchase.salePrice,
-        });
+        const result = await createPurchase({
+          carId: id!,
+          salePrice: confirmedPrice,
+        }).unwrap();
+
+        activePurchaseId = result.purchase.id;
+        setPurchaseId(result.purchase.id);
+
+        if (
+          result.purchase.platformFee != null &&
+          result.purchase.sellerEarnings != null
+        ) {
+          setCalculatedFees({
+            platformFee: result.purchase.platformFee,
+            sellerEarnings: result.purchase.sellerEarnings,
+            totalAmount: result.purchase.salePrice,
+          });
+        } else {
+          updateFeesForPrice(result.purchase.salePrice);
+        }
+
+        setSuccess(true);
       }
 
-      // Create Stripe payment intent
+      if (!activePurchaseId) {
+        setError(
+          "Unable to determine the purchase reference. Please try again or contact support."
+        );
+        return;
+      }
+
       try {
+        if (paymentOrder && purchaseId === activePurchaseId) {
+          setSuccess(true);
+          return;
+        }
+
         const paymentResult = await createPurchaseOrder({
-          purchaseId: result.purchase.id,
+          purchaseId: activePurchaseId,
         }).unwrap();
 
         setPaymentOrder(paymentResult);
@@ -126,7 +258,7 @@ const PurchaseBooking = () => {
       } catch (orderErr) {
         const message = getApiErrorMessage(
           orderErr,
-          "Failed to create payment order. Purchase created but payment failed."
+          "Failed to create payment order. Purchase exists but payment could not be initiated."
         );
         setError(message);
         setSuccess(true); // Purchase is still created
@@ -269,6 +401,7 @@ const PurchaseBooking = () => {
                     type="number"
                     value={salePrice}
                     onChange={(e) => handlePriceChange(e.target.value)}
+                    readOnly={!!acceptedDeal}
                     placeholder={
                       car.salePrice
                         ? `e.g., ${car.salePrice.toLocaleString()}`
@@ -277,7 +410,9 @@ const PurchaseBooking = () => {
                     min="1"
                     step="1"
                     required
-                    className="w-full px-4 py-3 border border-dark-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-lg font-semibold"
+                    className={`w-full px-4 py-3 border border-dark-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-lg font-semibold ${
+                      acceptedDeal ? "bg-dark-100 cursor-not-allowed text-dark-700" : ""
+                    }`}
                   />
                   {car.salePrice && (
                     <p className="text-xs text-dark-500 mt-1">
@@ -285,6 +420,59 @@ const PurchaseBooking = () => {
                     </p>
                   )}
                 </div>
+
+                {acceptedDeal ? (
+                  <div className="space-y-3 rounded-lg border border-success-200 bg-success-50 p-4">
+                    <div className="flex gap-3">
+                      <Handshake className="mt-0.5 h-5 w-5 text-success-600" />
+                      <div>
+                        <p className="font-semibold text-success-900">
+                          Deal confirmed with {acceptedDeal.seller.name}
+                        </p>
+                        <p className="text-sm text-success-700">
+                          Final agreed price: ₹
+                          {acceptedDeal.agreedPrice.toLocaleString()}.
+                        </p>
+                      </div>
+                    </div>
+                    <label
+                      htmlFor={priceConfirmationId}
+                      className="flex items-start gap-3 rounded-md border border-success-200 bg-white/80 px-4 py-3 text-sm text-dark-700 shadow-sm"
+                    >
+                      <input
+                        id={priceConfirmationId}
+                        type="checkbox"
+                        className="mt-1 h-4 w-4 rounded border-dark-300 text-primary-600 focus:ring-primary-500"
+                        checked={priceConfirmed}
+                        onChange={(event) => {
+                          setPriceConfirmed(event.target.checked);
+                          if (error) {
+                            setError("");
+                          }
+                        }}
+                      />
+                      <span className="leading-5">
+                        I confirm that I have reviewed and agreed to pay the deal
+                        price of ₹{acceptedDeal.agreedPrice.toLocaleString()} before
+                        proceeding to payment.
+                      </span>
+                    </label>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-3 rounded-lg border border-warning-200 bg-warning-50 p-4">
+                    <AlertTriangle className="mt-0.5 h-5 w-5 text-warning-600" />
+                    <div>
+                      <p className="font-semibold text-warning-900">
+                        Waiting for price confirmation
+                      </p>
+                      <p className="text-sm text-warning-700">
+                        Head back to chat, agree on the price, and create a deal from the
+                        chat window. Once the seller accepts that deal price, it will show
+                        up here so you can confirm it and continue to payment.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Fee Breakdown */}
                 {calculatedFees && (
@@ -340,7 +528,13 @@ const PurchaseBooking = () => {
                   </button>
                   <button
                     type="submit"
-                    disabled={isCreating || !salePrice || isCreatingOrder}
+                    disabled={
+                      isCreating ||
+                      !salePrice ||
+                      isCreatingOrder ||
+                      !acceptedDeal ||
+                      !priceConfirmed
+                    }
                     className="flex-1 bg-gradient-primary hover:bg-gradient-primary-dark text-white px-6 py-3 rounded-lg font-semibold transition shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isCreating || isCreatingOrder

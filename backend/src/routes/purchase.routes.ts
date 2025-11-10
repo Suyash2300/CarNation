@@ -45,40 +45,87 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Cannot purchase your own car' });
     }
 
-    // Calculate platform fee
-    const { platformFee, sellerEarnings } = await calculatePlatformFee(salePrice);
-
-    // Create purchase
-    const purchase = await prisma.purchase.create({
-      data: {
+    // Ensure there is an accepted deal for this car and buyer
+    const confirmedDeal = await prisma.deal.findFirst({
+      where: {
         carId,
         buyerId: userId,
-        salePrice,
-        platformFee,
-        sellerEarnings,
-        paymentStatus: 'PENDING',
-        status: 'PENDING',
+        dealType: 'PURCHASE',
+        status: 'ACCEPTED',
       },
-      include: {
-        car: {
-          include: {
-            seller: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
+      orderBy: {
+        updatedAt: 'desc',
+      },
+    });
+
+    if (!confirmedDeal) {
+      return res.status(400).json({
+        error:
+          'You must have a seller-confirmed deal before proceeding to payment. Please confirm the final price with the seller in chat.',
+      });
+    }
+
+    if (confirmedDeal.purchaseId) {
+      return res.status(400).json({
+        error:
+          'This confirmed deal is already linked to an existing purchase. Please complete the pending payment from your dashboard.',
+      });
+    }
+
+    const confirmedSalePrice = confirmedDeal.agreedPrice;
+
+    if (Math.abs(confirmedSalePrice - salePrice) > 0.5) {
+      return res.status(400).json({
+        error: `The confirmed deal price is ₹${confirmedSalePrice.toLocaleString()}. Please proceed with the agreed amount.`,
+      });
+    }
+
+    // Calculate platform fee using the confirmed price
+    const { platformFee, sellerEarnings } = await calculatePlatformFee(confirmedSalePrice);
+
+    // Create purchase and link deal atomically
+    const purchase = await prisma.$transaction(async (tx) => {
+      const createdPurchase = await tx.purchase.create({
+        data: {
+          carId,
+          buyerId: userId,
+          salePrice: confirmedSalePrice,
+          platformFee,
+          sellerEarnings,
+          paymentStatus: 'PENDING',
+          status: 'PENDING',
+        },
+        include: {
+          car: {
+            include: {
+              seller: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
               },
             },
           },
-        },
-        buyer: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+          buyer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
           },
         },
-      },
+      });
+
+      await tx.deal.update({
+        where: { id: confirmedDeal.id },
+        data: {
+          status: 'ACCEPTED',
+          purchaseId: createdPurchase.id,
+        },
+      });
+
+      return createdPurchase;
     });
 
     res.status(201).json({ purchase });

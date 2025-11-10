@@ -32,9 +32,13 @@ import SubscriptionManagement from "../components/seller/SubscriptionManagement"
 import AddSellerCarModal from "../components/seller/AddSellerCarModal";
 import EditSellerCarModal from "../components/seller/EditSellerCarModal";
 import DealStatusBadge from "../components/deals/DealStatusBadge";
-import { useGetDealsQuery } from "../services/dealsApi";
+import {
+  useGetDealsQuery,
+  useUpdateDealStatusMutation,
+} from "../services/dealsApi";
 import { useGetRentalsQuery } from "../services/rentalApi";
 import { useGetShopsByCityQuery } from "../services/shopApi";
+import { getApiErrorMessage } from "../utils/error";
 
 const PickupAddress: React.FC<{ city?: string }> = ({ city }) => {
   const { data } = useGetShopsByCityQuery(
@@ -92,6 +96,8 @@ const SellerDashboard = () => {
   const { data: rentalsData, isFetching: isRentalsLoading } =
     useGetRentalsQuery(undefined);
   const [deleteCar] = useDeleteSellerCarMutation();
+  const [updateDealStatus] = useUpdateDealStatusMutation();
+  const [respondingDealId, setRespondingDealId] = useState<string | null>(null);
 
   const cars = data?.cars || [];
   const stats = statsData?.stats;
@@ -123,6 +129,50 @@ const SellerDashboard = () => {
         (error as { data?: { error?: string } })?.data?.error ||
         "Failed to delete car. Please try again.";
       showError(fallbackMessage);
+    }
+  };
+
+  const handleDealResponse = async (
+    dealId: string,
+    status: "ACCEPTED" | "REJECTED",
+    agreedPrice: number,
+    carLabel: string
+  ) => {
+    const actionLabel = status === "ACCEPTED" ? "Accept" : "Reject";
+    const userConfirmed = await confirm({
+      title:
+        status === "ACCEPTED"
+          ? "Accept Deal Price"
+          : "Reject Deal Price",
+      message:
+        status === "ACCEPTED"
+          ? `Confirm you want to accept the ₹${agreedPrice.toLocaleString()} offer for ${carLabel}. This will allow the buyer to proceed to payment.`
+          : "Rejecting will notify the buyer and close this deal. Are you sure?",
+      confirmLabel: actionLabel,
+      cancelLabel: "Cancel",
+      variant: status === "ACCEPTED" ? "success" : "danger",
+    });
+
+    if (!userConfirmed) {
+      return;
+    }
+
+    try {
+      setRespondingDealId(dealId);
+      await updateDealStatus({ id: dealId, status }).unwrap();
+      showSuccess(
+        status === "ACCEPTED"
+          ? "Deal accepted successfully. The buyer can now proceed to payment."
+          : "Deal rejected. Let the buyer know if you want to renegotiate."
+      );
+    } catch (error) {
+      const fallback = getApiErrorMessage(
+        error,
+        `Failed to ${actionLabel.toLowerCase()} the deal. Please try again.`
+      );
+      showError(fallback);
+    } finally {
+      setRespondingDealId(null);
     }
   };
 
@@ -282,8 +332,13 @@ const SellerDashboard = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {deals.map((deal) => (
-                  <div key={deal.id} className="glass rounded-xl p-6">
+                {deals.map((deal) => {
+                  const isSeller = user?.id === deal.seller.id;
+                  const isPending = deal.status === "PENDING";
+                  const isResponding = respondingDealId === deal.id;
+                  const carLabel = `${deal.car.brand} ${deal.car.model} (${deal.car.year})`;
+                  return (
+                    <div key={deal.id} className="glass rounded-xl p-6">
                     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-4">
                       <div className="flex items-center gap-4">
                         {deal.car.primaryImage && (
@@ -349,9 +404,71 @@ const SellerDashboard = () => {
                           {new Date(deal.createdAt).toLocaleDateString()}
                         </p>
                       </div>
+                      {isSeller && (
+                        <div className="sm:col-span-2 lg:col-span-1">
+                          <p className="text-sm text-dark-600 mb-1">
+                            Buyer
+                          </p>
+                          <p className="font-semibold text-dark-900">
+                            {deal.buyer.name}
+                          </p>
+                        </div>
+                      )}
+                      {deal.status === "ACCEPTED" &&
+                        isSeller &&
+                        !deal.purchase && (
+                          <div className="sm:col-span-2 lg:col-span-4 rounded-lg border border-primary-200 bg-primary-50 p-4">
+                            <p className="text-sm text-primary-800">
+                              You accepted this deal. The buyer can now complete
+                              payment from their dashboard. Keep an eye on your
+                              inbox for payment confirmation.
+                            </p>
+                          </div>
+                        )}
+                      {isPending && isSeller && (
+                        <div className="sm:col-span-2 lg:col-span-4 flex flex-col sm:flex-row gap-3 mt-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleDealResponse(
+                                deal.id,
+                                "REJECTED",
+                                deal.agreedPrice,
+                                carLabel
+                              )
+                            }
+                            disabled={isResponding}
+                            className="w-full sm:w-auto px-5 py-2.5 rounded-lg border-2 border-error-200 text-error-700 font-semibold hover:bg-error-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isResponding && (
+                              <span className="inline-block h-4 w-4 border-2 border-t-transparent border-error-500 rounded-full animate-spin mr-2 align-middle" />
+                            )}
+                            Reject Price
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleDealResponse(
+                                deal.id,
+                                "ACCEPTED",
+                                deal.agreedPrice,
+                                carLabel
+                              )
+                            }
+                            disabled={isResponding}
+                            className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-gradient-primary text-white font-semibold shadow-lg hover:shadow-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isResponding && (
+                              <span className="inline-block h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2 align-middle" />
+                            )}
+                            Accept Price
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
-                ))}
+                );
+                })}
               </div>
             )}
           </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { X } from "lucide-react";
 import Select from "react-select";
 import {
@@ -38,6 +38,18 @@ const AddSellerCarModal = ({
     primaryImage: "",
     city: "",
   });
+
+  const selectMenuPortal = useMemo(
+    () => (typeof document !== "undefined" ? document.body : null),
+    []
+  );
+
+  const selectStyles = {
+    menuPortal: (base: any) => ({
+      ...base,
+      zIndex: 9999,
+    }),
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -126,9 +138,9 @@ const AddSellerCarModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50">
-      <div className="flex min-h-full items-center justify-center p-4 sm:p-8">
-        <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full my-8 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/50 overflow-y-auto">
+      <div className="flex min-h-full items-center justify-center p-3 sm:p-6">
+        <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl my-6 max-h-[92vh] overflow-y-auto">
           <div className="sticky top-0 bg-white border-b border-dark-200 px-6 py-4 flex justify-between items-center">
             <h2 className="text-2xl font-bold text-dark-900">
               Add Car for Sale
@@ -141,7 +153,7 @@ const AddSellerCarModal = ({
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <form onSubmit={handleSubmit} className="p-6 pt-4 space-y-5">
             {error && (
               <div className="bg-error-50 border border-error-200 rounded-lg p-4 mb-4">
                 <p className="text-error-900 text-sm">{error}</p>
@@ -159,7 +171,7 @@ const AddSellerCarModal = ({
                 )}
               </div>
             )}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-dark-900 mb-2">
                   Brand *
@@ -190,7 +202,7 @@ const AddSellerCarModal = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-dark-900 mb-2">
                   Year *
@@ -236,7 +248,7 @@ const AddSellerCarModal = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-dark-900 mb-2">
                   Transmission
@@ -252,6 +264,8 @@ const AddSellerCarModal = ({
                   className="react-select-container"
                   classNamePrefix="react-select"
                   placeholder="Select transmission"
+                  menuPortalTarget={selectMenuPortal}
+                  styles={selectStyles}
                 />
               </div>
               <div>
@@ -269,11 +283,13 @@ const AddSellerCarModal = ({
                   className="react-select-container"
                   classNamePrefix="react-select"
                   placeholder="Select fuel type"
+                  menuPortalTarget={selectMenuPortal}
+                  styles={selectStyles}
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-dark-900 mb-2">
                   KM Driven
@@ -386,18 +402,18 @@ const AddSellerCarModal = ({
               />
             </div>
 
-            <div className="flex gap-3 pt-4">
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-6 py-3 rounded-lg border border-dark-300 text-dark-700 font-semibold hover:bg-dark-50 transition"
+                className="w-full sm:w-auto sm:flex-1 px-6 py-3 rounded-lg border border-dark-300 text-dark-700 font-semibold hover:bg-dark-50 transition"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="flex-1 bg-gradient-primary hover:bg-gradient-primary-dark text-white px-6 py-3 rounded-lg font-semibold transition shadow-lg hover:shadow-xl disabled:opacity-50"
+                className="w-full sm:w-auto sm:flex-1 bg-gradient-primary hover:bg-gradient-primary-dark text-white px-6 py-3 rounded-lg font-semibold transition shadow-lg hover:shadow-xl disabled:opacity-50"
               >
                 {isLoading ? "Adding..." : "Add Car Listing"}
               </button>

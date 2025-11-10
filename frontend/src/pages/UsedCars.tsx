@@ -231,7 +231,10 @@ const UsedCars = () => {
               />
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:col-span-2 xl:col-span-1">
+            <div className="min-w-0 sm:self-end sm:pl-2 sm:col-span-2 lg:col-span-1">
+              <label className="block text-sm font-medium text-dark-900 mb-2 opacity-0">
+                Reset
+              </label>
               <button
                 onClick={() => {
                   setSelectedCity("");
@@ -239,13 +242,10 @@ const UsedCars = () => {
                   setSortBy("price");
                   setSortOrder("asc");
                 }}
-                className="w-full sm:w-auto px-4 py-2 bg-gradient-primary hover:bg-gradient-primary-dark text-white rounded-lg font-semibold transition shadow-md hover:shadow-lg"
+                className="w-full px-5 h-12 bg-gradient-primary hover:bg-gradient-primary-dark text-white rounded-lg font-semibold transition shadow-md hover:shadow-lg flex items-center justify-center"
               >
                 Reset Filters
               </button>
-              <label className="text-sm text-dark-600 sm:text-right">
-                Showing {cars.length} cars
-              </label>
             </div>
           </div>
         </div>
