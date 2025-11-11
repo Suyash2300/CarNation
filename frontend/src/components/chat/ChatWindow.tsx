@@ -28,7 +28,6 @@ const ChatWindow = ({
     null
   );
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -95,6 +94,19 @@ const ChatWindow = ({
     return grouped;
   }, [messages]);
 
+  const scrollMessagesToBottom = useCallback(
+    (behavior: ScrollBehavior = "smooth") => {
+      const container = messagesContainerRef.current;
+      if (!container) return;
+
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior,
+      });
+    },
+    []
+  );
+
   useEffect(() => {
     const socketInstance = socketTokenOverride
       ? getSocketWithToken(socketTokenOverride)
@@ -117,7 +129,7 @@ const ChatWindow = ({
           });
           // Auto-scroll to bottom on new message
           setTimeout(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            scrollMessagesToBottom("smooth");
           }, 100);
         }
       });
@@ -170,17 +182,23 @@ const ChatWindow = ({
         socketInstance.off("messages-read");
       }
     };
-  }, [conversation.id, effectiveUserId, refetch, socketTokenOverride]);
+  }, [
+    conversation.id,
+    effectiveUserId,
+    refetch,
+    socketTokenOverride,
+    scrollMessagesToBottom,
+  ]);
 
   useEffect(() => {
     if (messagesData) {
       setMessages(messagesData.messages);
       // Scroll to bottom on initial load
       setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+        scrollMessagesToBottom("auto");
       }, 100);
     }
-  }, [messagesData]);
+  }, [messagesData, scrollMessagesToBottom]);
 
   // Handle scroll to show/hide scroll button
   useEffect(() => {
@@ -205,8 +223,8 @@ const ChatWindow = ({
   }, []);
 
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, []);
+    scrollMessagesToBottom("smooth");
+  }, [scrollMessagesToBottom]);
 
   const handleSendMessage = useCallback(() => {
     if (!message.trim() || !socket) return;
@@ -229,9 +247,9 @@ const ChatWindow = ({
 
     // Auto-scroll after sending
     setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      scrollMessagesToBottom("smooth");
     }, 100);
-  }, [message, socket, conversation.id]);
+  }, [message, socket, conversation.id, scrollMessagesToBottom]);
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -278,9 +296,9 @@ const ChatWindow = ({
       : conversation.participant1;
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-dark-900">
+    <div className="flex flex-col h-full min-h-0 bg-white dark:bg-dark-900">
       {/* Chat Header */}
-      <div className="bg-gradient-to-r from-primary-50 to-primary-100 dark:from-dark-800 dark:to-dark-700 border-b border-dark-200 dark:border-dark-700 p-3 sm:p-4 flex items-center gap-2 sm:gap-3 shadow-sm min-w-0">
+      <div className="bg-gradient-to-r from-primary-50 to-primary-100 dark:from-dark-800 dark:to-dark-700 border-b border-dark-200 dark:border-dark-700 p-3 sm:p-4 flex items-center gap-2 sm:gap-3 shadow-sm min-w-0 flex-shrink-0">
         {otherParticipant.profileImage ? (
           <LazyImage
             src={otherParticipant.profileImage}
@@ -321,7 +339,7 @@ const ChatWindow = ({
       {/* Messages Area */}
       <div
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto p-4 bg-gradient-to-b from-light-subtle to-white dark:from-dark-900 dark:to-dark-800 relative scroll-smooth overscroll-contain"
+        className="flex-1 min-h-0 overflow-y-auto p-4 bg-gradient-to-b from-light-subtle to-white dark:from-dark-900 dark:to-dark-800 relative scroll-smooth overscroll-contain"
       >
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
@@ -346,7 +364,6 @@ const ChatWindow = ({
                 />
               ))
             )}
-            <div ref={messagesEndRef} />
           </>
         )}
 

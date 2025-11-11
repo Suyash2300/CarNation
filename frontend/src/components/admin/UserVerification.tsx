@@ -14,8 +14,23 @@ const UserVerification = () => {
   const [verifyAadhaar, { isLoading: isVerifying }] =
     useVerifyAadhaarMutation();
   const [viewingUser, setViewingUser] = useState<User | null>(null);
+  const [copiedForUserId, setCopiedForUserId] = useState<string | null>(null);
   const { showSuccess, showError } = useToast();
   const confirm = useConfirm();
+  const handleCopyAadhaar = async (aadhaarNumber: string, userId: string) => {
+    try {
+      await navigator.clipboard.writeText(aadhaarNumber);
+      setCopiedForUserId(userId);
+      showSuccess("Aadhaar number copied to clipboard");
+      setTimeout(() => {
+        setCopiedForUserId((current) => (current === userId ? null : current));
+      }, 2000);
+    } catch (error) {
+      console.error("Failed to copy Aadhaar number:", error);
+      showError("Unable to copy Aadhaar number. Please try manually.");
+    }
+  };
+
 
   const users = data?.users || [];
 
@@ -93,13 +108,28 @@ const UserVerification = () => {
                         {user.phone || "Not provided"}
                       </p>
                     </div>
-                    <div>
+                    <div className="space-y-1">
                       <p className="text-dark-600">Aadhaar Number</p>
-                      <p className="font-semibold text-dark-900">
-                        {user.aadhaarNumber
-                          ? `****${user.aadhaarNumber.slice(-4)}`
-                          : "Not provided"}
-                      </p>
+                      {user.aadhaarNumber ? (
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                          <span className="font-mono text-base font-semibold text-dark-900 tracking-[0.25em]">
+                            {user.aadhaarNumber.replace(/(.{4})/g, "$1 ").trim()}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleCopyAadhaar(user.aadhaarNumber!, user.id)
+                            }
+                            className="inline-flex items-center justify-center rounded-lg border border-primary-200 px-3 py-1.5 text-sm font-semibold text-primary-600 hover:bg-primary-50 transition"
+                          >
+                            {copiedForUserId === user.id ? "Copied!" : "Copy"}
+                          </button>
+                        </div>
+                      ) : (
+                        <p className="font-semibold text-dark-900">
+                          Not provided
+                        </p>
+                      )}
                     </div>
                     <div>
                       <p className="text-dark-600">Submitted</p>
@@ -152,7 +182,32 @@ const UserVerification = () => {
                 <XCircle className="w-6 h-6" />
               </button>
             </div>
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-6 space-y-6">
+              {viewingUser.aadhaarNumber && (
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl bg-dark-50 border border-dark-200 px-4 py-3">
+                  <div>
+                    <p className="text-sm text-dark-600 uppercase tracking-wide">
+                      Aadhaar Number
+                    </p>
+                    <p className="font-mono text-lg font-semibold text-dark-900 tracking-[0.35em] mt-1">
+                      {viewingUser.aadhaarNumber.replace(/(.{4})/g, "$1 ").trim()}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleCopyAadhaar(
+                        viewingUser.aadhaarNumber!,
+                        viewingUser.id
+                      )
+                    }
+                    className="inline-flex items-center justify-center rounded-lg border border-primary-200 px-4 py-2 text-sm font-semibold text-primary-600 hover:bg-primary-50 transition"
+                  >
+                    {copiedForUserId === viewingUser.id ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {viewingUser.aadhaarFrontImage && (
                 <div>
                   <h3 className="font-semibold text-dark-900 mb-2">
@@ -177,6 +232,7 @@ const UserVerification = () => {
                   />
                 </div>
               )}
+              </div>
             </div>
             <div className="p-6 border-t border-dark-200 flex justify-end gap-3">
               <button

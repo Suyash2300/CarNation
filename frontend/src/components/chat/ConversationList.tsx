@@ -95,7 +95,7 @@ const ConversationList = ({
       </div>
 
       {/* Conversations List */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 min-h-0 overflow-y-auto pb-4">
         {sortedConversations.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center p-8">
             <MessageCircle className="w-16 h-16 text-dark-300 dark:text-dark-600 mb-4" />
@@ -109,7 +109,7 @@ const ConversationList = ({
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-dark-200 dark:divide-dark-700">
+          <div className="divide-y divide-dark-200 dark:divide-dark-700 pb-6">
             {sortedConversations.map((conversation) => {
               const otherParticipant = getOtherParticipant(conversation);
               const unreadCount = conversation._count?.messages || 0;
