@@ -377,8 +377,10 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
       await sendPasswordResetEmail(user.email, resetUrl);
     } catch (emailError: any) {
       console.error('Failed to send password reset email:', emailError.message || emailError);
+      return res.status(500).json({
+        error: 'Failed to send password reset email. Please try again later or contact support.',
+      });
     }
-
 
     res.json({
       message: 'If an account with that email exists, we have sent a password reset link.',
