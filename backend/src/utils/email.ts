@@ -2,7 +2,7 @@ import * as brevo from '@getbrevo/brevo';
 import nodemailer from 'nodemailer';
 
 const brevoApiKey = process.env.BREVO_API_KEY;
-const useSMTP = process.env.BREVO_USE_SMTP === 'true' || !!process.env.BREVO_SMTP_PASSWORD;
+const useSMTP = process.env.BREVO_USE_SMTP?.toLowerCase() === 'true';
 
 const smtpConfig = {
   host: process.env.BREVO_SMTP_HOST || 'smtp-relay.brevo.com',
