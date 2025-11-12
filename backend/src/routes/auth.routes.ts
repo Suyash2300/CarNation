@@ -11,6 +11,25 @@ import { uploadToCloudinary } from '../utils/cloudinary.js';
 
 const router = Router();
 
+const resolveFrontendBaseUrl = (): string => {
+  const rawEnv = process.env.FRONTEND_URL?.trim();
+
+  if (rawEnv) {
+    // Handle values accidentally stored as "FRONTEND_URL=https://..."
+    const httpIndex = rawEnv.indexOf('http');
+    const candidate =
+      httpIndex >= 0 ? rawEnv.slice(httpIndex).trim() : rawEnv;
+
+    if (/^https?:\/\//i.test(candidate)) {
+      return candidate.replace(/\/+$/, '');
+    }
+  }
+
+  return (process.env.NODE_ENV === 'production'
+    ? 'https://car-nation-ten.vercel.app'
+    : 'http://localhost:5173').replace(/\/+$/, '');
+};
+
 // Apply rate limiting to auth routes
 router.use(authLimiter);
 
@@ -366,12 +385,10 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
     });
 
     // Generate reset URL
-    const frontendBase =
-      process.env.FRONTEND_URL ||
-      (process.env.NODE_ENV === 'production'
-        ? 'https://car-nation-ten.vercel.app'
-        : 'http://localhost:5173');
-    const resetUrl = `${frontendBase}/reset-password?token=${resetToken}&email=${encodeURIComponent(user.email)}`;
+    const frontendBase = resolveFrontendBaseUrl();
+    const resetUrl = `${frontendBase}/reset-password?token=${resetToken}&email=${encodeURIComponent(
+      user.email
+    )}`;
 
     try {
       await sendPasswordResetEmail(user.email, resetUrl);
