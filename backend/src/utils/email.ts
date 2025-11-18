@@ -208,7 +208,6 @@ The CarNation Team
         text: text,
       });
 
-      console.log(`Password reset email sent to ${email}`);
       return;
     } catch (error: any) {
       console.error('Failed to send email via SMTP:', error.message || error);
@@ -233,7 +232,6 @@ The CarNation Team
     sendSmtpEmail.to = [{ email: email }];
 
     await apiInstance!.sendTransacEmail(sendSmtpEmail);
-    console.log(`Password reset email sent to ${email}`);
   } catch (error: any) {
     console.error('Failed to send email via API:', error.message || error);
     throw new Error(`Failed to send email: ${error.message || 'Unknown error'}`);

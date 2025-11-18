@@ -43,14 +43,8 @@ router.post(
         return res.status(400).json({ error: 'No image file provided' });
       }
 
-      console.log('📤 Uploading image to Cloudinary...');
-      console.log('   File size:', req.file.size, 'bytes');
-      console.log('   File type:', req.file.mimetype);
-
       // Upload to Cloudinary
       const result = await uploadToCloudinary(req.file.buffer, 'carnation-cars');
-
-      console.log('✅ Image uploaded successfully:', result.url);
 
       res.json({
         url: result.url,

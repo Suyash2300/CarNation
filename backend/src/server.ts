@@ -279,11 +279,7 @@ cron.schedule('0 * * * *', async () => {
 });
 
 // Start server
-httpServer.listen(PORT, () => {
-  if (process.env.NODE_ENV !== 'test') {
-    console.log(`Server listening on http://localhost:${PORT}`);
-  }
-});
+httpServer.listen(PORT);
 
 export default app;
 export { io };

@@ -9,8 +9,6 @@ export const setupChatHandler = (io: SocketServer) => {
   io.on('connection', (socket: AuthenticatedSocket) => {
     const userId = socket.userId!;
 
-    console.log(`User ${userId} connected to chat`);
-
     // Add user to online users
     onlineUsers.set(userId, socket.id);
     socket.broadcast.emit('user-online', { userId });
@@ -43,7 +41,6 @@ export const setupChatHandler = (io: SocketServer) => {
         }
 
         socket.join(`conversation:${conversationId}`);
-        console.log(`User ${userId} joined conversation ${conversationId}`);
       } catch (error: any) {
         console.error('Error joining conversation:', error);
         if (error.code === 'P1017') {
@@ -136,7 +133,6 @@ export const setupChatHandler = (io: SocketServer) => {
             },
           });
 
-          console.log(`Message sent in conversation ${conversationId} by user ${userId}`);
         } catch (dbError: any) {
           console.error('Database error sending message:', dbError);
           if (dbError.code === 'P1017') {
@@ -214,7 +210,6 @@ export const setupChatHandler = (io: SocketServer) => {
 
     // Handle disconnect
     socket.on('disconnect', () => {
-      console.log(`User ${userId} disconnected from chat`);
       onlineUsers.delete(userId);
       socket.broadcast.emit('user-offline', { userId });
     });

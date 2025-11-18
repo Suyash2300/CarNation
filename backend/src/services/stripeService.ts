@@ -9,15 +9,7 @@ const HAS_LIVE_KEYS = STRIPE_SECRET_KEY?.startsWith('sk_live_') || false;
 
 let stripeInstance: Stripe | null = null;
 
-if (USE_MOCK_MODE) {
-  console.log('🔧 Stripe credentials not found. Using MOCK MODE - Payments will be simulated locally');
-} else if (HAS_TEST_KEYS) {
-  console.log('🔧 Stripe TEST KEYS detected - Using Stripe test API');
-} else if (HAS_LIVE_KEYS) {
-  console.log('✅ Stripe LIVE KEYS detected - Using Stripe live API (production)');
-} else {
-  console.log('✅ Stripe configured');
-}
+// Determine Stripe mode based on available credentials
 
 export const getStripeInstance = (): Stripe | null => {
   if (!STRIPE_SECRET_KEY) {
@@ -50,7 +42,6 @@ export const createPaymentIntent = async (params: CreatePaymentIntentParams) => 
       status: 'requires_payment_method',
       metadata: params.metadata || {},
     };
-    console.log('🔧 MOCK MODE: Created simulated Stripe payment intent:', mockPaymentIntent.id);
     return mockPaymentIntent as any;
   }
 
@@ -69,10 +60,6 @@ export const createPaymentIntent = async (params: CreatePaymentIntentParams) => 
     },
   });
 
-  if (HAS_TEST_KEYS) {
-    console.log('🔧 Stripe TEST API: Created payment intent:', paymentIntent.id);
-  }
-
   return paymentIntent;
 };
 
@@ -85,7 +72,6 @@ export const retrievePaymentIntent = async (paymentIntentId: string) => {
       amount: 10000,
       currency: 'inr',
     };
-    console.log('🔧 MOCK MODE: Retrieved simulated payment intent:', paymentIntentId);
     return mockPaymentIntent as any;
   }
 
@@ -101,7 +87,6 @@ export const retrievePaymentIntent = async (paymentIntentId: string) => {
 export const confirmPaymentIntent = async (paymentIntentId: string) => {
   // Mock mode: Auto-confirm
   if (USE_MOCK_MODE) {
-    console.log('🔧 MOCK MODE: Payment confirmed automatically:', paymentIntentId);
     return { id: paymentIntentId, status: 'succeeded' } as any;
   }
 
@@ -122,7 +107,6 @@ export const isTestMode = (): boolean => {
 // Get publishable key for frontend
 export const getPublishableKey = (): string => {
   if (USE_MOCK_MODE) {
-    console.log('⚠️ Stripe MOCK MODE: Returning pk_test_mock (no secret key found)');
     return 'pk_test_mock';
   }
 
@@ -130,17 +114,10 @@ export const getPublishableKey = (): string => {
   const publishableKey = process.env.STRIPE_PUBLISHABLE_KEY?.trim();
   
   if (!publishableKey) {
-    console.warn('⚠️ STRIPE_PUBLISHABLE_KEY not found in env, but STRIPE_SECRET_KEY exists');
-    // If not provided, derive from secret key pattern (this is just for convenience)
     if (HAS_TEST_KEYS) {
-      console.warn('⚠️ Returning pk_test_placeholder - STRIPE_PUBLISHABLE_KEY should be set');
       return 'pk_test_placeholder';
     }
     return 'pk_live_placeholder';
-  }
-
-  if (HAS_TEST_KEYS && publishableKey.startsWith('pk_test_')) {
-    console.log('✅ Returning Stripe test publishable key:', publishableKey.substring(0, 20) + '...');
   }
 
   return publishableKey;

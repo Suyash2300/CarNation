@@ -35,11 +35,10 @@ export const getApiBaseUrl = (): string => {
   
   // Explicitly check for VITE_API_URL first (set in Vercel)
   if (import.meta.env.VITE_API_URL) {
-    // Reject localhost URLs in production
-    if (isProduction && import.meta.env.VITE_API_URL.includes('localhost')) {
-      console.warn('[API Config] Rejected localhost URL in production, using fallback');
-    } else {
-      return import.meta.env.VITE_API_URL;
+    const envApiUrl = import.meta.env.VITE_API_URL;
+    const isLocalhostUrl = envApiUrl.includes('localhost');
+    if (!isProduction || !isLocalhostUrl) {
+      return envApiUrl;
     }
   }
 
@@ -49,18 +48,7 @@ export const getApiBaseUrl = (): string => {
   
   // Safety check: Never return localhost in production
   if (isProduction && apiUrl.includes('localhost')) {
-    console.error('[API Config] ERROR: Attempted to use localhost in production!');
-    console.error('[API Config] Falling back to production backend');
     return `${PROD_SERVER_BASE}/api`;
-  }
-  
-  // Always log in production to help debug
-  if (typeof window !== 'undefined') {
-    console.log('[API Config] VITE_API_URL:', import.meta.env.VITE_API_URL || 'not set');
-    console.log('[API Config] Hostname:', window.location.hostname);
-    console.log('[API Config] Is Production:', isProduction);
-    console.log('[API Config] Using API URL:', apiUrl);
-    console.log('[API Config] PROD mode:', import.meta.env.PROD);
   }
   
   return apiUrl;

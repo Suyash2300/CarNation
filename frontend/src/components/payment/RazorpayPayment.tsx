@@ -83,9 +83,6 @@ const RazorpayPayment = ({
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
-    script.onload = () => {
-      console.log("Razorpay script loaded");
-    };
     script.onerror = () => {
       setError("Failed to load Razorpay. Please refresh the page.");
     };
